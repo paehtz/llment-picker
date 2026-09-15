@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Element-Picker",
+  "version": "1.0.0",
+  "description": "Ein Klick auf ein Seitenelement kopiert URL, eindeutigen CSS-Selektor und Textanfang in die Zwischenablage – zum Einfügen in Claude-Chats.",
+  "author": "Henning Pähtz",
+  "icons": {
+    "48": "icon.svg",
+    "96": "icon.svg"
+  },
+  "action": {
+    "default_icon": "icon.svg",
+    "default_title": "Element-Picker (Alt+Shift+P)"
+  },
+  "permissions": ["activeTab", "scripting"],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      },
+      "description": "Element-Picker auf der aktuellen Seite starten / abbrechen"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "element-picker@henning-paehtz.de",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  }
+}
