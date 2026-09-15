@@ -17,11 +17,12 @@ https://www.wolf-automobile.com/team/#bereiche
 
 | Aktion | Wirkung |
 |---|---|
-| Toolbar-Icon oder **Alt+Shift+P** | Picker starten – Cursor wird zum Fadenkreuz, Element unter der Maus bekommt einen Rahmen |
+| Toolbar-Icon oder **Strg+Alt+P** | Picker starten – Cursor wird zum Fadenkreuz, Element unter der Maus bekommt einen Rahmen |
 | Klick | kopiert die drei Zeilen, Picker beendet sich, Toast „Kopiert" |
 | **Escape** oder erneut Icon/Kürzel | Abbruch ohne Kopieren |
+| **Rechtsklick → „Element-Picker: dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus |
 
-Das Kürzel lässt sich ändern unter `about:addons` → Zahnrad → „Tastenkombinationen für Erweiterungen verwalten".
+Das Kürzel lässt sich ändern unter `about:addons` → Zahnrad → „Tastenkombinationen für Erweiterungen verwalten". (Alt+Shift+P war die erste Wahl, öffnet in Firefox aber die Profilverwaltung.)
 
 ## Selektor-Logik
 
@@ -37,13 +38,13 @@ Zustands-/Animationsklassen (`active`, `rv`, `is-*`, `js-*`, `aos-*`, …) und g
 ## Technik
 
 - WebExtension, Manifest V3, Firefox ≥ 140
-- Berechtigungen: nur `activeTab` + `scripting` – keine Host-Berechtigung, kein dauerhaftes Content-Script. `picker.js` wird erst beim Aufruf in den aktiven Tab injiziert.
+- Berechtigungen: `activeTab` + `scripting` (Injektion nur nach Aufruf), `menus` (Kontextmenü-Eintrag), `clipboardWrite` (Schreiben ohne Klick-Geste, nötig für den Kontextmenü-Weg) – keine Host-Berechtigung, kein dauerhaftes Content-Script.
 - Keine Netzwerkzugriffe, kein Speicher, keine Datenerhebung (`data_collection_permissions: none`).
 - Reines JavaScript, kein Build-Schritt, keine Abhängigkeiten.
 
 ```
 manifest.json   Metadaten, Berechtigungen, Tastenkürzel
-background.js   injiziert picker.js beim Icon-Klick / Kürzel
+background.js   Kontextmenü-Eintrag; injiziert picker.js bei Icon / Kürzel / Menü
 picker.js       Overlay, Selektor-Erzeugung, Zwischenablage, Toast
 icon.svg        Toolbar-Icon
 ```
@@ -64,7 +65,7 @@ Firefox installiert nur signierte Add-ons dauerhaft. Die Signierung ist kostenlo
    ```bash
    npx web-ext build --source-dir . --artifacts-dir dist --overwrite-dest
    ```
-   erzeugt `dist/element_picker-1.0.0.zip`.
+   erzeugt `dist/element-picker-<version>.zip`.
 3. Nach der automatischen Prüfung die signierte `.xpi` herunterladen und per Doppelklick bzw. Drag & Drop auf ein Firefox-Fenster installieren.
 
 Alternativ per Kommandozeile (API-Key unter https://addons.mozilla.org/developers/addon/api/key/):

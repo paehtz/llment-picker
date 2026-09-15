@@ -1,23 +1,23 @@
 // Element-Picker – Content-Script.
 //
-// Wird bei jedem Icon-Klick frisch injiziert. Läuft der Picker bereits
-// (Marker an `window`), wird er abgebrochen; andernfalls gestartet.
+// Wird bei jedem Aufruf frisch injiziert. Zwei Wege hinein:
 //
-// Ablauf: Hover zeichnet einen Rahmen (Overlay, das Ziel selbst wird nicht
-// angefasst) → Klick kopiert drei Zeilen in die Zwischenablage:
+//   a) Icon / Tastenkürzel → Picker-Modus: Hover zeichnet einen Rahmen
+//      (Overlay, das Ziel selbst wird nicht angefasst), Klick kopiert.
+//      Läuft der Picker bereits (Marker an `window`), wird er abgebrochen.
+//   b) Kontextmenü „Element-Picker: dieses Element kopieren" → das Hintergrund-
+//      skript hinterlegt vorher `window.__elementPickerContextTarget`
+//      (targetElementId aus dem Menü-Klick); das Element wird sofort kopiert,
+//      ohne Picker-Modus.
+//
+// Kopiert werden drei Zeilen:
 //   1. vollständige Seiten-URL (inkl. Hash)
 //   2. kürzester eindeutiger CSS-Selektor
 //   3. sichtbarer Textanfang in Anführungszeichen (max. 60 Zeichen)
-// Escape bricht ab.
 
 (() => {
   const KEY = "__elementPickerInstance";
-
-  // ───────────────────────── Toggle: läuft schon? → abbrechen ─────────────
-  if (window[KEY]) {
-    window[KEY].cancel();
-    return;
-  }
+  const CTX = "__elementPickerContextTarget";
 
   // ───────────────────────── Selektor-Erzeugung ───────────────────────────
 
@@ -135,8 +135,81 @@
     return t.length > 60 ? t.slice(0, 60).trimEnd() + "…" : t;
   }
 
-  // ───────────────────────── Overlay / UI ─────────────────────────────────
+  function payloadFor(el) {
+    const lines = [location.href, buildSelector(el)];
+    const snippet = textSnippet(el);
+    if (snippet) lines.push(JSON.stringify(snippet));
+    return lines.join("\n");
+  }
+
+  // ───────────────────────── Zwischenablage & Toast ───────────────────────
   const Z = "2147483647";
+
+  async function copy(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Rückfall: execCommand – funktioniert innerhalb einer Nutzergeste.
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        ta.remove();
+        return ok;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  function toast(msg, good) {
+    const t = document.createElement("div");
+    t.setAttribute("data-element-picker", "");
+    t.textContent = msg;
+    t.style.cssText = `position:fixed;top:16px;right:16px;z-index:${Z};pointer-events:none;
+      font:14px/1 system-ui,sans-serif;color:#fff;background:${good ? "#1a7f37" : "#57606a"};
+      padding:10px 14px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.25);
+      opacity:0;transition:opacity .15s;`;
+    document.documentElement.appendChild(t);
+    requestAnimationFrame(() => (t.style.opacity = "1"));
+    setTimeout(() => {
+      t.style.opacity = "0";
+      setTimeout(() => t.remove(), 200);
+    }, 1400);
+  }
+
+  async function copyElement(el) {
+    const text = payloadFor(el);
+    const ok = await copy(text);
+    toast(ok ? "Kopiert" : "Kopieren fehlgeschlagen", ok);
+    window.__elementPickerLast = text; // für Tests / Debugging
+    return ok;
+  }
+
+  // ───────────────────────── Weg b: Kontextmenü ───────────────────────────
+  if (window[CTX] != null) {
+    const id = window[CTX];
+    delete window[CTX];
+    if (window[KEY]) window[KEY].cancel(true);
+    let el = null;
+    try {
+      el = browser.menus.getTargetElement(id);
+    } catch {}
+    if (el) copyElement(el);
+    else toast("Element nicht gefunden", false);
+    return;
+  }
+
+  // ───────────────────────── Weg a: Picker-Modus (Toggle) ─────────────────
+  if (window[KEY]) {
+    window[KEY].cancel();
+    return;
+  }
+
   const box = document.createElement("div");
   box.setAttribute("data-element-picker", "");
   box.style.cssText = `position:fixed;pointer-events:none;z-index:${Z};box-sizing:border-box;
@@ -178,14 +251,11 @@
     return el;
   }
 
+  let lastXY = null;
   function onMove(e) {
+    lastXY = [e.clientX, e.clientY];
     const el = targetAt(e.clientX, e.clientY);
     if (el) highlight(el);
-  }
-  let lastXY = null;
-  function onMoveTrack(e) {
-    lastXY = [e.clientX, e.clientY];
-    onMove(e);
   }
   function onScroll() {
     if (!lastXY) return;
@@ -203,15 +273,8 @@
     swallow(e);
     const el = targetAt(e.clientX, e.clientY) || current;
     if (!el) return;
-    const selector = buildSelector(el);
-    const snippet = textSnippet(el);
-    const lines = [location.href, selector];
-    if (snippet) lines.push(JSON.stringify(snippet));
-    const text = lines.join("\n");
-    const ok = await copy(text);
     cleanup();
-    toast(ok ? "Kopiert" : "Kopieren fehlgeschlagen", ok);
-    window.__elementPickerLast = text; // für Tests / Debugging
+    await copyElement(el);
   }
 
   function onKey(e) {
@@ -222,46 +285,9 @@
     }
   }
 
-  async function copy(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      // Rückfall: execCommand – funktioniert innerhalb einer Nutzergeste.
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
-        document.body.appendChild(ta);
-        ta.select();
-        const ok = document.execCommand("copy");
-        ta.remove();
-        return ok;
-      } catch {
-        return false;
-      }
-    }
-  }
-
-  function toast(msg, good) {
-    const t = document.createElement("div");
-    t.setAttribute("data-element-picker", "");
-    t.textContent = msg;
-    t.style.cssText = `position:fixed;top:16px;right:16px;z-index:${Z};pointer-events:none;
-      font:14px/1 system-ui,sans-serif;color:#fff;background:${good ? "#1a7f37" : "#57606a"};
-      padding:10px 14px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.25);
-      opacity:0;transition:opacity .15s;`;
-    document.documentElement.appendChild(t);
-    requestAnimationFrame(() => (t.style.opacity = "1"));
-    setTimeout(() => {
-      t.style.opacity = "0";
-      setTimeout(() => t.remove(), 200);
-    }, 1400);
-  }
-
   const opts = { capture: true };
   function cleanup() {
-    window.removeEventListener("mousemove", onMoveTrack, opts);
+    window.removeEventListener("mousemove", onMove, opts);
     window.removeEventListener("scroll", onScroll, opts);
     window.removeEventListener("click", onClick, opts);
     window.removeEventListener("mousedown", swallow, opts);
@@ -274,7 +300,7 @@
     delete window[KEY];
   }
 
-  window.addEventListener("mousemove", onMoveTrack, opts);
+  window.addEventListener("mousemove", onMove, opts);
   window.addEventListener("scroll", onScroll, opts);
   window.addEventListener("click", onClick, opts);
   window.addEventListener("mousedown", swallow, opts);
@@ -283,9 +309,9 @@
   window.addEventListener("keydown", onKey, opts);
 
   window[KEY] = {
-    cancel() {
+    cancel(silent) {
       cleanup();
-      toast("Abgebrochen", false);
+      if (!silent) toast("Abgebrochen", false);
     },
     // für Tests: Selektor eines beliebigen Elements berechnen
     buildSelector,
