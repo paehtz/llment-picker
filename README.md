@@ -4,9 +4,9 @@ Ein Klick auf ein Seitenelement kopiert drei Zeilen in die Zwischenablage – zu
 Einfügen in einen Chat mit einem Coding-Agenten („dieses Element meine ich"):
 
 ```
-https://www.wolf-automobile.com/team/#bereiche
-#bereiche .values > .value:nth-of-type(2) > p
-"Rechnungserstellung, Proformas und die Belege für Ihre Buchh…"
+https://www.paehtz.de/#leistungen
+#leistungen .service-list > .service:nth-of-type(2) > .service__body
+"Unternehmenswebseiten: von der Sitemap über die Nutzerführung und Content-Architektur bis"
 ```
 
 1. vollständige Seiten-URL (inkl. Hash)
@@ -42,7 +42,7 @@ Kürzel ändern: Firefox `about:addons` → Zahnrad → „Tastenkombinationen f
 Reihenfolge der Bevorzugung:
 
 1. **ID** am Element selbst → `#id`, fertig.
-2. Sonst: nächster Vorfahr mit ID als **Anker** (`#bereiche …`), darunter Kette aus **sprechenden Klassen** (`.values > .value`) oder Tag-Namen.
+2. Sonst: nächster Vorfahr mit ID als **Anker** (`#leistungen …`), darunter Kette aus **sprechenden Klassen** (`.service-list > .service`) oder Tag-Namen.
 3. `:nth-of-type(n)` nur, wenn Geschwister sonst mehrdeutig wären – und dann immer mit dem Elternsegment davor, damit lesbar bleibt, „das zweite wovon".
 4. Die Kette wird vom Ziel her Segment für Segment verlängert, bis `document.querySelectorAll(sel).length === 1`.
 
@@ -72,14 +72,14 @@ store/                Listing-Texte, Berechtigungsbegründungen, Screenshots, De
 
 **Firefox (temporär – nach Neustart wieder weg):** `about:debugging` → „Dieser Firefox" → „Temporäres Add-on laden…" → `manifest.json` aus diesem Ordner. Nach Code-Änderungen dort „Neu laden" klicken – es gibt keine automatische Aktualisierung.
 
-**Chrome (bleibt, solange der Ordner existiert):** erst `.uild.ps1`, dann `chrome://extensions` → „Entwicklermodus" an → „Entpackte Erweiterung laden" → Ordner `dist/chrome/llment-picker`. Nach Änderungen: neu bauen und auf der Karte „Aktualisieren" klicken.
+**Chrome (bleibt, solange der Ordner existiert):** erst `.\build.ps1`, dann `chrome://extensions` → „Entwicklermodus" an → „Entpackte Erweiterung laden" → Ordner `dist/chrome/llment-picker`. Nach Änderungen: neu bauen und auf der Karte „Aktualisieren" klicken.
 
 ### Dauerhaft: bei Mozilla signieren lassen (empfohlen)
 
 Firefox installiert nur signierte Add-ons dauerhaft. Die Signierung ist kostenlos, braucht keine Veröffentlichung („self-distributed") und dauert meist wenige Minuten:
 
 1. Konto anlegen unter https://addons.mozilla.org (AMO), dann https://addons.mozilla.org/developers/ → „Submit a New Add-on" → **„On your own"** (nicht „On this site").
-2. `.uild.ps1` ausführen und `dist/firefox/llment-picker-<version>.zip` hochladen.
+2. `.\build.ps1` ausführen und `dist/firefox/llment_picker-<version>.zip` hochladen.
 3. Nach der automatischen Prüfung die signierte `.xpi` herunterladen und per Doppelklick bzw. Drag & Drop auf ein Firefox-Fenster installieren.
 
 Alternativ per Kommandozeile (API-Key unter https://addons.mozilla.org/developers/addon/api/key/):
@@ -101,7 +101,7 @@ Einmalig 5 USD Entwickler-Registrierung unter https://chrome.google.com/webstore
 ## Entwicklung
 
 ```powershell
-.uild.ps1          # lint + beide Store-Pakete nach dist/
+.\build.ps1          # lint + beide Store-Pakete nach dist/
 npx web-ext run       # Firefox mit dem Add-on starten, lädt bei Änderungen neu
 ```
 
