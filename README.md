@@ -1,4 +1,4 @@
-# Element-Picker (Firefox & Chrome)
+# LLMent Picker (Firefox & Chrome)
 
 Ein Klick auf ein Seitenelement kopiert drei Zeilen in die Zwischenablage – zum
 Einfügen in einen Chat mit einem Coding-Agenten („dieses Element meine ich"):
@@ -11,16 +11,19 @@ https://www.wolf-automobile.com/team/#bereiche
 
 1. vollständige Seiten-URL (inkl. Hash)
 2. kürzester CSS-Selektor, der das Element eindeutig trifft
-3. sichtbarer Textanfang (max. 60 Zeichen)
+3. **nur wenn vorher Text markiert war:** der markierte Text in Anführungszeichen (max. 240 Zeichen)
 
 ## Bedienung
 
 | Aktion | Wirkung |
 |---|---|
-| Toolbar-Icon oder **Strg+Alt+P** (Firefox) / **Alt+Shift+P** (Chrome) | Picker starten – Cursor wird zum Fadenkreuz, Element unter der Maus bekommt einen Rahmen |
+| Text auf der Seite markieren, dann Toolbar-Icon oder Kürzel | kopiert sofort das Element, das die Markierung enthält, plus den markierten Text als dritte Zeile – kein Picker-Modus |
+| Toolbar-Icon oder **Strg+Alt+P** (Firefox) / **Alt+Shift+P** (Chrome), nichts markiert | Picker starten – Cursor wird zum Fadenkreuz, Element unter der Maus bekommt einen Rahmen |
 | Klick | kopiert die drei Zeilen, Picker beendet sich, Toast „Kopiert" |
 | **Escape** oder erneut Icon/Kürzel | Abbruch ohne Kopieren |
-| **Rechtsklick → „Element-Picker: dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus |
+| **Rechtsklick → „LLMent Picker: dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus; liegt der Rechtsklick auf markiertem Text, kommt der Text als dritte Zeile mit |
+
+Die dritte Zeile gibt es also nur, wenn Du sie durch eine Markierung ausdrücklich verlangst. Ein angeklickter Block ohne Markierung liefert nur URL und Selektor – sonst läse ein Chat „dieser Satz ist gemeint", obwohl der Block gemeint war.
 
 Kürzel ändern: Firefox `about:addons` → Zahnrad → „Tastenkombinationen für Erweiterungen verwalten"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P öffnet in Firefox die Profilverwaltung; Chrome erlaubt keine Strg+Alt-Kombinationen – daher zwei Standards.)
 
@@ -59,14 +62,14 @@ store/                Listing-Texte, Berechtigungsbegründungen, Screenshots, De
 
 **Firefox (temporär – nach Neustart wieder weg):** `about:debugging` → „Dieser Firefox" → „Temporäres Add-on laden…" → `manifest.json` aus diesem Ordner. Nach Code-Änderungen dort „Neu laden" klicken – es gibt keine automatische Aktualisierung.
 
-**Chrome (bleibt, solange der Ordner existiert):** erst `.uild.ps1`, dann `chrome://extensions` → „Entwicklermodus" an → „Entpackte Erweiterung laden" → Ordner `dist/chrome/element-picker`. Nach Änderungen: neu bauen und auf der Karte „Aktualisieren" klicken.
+**Chrome (bleibt, solange der Ordner existiert):** erst `.uild.ps1`, dann `chrome://extensions` → „Entwicklermodus" an → „Entpackte Erweiterung laden" → Ordner `dist/chrome/llment-picker`. Nach Änderungen: neu bauen und auf der Karte „Aktualisieren" klicken.
 
 ### Dauerhaft: bei Mozilla signieren lassen (empfohlen)
 
 Firefox installiert nur signierte Add-ons dauerhaft. Die Signierung ist kostenlos, braucht keine Veröffentlichung („self-distributed") und dauert meist wenige Minuten:
 
 1. Konto anlegen unter https://addons.mozilla.org (AMO), dann https://addons.mozilla.org/developers/ → „Submit a New Add-on" → **„On your own"** (nicht „On this site").
-2. `.uild.ps1` ausführen und `dist/firefox/element-picker-<version>.zip` hochladen.
+2. `.uild.ps1` ausführen und `dist/firefox/llment-picker-<version>.zip` hochladen.
 3. Nach der automatischen Prüfung die signierte `.xpi` herunterladen und per Doppelklick bzw. Drag & Drop auf ein Firefox-Fenster installieren.
 
 Alternativ per Kommandozeile (API-Key unter https://addons.mozilla.org/developers/addon/api/key/):
@@ -83,7 +86,7 @@ Firefox Developer Edition oder Nightly mit `xpinstall.signatures.required = fals
 
 ### Chrome Web Store
 
-Einmalig 5 USD Entwickler-Registrierung unter https://chrome.google.com/webstore/devconsole. Dann „Neues Element" → `dist/chrome/element-picker-chrome-<version>.zip` hochladen, Listing-Texte, Screenshots und Berechtigungsbegründungen aus `store/listing.md` eintragen. Review dauert typisch 1–3 Tage. Chrome installiert nur Erweiterungen aus dem Store dauerhaft (entpackte Erweiterungen bleiben, solange der Ordner existiert, mit Hinweisbanner).
+Einmalig 5 USD Entwickler-Registrierung unter https://chrome.google.com/webstore/devconsole. Dann „Neues Element" → `dist/chrome/llment-picker-chrome-<version>.zip` hochladen, Listing-Texte, Screenshots und Berechtigungsbegründungen aus `store/listing.md` eintragen. Review dauert typisch 1–3 Tage. Chrome installiert nur Erweiterungen aus dem Store dauerhaft (entpackte Erweiterungen bleiben, solange der Ordner existiert, mit Hinweisbanner).
 
 ## Entwicklung
 

@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Element-Picker",
-  "version": "1.2.0",
-  "description": "Klick auf ein Seitenelement kopiert URL, eindeutigen CSS-Selektor und Textanfang – für KI-Chats und Coding-Agenten.",
+  "name": "LLMent Picker",
+  "version": "1.3.0",
+  "description": "Klick auf ein Seitenelement kopiert URL und eindeutigen CSS-Selektor, markierter Text kommt mit – für KI-Chats und Coding-Agenten.",
   "author": "Henning Pähtz",
-  "homepage_url": "https://github.com/paehtz/element-picker",
+  "homepage_url": "https://github.com/paehtz/llment-picker",
   "icons": {
     "16": "icons/16.png",
     "32": "icons/32.png",
@@ -16,7 +16,7 @@
       "16": "icons/16.png",
       "32": "icons/32.png"
     },
-    "default_title": "Element-Picker (Strg+Alt+P)"
+    "default_title": "LLMent Picker (Strg+Alt+P)"
   },
   "permissions": [
     "activeTab",
@@ -34,12 +34,12 @@
       "suggested_key": {
         "default": "Ctrl+Alt+P"
       },
-      "description": "Element-Picker auf der aktuellen Seite starten / abbrechen"
+      "description": "LLMent Picker auf der aktuellen Seite starten / abbrechen"
     }
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "element-picker@henning-paehtz.de",
+      "id": "llment-picker@henning-paehtz.de",
       "strict_min_version": "142.0",
       "data_collection_permissions": {
         "required": [

@@ -11,13 +11,13 @@ npx --yes web-ext lint --source-dir . --ignore-files "dist/**" "chrome/**" "stor
 npx --yes web-ext build --source-dir . --artifacts-dir dist/firefox --overwrite-dest --ignore-files "dist/**" "chrome/**" "store/**" "build.ps1" "README.md" ".gitignore" "icons/icon.svg"
 
 # Chrome: gleiche Laufzeitdateien, eigenes Manifest
-$out = "dist/chrome/element-picker"
+$out = "dist/chrome/llment-picker"
 if (Test-Path $out) { Remove-Item -Recurse -Force $out }
 New-Item -ItemType Directory -Force "$out/icons" | Out-Null
 Copy-Item background.js, picker.js $out
 Copy-Item icons/*.png "$out/icons"
 Copy-Item chrome/manifest.json $out
-$zip = "dist/chrome/element-picker-chrome-$v.zip"
+$zip = "dist/chrome/llment-picker-chrome-$v.zip"
 if (Test-Path $zip) { Remove-Item $zip }
 Compress-Archive -Path "$out/*" -DestinationPath $zip
-Write-Host "Fertig: dist/firefox/element-picker-$v.zip und $zip"
+Write-Host "Fertig: dist/firefox/llment-picker-$v.zip und $zip"

@@ -1,11 +1,11 @@
-// Element-Picker – Hintergrundskript (Firefox: Event-Page, Chrome: Service-Worker).
+// LLMent Picker – Hintergrundskript (Firefox: Event-Page, Chrome: Service-Worker).
 //
 // Tut nichts, bis der Picker aufgerufen wird. Drei Wege:
 //   1. Toolbar-Icon
 //   2. Tastenkürzel (`_execute_action`; Firefox Strg+Alt+P, Chrome Alt+Shift+P –
 //      Chrome erlaubt keine Strg+Alt-Kombinationen; änderbar in den
 //      Add-on-/Erweiterungs-Einstellungen des Browsers)
-//   3. Kontextmenü „Element-Picker: dieses Element kopieren" – kopiert das
+//   3. Kontextmenü „LLMent Picker: dieses Element kopieren" – kopiert das
 //      rechtsgeklickte Element direkt, ohne Picker-Modus
 //
 // Es gibt keinen Zustand im Hintergrund. Toggle (zweiter Aufruf = Abbruch)
@@ -13,7 +13,7 @@
 
 const api = globalThis.browser ?? globalThis.chrome;
 const menus = api.menus ?? api.contextMenus;
-const MENU_ID = "element-picker-copy";
+const MENU_ID = "llment-picker-copy";
 
 async function inject(tabId, frameId, prelude) {
   const target = { tabId, frameIds: [frameId || 0] };
@@ -23,7 +23,7 @@ async function inject(tabId, frameId, prelude) {
   } catch (err) {
     // Typisch: privilegierte Seiten (about:*, chrome://, Add-on-Stores,
     // PDF-Viewer), auf denen der Browser kein Content-Script zulässt.
-    console.warn("Element-Picker: Injektion nicht möglich –", err && err.message);
+    console.warn("LLMent Picker: Injektion nicht möglich –", err && err.message);
   }
 }
 
@@ -39,7 +39,7 @@ api.action.onClicked.addListener((tab) => {
 menus.removeAll().then(() =>
   menus.create({
     id: MENU_ID,
-    title: "Element-Picker: dieses Element kopieren",
+    title: "LLMent Picker: dieses Element kopieren",
     contexts: ["all"],
   })
 );
@@ -47,9 +47,10 @@ menus.removeAll().then(() =>
 menus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== MENU_ID || !tab || tab.id == null) return;
   inject(tab.id, info.frameId, {
-    func: (id) => {
-      window.__elementPickerContextTarget = id;
+    // onSelection: Rechtsklick lag auf markiertem Text -> dritte Zeile mit dem Text
+    func: (ctx) => {
+      window.__elementPickerContextTarget = ctx;
     },
-    args: [info.targetElementId ?? -1],
+    args: [{ id: info.targetElementId ?? -1, onSelection: !!info.selectionText }],
   });
 });

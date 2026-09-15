@@ -1,11 +1,11 @@
-// Element-Picker – Content-Script.
+// LLMent Picker – Content-Script.
 //
 // Wird bei jedem Aufruf frisch injiziert. Zwei Wege hinein:
 //
 //   a) Icon / Tastenkürzel → Picker-Modus: Hover zeichnet einen Rahmen
 //      (Overlay, das Ziel selbst wird nicht angefasst), Klick kopiert.
 //      Läuft der Picker bereits (Marker an `window`), wird er abgebrochen.
-//   b) Kontextmenü „Element-Picker: dieses Element kopieren" → das Hintergrund-
+//   b) Kontextmenü „LLMent Picker: dieses Element kopieren" → das Hintergrund-
 //      skript hinterlegt vorher `window.__elementPickerContextTarget`
 //      (targetElementId aus dem Menü-Klick); das Element wird sofort kopiert,
 //      ohne Picker-Modus.
@@ -13,7 +13,9 @@
 // Kopiert werden drei Zeilen:
 //   1. vollständige Seiten-URL (inkl. Hash)
 //   2. kürzester eindeutiger CSS-Selektor
-//   3. sichtbarer Textanfang in Anführungszeichen (max. 60 Zeichen)
+//   3. nur wenn vorher Text auf der Seite markiert war: der markierte Text in
+//      Anführungszeichen (max. 240 Zeichen) – dann wird das Element, das die
+//      Markierung enthält, sofort kopiert, ohne Picker-Modus
 
 (() => {
   const KEY = "__elementPickerInstance";
@@ -128,21 +130,25 @@
     return (anchor || "html") + " > " + full;
   }
 
-  function textSnippet(el) {
-    let t = "";
-    if (el.tagName === "IMG") t = el.getAttribute("alt") || "";
-    else if (el.tagName === "INPUT" || el.tagName === "TEXTAREA")
-      t = el.value || el.getAttribute("placeholder") || "";
-    else t = el.innerText || el.textContent || "";
-    t = t.replace(/\s+/g, " ").trim();
-    if (!t) return "";
-    return t.length > 60 ? t.slice(0, 60).trimEnd() + "…" : t;
+  // Markierter Text auf der Seite + das Element, das die Markierung umschließt.
+  // Nur eine echte Markierung liefert die dritte Zeile – ein angeklickter
+  // Block ohne Markierung bekommt keine, sonst läse ein Chat „dieser Text ist
+  // gemeint", obwohl der Block gemeint war.
+  const MAX_TEXT = 240;
+  function selectionTarget() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
+    const text = sel.toString().replace(/\s+/g, " ").trim();
+    if (!text) return null;
+    const node = sel.getRangeAt(0).commonAncestorContainer;
+    const el = node.nodeType === 1 ? node : node.parentElement;
+    if (!el || el === document.documentElement || el.hasAttribute("data-llment-picker")) return null;
+    return { el, text: text.length > MAX_TEXT ? text.slice(0, MAX_TEXT).trimEnd() + "…" : text };
   }
 
-  function payloadFor(el) {
+  function payloadFor(el, text) {
     const lines = [location.href, buildSelector(el)];
-    const snippet = textSnippet(el);
-    if (snippet) lines.push(JSON.stringify(snippet));
+    if (text) lines.push(JSON.stringify(text));
     return lines.join("\n");
   }
 
@@ -172,7 +178,7 @@
 
   function toast(msg, good) {
     const t = document.createElement("div");
-    t.setAttribute("data-element-picker", "");
+    t.setAttribute("data-llment-picker", "");
     t.textContent = msg;
     t.style.cssText = `position:fixed;top:16px;right:16px;z-index:${Z};pointer-events:none;
       font:14px/1 system-ui,sans-serif;color:#fff;background:${good ? "#1a7f37" : "#57606a"};
@@ -186,11 +192,11 @@
     }, 1400);
   }
 
-  async function copyElement(el) {
-    const text = payloadFor(el);
-    const ok = await copy(text);
+  async function copyElement(el, text) {
+    const payload = payloadFor(el, text);
+    const ok = await copy(payload);
     toast(ok ? "Kopiert" : "Kopieren fehlgeschlagen", ok);
-    window.__elementPickerLast = text; // für Tests / Debugging
+    window.__elementPickerLast = payload; // für Tests / Debugging
     return ok;
   }
 
@@ -205,14 +211,20 @@
     } catch {}
     const hovered = document.querySelectorAll(":hover");
     const el = hovered[hovered.length - 1];
-    return el && !el.hasAttribute("data-element-picker") ? el : null;
+    return el && !el.hasAttribute("data-llment-picker") ? el : null;
   }
 
   let contextFallback = false;
   if (window[CTX] != null) {
-    const id = window[CTX];
+    const { id, onSelection } = window[CTX];
     delete window[CTX];
     if (window[KEY]) window[KEY].cancel(true);
+    // Rechtsklick lag auf markiertem Text → Element der Markierung + Text
+    const marked = onSelection ? selectionTarget() : null;
+    if (marked) {
+      copyElement(marked.el, marked.text);
+      return;
+    }
     const el = contextTarget(id);
     if (el) {
       copyElement(el);
@@ -228,19 +240,29 @@
     return;
   }
 
+  // Ist Text markiert, ist das Ziel schon klar: Element + Markierung kopieren,
+  // kein Picker-Modus. (Für den Picker-Modus vorher die Markierung aufheben.)
+  if (!contextFallback) {
+    const marked = selectionTarget();
+    if (marked) {
+      copyElement(marked.el, marked.text);
+      return;
+    }
+  }
+
   const box = document.createElement("div");
-  box.setAttribute("data-element-picker", "");
+  box.setAttribute("data-llment-picker", "");
   box.style.cssText = `position:fixed;pointer-events:none;z-index:${Z};box-sizing:border-box;
     border:2px solid #0a84ff;background:rgba(10,132,255,.14);border-radius:2px;
     display:none;transition:none;`;
   const label = document.createElement("div");
-  label.setAttribute("data-element-picker", "");
+  label.setAttribute("data-llment-picker", "");
   label.style.cssText = `position:fixed;pointer-events:none;z-index:${Z};display:none;
     font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;color:#fff;background:#0a84ff;
     padding:2px 6px;border-radius:3px;white-space:nowrap;max-width:60vw;overflow:hidden;
     text-overflow:ellipsis;`;
   const style = document.createElement("style");
-  style.setAttribute("data-element-picker", "");
+  style.setAttribute("data-llment-picker", "");
   style.textContent = `*, *::before, *::after { cursor: crosshair !important; }`;
   document.documentElement.append(box, label, style);
 
@@ -265,7 +287,7 @@
 
   function targetAt(x, y) {
     const el = document.elementFromPoint(x, y);
-    if (!el || el.hasAttribute("data-element-picker")) return null;
+    if (!el || el.hasAttribute("data-llment-picker")) return null;
     return el;
   }
 
@@ -334,6 +356,6 @@
     },
     // für Tests: Selektor eines beliebigen Elements berechnen
     buildSelector,
-    textSnippet,
+    selectionTarget,
   };
 })();
