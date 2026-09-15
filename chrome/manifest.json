@@ -3,7 +3,6 @@
   "name": "Element-Picker",
   "version": "1.2.0",
   "description": "Klick auf ein Seitenelement kopiert URL, eindeutigen CSS-Selektor und Textanfang – für KI-Chats und Coding-Agenten.",
-  "author": "Henning Pähtz",
   "homepage_url": "https://github.com/paehtz/element-picker",
   "icons": {
     "16": "icons/16.png",
@@ -16,36 +15,23 @@
       "16": "icons/16.png",
       "32": "icons/32.png"
     },
-    "default_title": "Element-Picker (Strg+Alt+P)"
+    "default_title": "Element-Picker (Alt+Shift+P)"
   },
   "permissions": [
     "activeTab",
     "scripting",
-    "menus",
+    "contextMenus",
     "clipboardWrite"
   ],
   "background": {
-    "scripts": [
-      "background.js"
-    ]
+    "service_worker": "background.js"
   },
   "commands": {
     "_execute_action": {
       "suggested_key": {
-        "default": "Ctrl+Alt+P"
+        "default": "Alt+Shift+P"
       },
       "description": "Element-Picker auf der aktuellen Seite starten / abbrechen"
-    }
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "element-picker@henning-paehtz.de",
-      "strict_min_version": "142.0",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
     }
   }
 }

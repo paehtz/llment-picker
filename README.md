@@ -1,4 +1,4 @@
-# Element-Picker (Firefox-Add-on)
+# Element-Picker (Firefox & Chrome)
 
 Ein Klick auf ein Seitenelement kopiert drei Zeilen in die Zwischenablage – zum
 Einfügen in einen Chat mit einem Coding-Agenten („dieses Element meine ich"):
@@ -17,12 +17,12 @@ https://www.wolf-automobile.com/team/#bereiche
 
 | Aktion | Wirkung |
 |---|---|
-| Toolbar-Icon oder **Strg+Alt+P** | Picker starten – Cursor wird zum Fadenkreuz, Element unter der Maus bekommt einen Rahmen |
+| Toolbar-Icon oder **Strg+Alt+P** (Firefox) / **Alt+Shift+P** (Chrome) | Picker starten – Cursor wird zum Fadenkreuz, Element unter der Maus bekommt einen Rahmen |
 | Klick | kopiert die drei Zeilen, Picker beendet sich, Toast „Kopiert" |
 | **Escape** oder erneut Icon/Kürzel | Abbruch ohne Kopieren |
 | **Rechtsklick → „Element-Picker: dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus |
 
-Das Kürzel lässt sich ändern unter `about:addons` → Zahnrad → „Tastenkombinationen für Erweiterungen verwalten". (Alt+Shift+P war die erste Wahl, öffnet in Firefox aber die Profilverwaltung.)
+Kürzel ändern: Firefox `about:addons` → Zahnrad → „Tastenkombinationen für Erweiterungen verwalten"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P öffnet in Firefox die Profilverwaltung; Chrome erlaubt keine Strg+Alt-Kombinationen – daher zwei Standards.)
 
 ## Selektor-Logik
 
@@ -37,35 +37,36 @@ Zustands-/Animationsklassen (`active`, `rv`, `is-*`, `js-*`, `aos-*`, …) und g
 
 ## Technik
 
-- WebExtension, Manifest V3, Firefox ≥ 140
-- Berechtigungen: `activeTab` + `scripting` (Injektion nur nach Aufruf), `menus` (Kontextmenü-Eintrag), `clipboardWrite` (Schreiben ohne Klick-Geste, nötig für den Kontextmenü-Weg) – keine Host-Berechtigung, kein dauerhaftes Content-Script.
+- WebExtension, Manifest V3. Firefox ≥ 142 (Event-Page) und Chrome (Service-Worker) aus denselben Skripten; nur das Manifest unterscheidet sich (`manifest.json` Firefox, `chrome/manifest.json` Chrome).
+- Berechtigungen: `activeTab` + `scripting` (Injektion nur nach Aufruf), `menus`/`contextMenus` (Kontextmenü-Eintrag), `clipboardWrite` (Schreiben ohne Klick-Geste, nötig für den Kontextmenü-Weg) – keine Host-Berechtigung, kein dauerhaftes Content-Script.
+- Kontextmenü-Ziel: Firefox liefert `targetElementId` → `menus.getTargetElement`. Chrome kennt das nicht; dort bleibt der `:hover`-Zustand der Seite stehen, solange das native Menü offen ist, und das tiefste `:hover`-Element ist das rechtsgeklickte. Lässt sich kein Ziel bestimmen, startet stattdessen der Picker-Modus.
 - Keine Netzwerkzugriffe, kein Speicher, keine Datenerhebung (`data_collection_permissions: none`).
 - Reines JavaScript, kein Build-Schritt, keine Abhängigkeiten.
 
 ```
-manifest.json   Metadaten, Berechtigungen, Tastenkürzel
-background.js   Kontextmenü-Eintrag; injiziert picker.js bei Icon / Kürzel / Menü
-picker.js       Overlay, Selektor-Erzeugung, Zwischenablage, Toast
-icon.svg        Toolbar-Icon
+manifest.json         Firefox-Manifest (Repo-Wurzel ist direkt als temporäres Add-on ladbar)
+chrome/manifest.json  Chrome-Manifest (Service-Worker, contextMenus, Alt+Shift+P)
+background.js         Kontextmenü-Eintrag; injiziert picker.js bei Icon / Kürzel / Menü
+picker.js             Overlay, Selektor-Erzeugung, Zwischenablage, Toast
+icons/                PNG 16/32/48/128 (aus icon.svg gerastert)
+build.ps1             baut dist/firefox/*.zip (via web-ext) und dist/chrome/*.zip
+store/                Listing-Texte, Berechtigungsbegründungen, Screenshots, Demo-Seite
 ```
 
 ## Installation
 
-### Zum Testen (temporär – nach Firefox-Neustart wieder weg)
+### Zum Testen
 
-1. `about:debugging` → „Dieser Firefox" → „Temporäres Add-on laden…"
-2. `manifest.json` aus diesem Ordner auswählen.
+**Firefox (temporär – nach Neustart wieder weg):** `about:debugging` → „Dieser Firefox" → „Temporäres Add-on laden…" → `manifest.json` aus diesem Ordner. Nach Code-Änderungen dort „Neu laden" klicken – es gibt keine automatische Aktualisierung.
+
+**Chrome (bleibt, solange der Ordner existiert):** erst `.uild.ps1`, dann `chrome://extensions` → „Entwicklermodus" an → „Entpackte Erweiterung laden" → Ordner `dist/chrome/element-picker`. Nach Änderungen: neu bauen und auf der Karte „Aktualisieren" klicken.
 
 ### Dauerhaft: bei Mozilla signieren lassen (empfohlen)
 
 Firefox installiert nur signierte Add-ons dauerhaft. Die Signierung ist kostenlos, braucht keine Veröffentlichung („self-distributed") und dauert meist wenige Minuten:
 
 1. Konto anlegen unter https://addons.mozilla.org (AMO), dann https://addons.mozilla.org/developers/ → „Submit a New Add-on" → **„On your own"** (nicht „On this site").
-2. Ordner als ZIP hochladen (nur die vier Dateien, ohne `.git`, README optional):
-   ```bash
-   npx web-ext build --source-dir . --artifacts-dir dist --overwrite-dest
-   ```
-   erzeugt `dist/element-picker-<version>.zip`.
+2. `.uild.ps1` ausführen und `dist/firefox/element-picker-<version>.zip` hochladen.
 3. Nach der automatischen Prüfung die signierte `.xpi` herunterladen und per Doppelklick bzw. Drag & Drop auf ein Firefox-Fenster installieren.
 
 Alternativ per Kommandozeile (API-Key unter https://addons.mozilla.org/developers/addon/api/key/):
@@ -80,9 +81,19 @@ Bei jeder neuen Version `version` im Manifest erhöhen – AMO nimmt dieselbe Ve
 
 Firefox Developer Edition oder Nightly mit `xpinstall.signatures.required = false` in `about:config`. Nachteil: zweiter Browser bzw. Nightly-Kanal.
 
+### Chrome Web Store
+
+Einmalig 5 USD Entwickler-Registrierung unter https://chrome.google.com/webstore/devconsole. Dann „Neues Element" → `dist/chrome/element-picker-chrome-<version>.zip` hochladen, Listing-Texte, Screenshots und Berechtigungsbegründungen aus `store/listing.md` eintragen. Review dauert typisch 1–3 Tage. Chrome installiert nur Erweiterungen aus dem Store dauerhaft (entpackte Erweiterungen bleiben, solange der Ordner existiert, mit Hinweisbanner).
+
 ## Entwicklung
 
-```bash
-npx web-ext lint      # Manifest/Code gegen Firefox-Regeln prüfen
+```powershell
+.uild.ps1          # lint + beide Store-Pakete nach dist/
 npx web-ext run       # Firefox mit dem Add-on starten, lädt bei Änderungen neu
 ```
+
+`store/demo.html` ist eine neutrale Testseite ohne echte Daten (auch Quelle der Listing-Screenshots).
+
+## Lizenz
+
+MIT – siehe `LICENSE`.

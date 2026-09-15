@@ -23,7 +23,7 @@
 
   // Klassen, die Zustand/Animation beschreiben statt Struktur – als Anker
   // unbrauchbar, weil sie kommen und gehen.
-  const STATE_CLASS = /^(active|inactive|open|closed|visible|hidden|show|hide|shown|selected|current|focus|focused|hover|disabled|enabled|loaded|loading|animated|animate|in-view|inview|rv|wow|aos-.*|et_.*|js-.*|is-.*|has-.*|w-.*|sc-.*|css-.*|jsx-.*|svelte-.*|ng-.*|v-.*|_.*|.*--.*(active|open|visible|hidden).*)$/i;
+  const STATE_CLASS = /^(active|inactive|open|closed|visible|invisible|hidden|show|hide|shown|selected|current|focus|focused|hover|disabled|enabled|loaded|loading|lazyloaded|animated|animate|in|out|on|off|in-view|inview|entered|revealed|reveal|rv|wow|fade|fade-in|collapse|collapsing|collapsed|expanded|ready|init|initialized|mounted|hydrated|aos-.*|et_.*|js-.*|is-.*|has-.*|w-.*|sc-.*|css-.*|jsx-.*|svelte-.*|ng-.*|v-.*|_.*|.*--.*(active|open|visible|hidden).*)$/i;
   // Generiert aussehende Namen: Hash-Anteile, lange Ziffernfolgen.
   const GENERATED = /[0-9a-f]{6,}|\d{4,}|^[a-z]{1,2}\d+$|^:/i;
 
@@ -57,6 +57,10 @@
     const sameTag = Array.from(parent.children).filter((c) => c.tagName === el.tagName);
     const matches = Array.from(parent.querySelectorAll(":scope > " + seg));
     if (matches.length > 1) {
+      // :nth-of-type zählt pro Tag, die Klasse aber tag-übergreifend – tragen
+      // Geschwister verschiedener Tags dieselbe Klasse, muss der Tag mit rein
+      // (sonst trifft `.in:nth-of-type(1)` das erste h1 UND das erste p).
+      if (cls && !matches.every((m) => m.tagName === el.tagName)) seg = tag + seg;
       seg += `:nth-of-type(${sameTag.indexOf(el) + 1})`;
       return { seg, positional: true };
     }
@@ -191,17 +195,31 @@
   }
 
   // ───────────────────────── Weg b: Kontextmenü ───────────────────────────
+  // Firefox: targetElementId → menus.getTargetElement. Chrome kennt das nicht;
+  // dort bleibt der :hover-Zustand der Seite stehen, solange das native Menü
+  // offen ist – das tiefste :hover-Element ist das rechtsgeklickte.
+  function contextTarget(id) {
+    try {
+      const el = globalThis.browser?.menus?.getTargetElement?.(id);
+      if (el) return el;
+    } catch {}
+    const hovered = document.querySelectorAll(":hover");
+    const el = hovered[hovered.length - 1];
+    return el && !el.hasAttribute("data-element-picker") ? el : null;
+  }
+
+  let contextFallback = false;
   if (window[CTX] != null) {
     const id = window[CTX];
     delete window[CTX];
     if (window[KEY]) window[KEY].cancel(true);
-    let el = null;
-    try {
-      el = browser.menus.getTargetElement(id);
-    } catch {}
-    if (el) copyElement(el);
-    else toast("Element nicht gefunden", false);
-    return;
+    const el = contextTarget(id);
+    if (el) {
+      copyElement(el);
+      return;
+    }
+    // Kein Ziel bestimmbar → in den Picker-Modus fallen statt aufzugeben.
+    contextFallback = true;
   }
 
   // ───────────────────────── Weg a: Picker-Modus (Toggle) ─────────────────
@@ -307,6 +325,7 @@
   window.addEventListener("mouseup", swallow, opts);
   window.addEventListener("pointerdown", swallow, opts);
   window.addEventListener("keydown", onKey, opts);
+  if (contextFallback) toast("Element anklicken", false);
 
   window[KEY] = {
     cancel(silent) {

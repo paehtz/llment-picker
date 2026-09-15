@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Demo-Seite – Element-Picker</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--ink:#14181f;--mute:#5b6675;--line:#e3e7ec;--bg:#f6f7f9;--card:#fff;--acc:#0a84ff}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+  header{background:#fff;border-bottom:1px solid var(--line)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+  nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{font-weight:800;letter-spacing:-.02em;font-size:20px}
+  .logo span{color:var(--acc)}
+  nav ul{display:flex;gap:28px;list-style:none;margin:0;padding:0}
+  nav a{color:var(--ink);text-decoration:none;font-weight:500}
+  .btn{background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600}
+  section{padding:72px 0}
+  .tag{display:inline-block;font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px}
+  h1{font-size:44px;line-height:1.1;letter-spacing:-.03em;margin:18px 0 12px}
+  h2{font-size:34px;line-height:1.15;letter-spacing:-.02em;margin:18px 0 10px}
+  .lead{font-size:19px;color:var(--mute);max-width:640px;margin:0}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:36px}
+  .card{background:var(--card);border:1px solid var(--line);border-left:4px solid #d9262c;border-radius:10px;padding:26px 30px}
+  .card h3{margin:0 0 6px;font-size:19px}
+  .card .role{color:var(--ink);font-weight:500;margin-bottom:8px}
+  .card p{margin:0 0 16px;color:var(--mute)}
+  .kd a{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-top:8px;color:var(--ink);text-decoration:none;font:13px ui-monospace,Menlo,Consolas,monospace}
+  .kd svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+  footer{border-top:1px solid var(--line);padding:32px 0;color:var(--mute);font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="logo">Muster<span>werk</span> GmbH</div>
+      <ul><li><a href="#">Leistungen</a></li><li><a href="#">Unternehmen</a></li><li><a href="#">Karriere</a></li><li><a href="#">Kontakt</a></li></ul>
+      <a class="btn" href="#">Anfrage stellen</a>
+    </nav>
+  </div>
+</header>
+
+<main id="inhalt">
+  <section id="intro">
+    <div class="wrap">
+      <span class="tag">Team</span>
+      <h1>Menschen statt Warteschleife: Ihre Ansprechpartner.</h1>
+      <p class="lead">Bei uns sprechen Sie mit Menschen, die Ihr Anliegen kennen. Kein Ticketsystem, keine Weiterleitung.</p>
+    </div>
+  </section>
+
+  <section id="bereiche" aria-label="Bereiche">
+    <div class="wrap">
+      <span class="tag">Bereiche</span>
+      <h2>Für jedes Anliegen ein fester Ansprechpartner.</h2>
+      <p class="lead">Sie erreichen nicht „die Firma", sondern den Bereich, der Ihr Anliegen bearbeitet.</p>
+      <div class="grid values">
+        <div class="value card">
+          <h3>Auftragsabwicklung</h3>
+          <div class="role">Bereich A</div>
+          <p>Termine, Dokumente und die Planung Ihrer Lieferungen.</p>
+          <div class="kd"><a href="#"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.9.7a2 2 0 0 1 1.6 2z"/></svg>+49 30 000000-1</a><a href="#"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>auftrag@example.com</a></div>
+        </div>
+        <div class="value card">
+          <h3>Buchhaltung</h3>
+          <div class="role">Bereich B</div>
+          <p>Rechnungen, Gutschriften und die Belege für Ihre Buchhaltung.</p>
+          <div class="kd"><a href="#"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.9.7a2 2 0 0 1 1.6 2z"/></svg>+49 30 000000-2</a><a href="#"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>buchhaltung@example.com</a></div>
+        </div>
+        <div class="value card">
+          <h3>Einkauf</h3>
+          <div class="role">Bereich C</div>
+          <p>Beschaffung und die Pflege unserer Lieferantenbeziehungen.</p>
+          <div class="kd"><a href="#"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.9.7a2 2 0 0 1 1.6 2z"/></svg>+49 30 000000-3</a><a href="#"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>einkauf@example.com</a></div>
+        </div>
+        <div class="value card">
+          <h3>Vertrieb</h3>
+          <div class="role">Bereich D</div>
+          <p>Angebote, Beratung und die Betreuung unserer Kunden.</p>
+          <div class="kd"><a href="#"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.9.7a2 2 0 0 1 1.6 2z"/></svg>+49 30 000000-4</a><a href="#"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>vertrieb@example.com</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">Musterwerk GmbH · Demo-Seite für den Element-Picker · keine echten Daten</div></footer>
+</body>
+</html>
