@@ -20,4 +20,4 @@ Copy-Item chrome/manifest.json $out
 $zip = "dist/chrome/llment-picker-chrome-$v.zip"
 if (Test-Path $zip) { Remove-Item $zip }
 Compress-Archive -Path "$out/*" -DestinationPath $zip
-Write-Host "Fertig: dist/firefox/llment-picker-$v.zip und $zip"
+Write-Host "Fertig: dist/firefox/llment_picker-$v.zip und $zip"

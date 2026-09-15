@@ -13,6 +13,16 @@ https://www.wolf-automobile.com/team/#bereiche
 2. kürzester CSS-Selektor, der das Element eindeutig trifft
 3. **nur wenn vorher Text markiert war:** der markierte Text in Anführungszeichen (max. 240 Zeichen)
 
+## Warum es das gibt
+
+LLMent Picker ist aus der täglichen Arbeit von [Henning Pähtz](https://www.paehtz.de) entstanden: Webseiten für kleine und mittlere Unternehmen, seit 2025 zunehmend zusammen mit agentischer KI (Claude Code und vergleichbare Werkzeuge). Der Agent baut und ändert die Seite, der Mensch prüft im Browser und gibt Änderungswünsche zurück.
+
+Genau an dieser Rückgabe hakte es. „Der zweite Kasten unter der Überschrift, der Absatz darin" ist für einen Menschen eindeutig, für einen Agenten nicht – er sieht die Seite nicht, er sieht Quelltext. Die Behelfe waren ein Screenshot (der Agent muss raten, welches DOM-Element gemeint ist) oder „Copy XPath" aus den DevTools: drei Klicks, ein Pfad, der bei jeder Layoutänderung bricht, und die URL musste separat mit. Bei dreißig Rückmeldungen am Tag summiert sich das, und jede Unschärfe kostet eine Korrekturrunde.
+
+Das Werkzeug macht daraus einen Klick, der genau das liefert, was der Agent braucht: die Seite, einen eindeutigen und lesbaren Selektor, und – wenn es um eine konkrete Textstelle geht – den markierten Text. Der Name verbindet „Element" und „LLM": Es sagt einem Sprachmodell, welches Element gemeint ist.
+
+Der erste Stand entstand am 15. September 2026 in einer Sitzung mit Claude Code, getestet am DOM echter Kundenseiten; die Entscheidungen zum Selektor-Algorithmus (IDs als Anker, Zustandsklassen ignorieren, Positionen nur wo nötig, Eindeutigkeit vor dem Kopieren prüfen) kommen aus den Fehlern, die dabei auftraten. Die dritte Zeile war anfangs immer dabei und wurde nach dem ersten Praxistag auf „nur bei Markierung" umgestellt: Ein Block ohne Textzeile ist ein Block, ein Block mit Textzeile liest sich wie „dieser Satz ist gemeint".
+
 ## Bedienung
 
 | Aktion | Wirkung |
