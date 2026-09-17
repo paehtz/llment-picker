@@ -405,7 +405,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
   const CTRL_LABEL = isMac ? "\u2318" : "Strg";
   function applyHints() {
     fillChip(codeChip, ICON_CODE(), hints.html < HINT_LIMIT ? CTRL_LABEL + " HTML" : "");
-    fillChip(camChip, ICON_CAM(), hints.shot < HINT_LIMIT ? "\u21e7 Screenshot" : "");
+    fillChip(camChip, ICON_CAM(), hints.shot < HINT_LIMIT ? "Alt Screenshot" : "");
   }
   applyHints();
   try {
