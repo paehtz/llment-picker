@@ -15,6 +15,8 @@ const api = globalThis.browser ?? globalThis.chrome;
 const menus = api.menus ?? api.contextMenus;
 const MENU_ID = "llment-picker-copy";
 const MENU_SHOT_ID = "llment-picker-copy-shot";
+const MENU_HTML_ID = "llment-picker-copy-html";
+const DEFAULTS = { subfolder: "LLMent Picker", saveAs: false };
 
 async function inject(tabId, frameId, prelude) {
   const target = { tabId, frameIds: [frameId || 0] };
@@ -40,27 +42,61 @@ api.action.onClicked.addListener((tab) => {
 menus.removeAll().then(() => {
   menus.create({ id: MENU_ID, title: "LLMent Picker: dieses Element kopieren", contexts: ["all"] });
   menus.create({ id: MENU_SHOT_ID, title: "LLMent Picker: mit Screenshot kopieren", contexts: ["all"] });
+  menus.create({ id: MENU_HTML_ID, title: "LLMent Picker: gerendertes HTML als Datei speichern", contexts: ["all"] });
 });
 
 menus.onClicked.addListener((info, tab) => {
-  if ((info.menuItemId !== MENU_ID && info.menuItemId !== MENU_SHOT_ID) || !tab || tab.id == null) return;
+  if (![MENU_ID, MENU_SHOT_ID, MENU_HTML_ID].includes(info.menuItemId) || !tab || tab.id == null) return;
   inject(tab.id, info.frameId, {
     // onSelection: Rechtsklick lag auf markiertem Text -> dritte Zeile mit dem Text
     func: (ctx) => {
       window.__elementPickerContextTarget = ctx;
     },
-    args: [{ id: info.targetElementId ?? -1, onSelection: !!info.selectionText, shot: info.menuItemId === MENU_SHOT_ID }],
+    args: [{ id: info.targetElementId ?? -1, onSelection: !!info.selectionText, shot: info.menuItemId === MENU_SHOT_ID, html: info.menuItemId === MENU_HTML_ID }],
   });
 });
 
 // Screenshot-Anfrage des Content-Scripts: sichtbaren Tab als PNG liefern.
 // captureVisibleTab ist durch activeTab gedeckt (Icon-, Kürzel- oder Menü-Aufruf).
 api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (!msg || msg.type !== "llment-capture") return;
-  const windowId = sender.tab && sender.tab.windowId;
-  api.tabs.captureVisibleTab(windowId, { format: "png" }).then(
-    (dataUrl) => sendResponse({ dataUrl }),
-    (err) => sendResponse({ error: String((err && err.message) || err) })
-  );
-  return true; // asynchrone Antwort
+  if (!msg) return;
+  if (msg.type === "llment-capture") {
+    const windowId = sender.tab && sender.tab.windowId;
+    api.tabs.captureVisibleTab(windowId, { format: "png" }).then(
+      (dataUrl) => sendResponse({ dataUrl }),
+      (err) => sendResponse({ error: String((err && err.message) || err) })
+    );
+    return true; // asynchrone Antwort
+  }
+  if (msg.type === "llment-save-html") {
+    saveHtml(msg.filename, msg.content).then(
+      (path) => sendResponse({ path }),
+      (err) => sendResponse({ error: String((err && err.message) || err) })
+    );
+    return true;
+  }
 });
+
+// HTML-Datei in den Download-Ordner des Browsers legen (Unterordner und
+// „Speichern unter" aus den Einstellungen). Erweiterungen dürfen nur dorthin
+// schreiben; der absolute Pfad kommt aus downloads.search zurück.
+async function saveHtml(filename, content) {
+  const cfg = Object.assign({}, DEFAULTS, await api.storage.sync.get(DEFAULTS));
+  const safe = filename.replace(/[\\/:*?"<>|]/g, "-");
+  const sub = (cfg.subfolder || "").trim().replace(/[\\/:*?"<>|]/g, "-").replace(/^\.+/, "");
+  const url = "data:text/html;charset=utf-8," + encodeURIComponent(content);
+  const id = await api.downloads.download({
+    url,
+    filename: sub ? sub + "/" + safe : safe,
+    saveAs: !!cfg.saveAs,
+    conflictAction: "uniquify",
+  });
+  // auf Abschluss warten, dann absoluten Pfad holen
+  for (let i = 0; i < 100; i++) {
+    const [item] = await api.downloads.search({ id });
+    if (item && item.state === "complete") return item.filename;
+    if (item && item.state === "interrupted") throw new Error(item.error || "abgebrochen");
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error("Zeitüberschreitung beim Speichern");
+}

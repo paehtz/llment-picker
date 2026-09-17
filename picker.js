@@ -147,11 +147,45 @@
     return { el, text: text.length > MAX_TEXT ? text.slice(0, MAX_TEXT).trimEnd() + "…" : text };
   }
 
-  function payloadFor(el, text, shotInfo) {
+  function payloadFor(el, text, shotInfo, htmlPath) {
     const lines = [location.href, buildSelector(el)];
     if (text) lines.push(JSON.stringify(text));
     if (shotInfo) lines.push(shotInfo);
+    if (htmlPath) lines.push("HTML: " + htmlPath);
     return lines.join("\n");
+  }
+
+  // ───────────────────────── Gerendertes HTML als Datei ───────────────────
+  // Für Inhalte, die es nur im Browser gibt (eingeloggte Portale, per JS
+  // gerenderte Tabellen): outerHTML des Elements ohne Skripte, mit Kopfzeile,
+  // gespeichert über das Hintergrundskript (downloads) in den Download-Ordner.
+  function htmlFor(el, selector) {
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll("script, noscript").forEach((n) => n.remove());
+    const head = `<!-- LLMent Picker · ${new Date().toISOString()}
+URL: ${location.href}
+Selektor: ${selector}
+Titel: ${document.title.replace(/--/g, "- -")}
+-->
+`;
+    return head + clone.outerHTML + "\n";
+  }
+
+  function slugFor(el) {
+    const cls = bestClass(el);
+    const raw = el.id && usableId(el) ? el.id : cls ? cls : el.tagName.toLowerCase();
+    return raw.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "element";
+  }
+
+  async function saveHtml(el, selector) {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+    const host = location.hostname.replace(/^www\./, "");
+    const filename = `${stamp}_${host}_${slugFor(el)}.html`;
+    const res = await api.runtime.sendMessage({ type: "llment-save-html", filename, content: htmlFor(el, selector) });
+    if (!res || !res.path) throw new Error((res && res.error) || "nicht gespeichert");
+    return res.path;
   }
 
   // ───────────────────────── Screenshot des Elements ──────────────────────
@@ -238,8 +272,9 @@
     }, 1400);
   }
 
-  async function copyElement(el, text, withShot) {
-    let shot = null;
+  async function copyElement(el, text, opts) {
+    const withShot = !!(opts && opts.shot), withHtml = !!(opts && opts.html);
+    let shot = null, htmlPath = null, htmlErr = null;
     if (withShot) {
       try {
         shot = await captureElement(el);
@@ -247,17 +282,28 @@
         console.warn("LLMent Picker: Screenshot fehlgeschlagen –", e && e.message);
       }
     }
-    const payload = payloadFor(el, text, shot && shot.info);
-    let ok = false, msg;
-    if (shot && (await copyWithImage(payload, shot.blob))) {
-      ok = true; msg = "Kopiert (mit Screenshot)";
-    } else {
-      ok = await copy(payload);
-      msg = !ok ? "Kopieren fehlgeschlagen" : withShot ? "Nur Text kopiert (Screenshot nicht möglich)" : "Kopiert";
+    const selector = buildSelector(el);
+    if (withHtml) {
+      try {
+        htmlPath = await saveHtml(el, selector);
+      } catch (e) {
+        htmlErr = (e && e.message) || String(e);
+        console.warn("LLMent Picker: HTML nicht gespeichert –", htmlErr);
+      }
     }
-    toast(msg, ok && !(withShot && !shot));
+    const payload = payloadFor(el, text, shot && shot.info, htmlPath);
+    let ok = false;
+    if (shot && (await copyWithImage(payload, shot.blob))) ok = true;
+    else ok = await copy(payload);
+    const parts = [];
+    if (!ok) parts.push("Kopieren fehlgeschlagen");
+    else parts.push(shot ? "Kopiert (mit Screenshot)" : withShot ? "Nur Text kopiert (Screenshot nicht möglich)" : "Kopiert");
+    if (withHtml) parts.push(htmlPath ? "HTML gespeichert" : "HTML nicht gespeichert" + (htmlErr ? ": " + htmlErr : ""));
+    const good = ok && !(withShot && !shot) && !(withHtml && !htmlPath);
+    toast(parts.join(" · "), good);
     window.__elementPickerLast = payload; // für Tests / Debugging
     window.__elementPickerLastShot = shot ? { bytes: shot.blob && shot.blob.size, info: shot.info } : null;
+    window.__elementPickerLastHtml = htmlPath || htmlErr;
     return ok;
   }
 
@@ -277,18 +323,18 @@
 
   let contextFallback = false;
   if (window[CTX] != null) {
-    const { id, onSelection, shot } = window[CTX];
+    const { id, onSelection, shot, html } = window[CTX];
     delete window[CTX];
     if (window[KEY]) window[KEY].cancel(true);
     // Rechtsklick lag auf markiertem Text → Element der Markierung + Text
     const marked = onSelection ? selectionTarget() : null;
     if (marked) {
-      copyElement(marked.el, marked.text, shot);
+      copyElement(marked.el, marked.text, { shot, html });
       return;
     }
     const el = contextTarget(id);
     if (el) {
-      copyElement(el, undefined, shot);
+      copyElement(el, undefined, { shot, html });
       return;
     }
     // Kein Ziel bestimmbar → in den Picker-Modus fallen statt aufzugeben.
@@ -319,6 +365,12 @@
   cam.style.cssText = `position:fixed;z-index:${Z};display:none;width:24px;height:24px;box-sizing:border-box;
     padding:5px;border-radius:4px;background:#0a84ff;pointer-events:auto;cursor:pointer !important;
     box-shadow:0 1px 4px rgba(0,0,0,.3);`;
+  // Code-Knopf links neben der Kamera: Klick = gerendertes HTML als Datei
+  const code = document.createElement("div");
+  code.setAttribute("data-llment-picker", "");
+  code.title = "Gerendertes HTML als Datei speichern (auch: Alt+Klick)";
+  code.innerHTML = '<svg style="pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+  code.style.cssText = cam.style.cssText;
   const box = document.createElement("div");
   box.setAttribute("data-llment-picker", "");
   box.style.cssText = `position:fixed;pointer-events:none;z-index:${Z};box-sizing:border-box;
@@ -333,7 +385,7 @@
   const style = document.createElement("style");
   style.setAttribute("data-llment-picker", "");
   style.textContent = `*, *::before, *::after { cursor: crosshair !important; }`;
-  document.documentElement.append(box, label, cam, style);
+  document.documentElement.append(box, label, cam, code, style);
 
   let current = null;
 
@@ -353,10 +405,15 @@
     label.style.left = Math.max(0, r.left) + "px";
     label.style.top = (above ? r.top - 22 : r.bottom + 2) + "px";
     // Kamera innen rechts oben; bei sehr kleinen Elementen außen rechts daneben
-    const inside = r.width >= 60 && r.height >= 36;
+    const inside = r.width >= 90 && r.height >= 36;
+    const camLeft = Math.min(innerWidth - 26, inside ? r.right - 28 : r.right + 4);
+    const top = Math.max(0, inside ? r.top + 4 : r.top);
     cam.style.display = "block";
-    cam.style.left = Math.min(innerWidth - 26, inside ? r.right - 28 : r.right + 4) + "px";
-    cam.style.top = Math.max(0, inside ? r.top + 4 : r.top) + "px";
+    cam.style.left = camLeft + "px";
+    cam.style.top = top + "px";
+    code.style.display = "block";
+    code.style.left = (inside ? camLeft - 28 : Math.min(innerWidth - 26, camLeft + 28)) + "px";
+    code.style.top = top + "px";
   }
 
   function targetAt(x, y) {
@@ -387,10 +444,11 @@
     swallow(e);
     const hit = document.elementFromPoint(e.clientX, e.clientY);
     const withShot = e.shiftKey || (hit && cam.contains(hit));
+    const withHtml = e.altKey || (hit && code.contains(hit));
     const el = targetAt(e.clientX, e.clientY) || current;
     if (!el) return;
     cleanup();
-    await copyElement(el, undefined, withShot);
+    await copyElement(el, undefined, { shot: withShot, html: withHtml });
   }
 
   function onKey(e) {
@@ -413,6 +471,7 @@
     box.remove();
     label.remove();
     cam.remove();
+    code.remove();
     style.remove();
     delete window[KEY];
   }

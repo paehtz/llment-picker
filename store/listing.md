@@ -29,6 +29,7 @@ Bedienung:
 • Nichts markiert: Icon oder Tastenkürzel → Picker starten, Element unter der Maus wird umrahmt, Klick kopiert
 • Rechtsklick → „LLMent Picker: dieses Element kopieren" → ohne Picker-Modus direkt kopieren (auf markiertem Text: mit Text)
 • Kamera-Icon im Rahmen, Shift+Klick oder „… mit Screenshot kopieren" → zusätzlich ein Bildausschnitt des Elements samt Viewport-Angaben, für Layout-Fragen („das überlappt hier")
+• Code-Icon, Alt+Klick oder „… gerendertes HTML als Datei speichern" → das HTML des Elements, so wie es gerade im Browser steht, als Datei im Download-Ordner; der Pfad kommt mit in die Zwischenablage. Für Inhalte, die es nur eingeloggt oder nur nach dem Rendern gibt (Stundenpläne, Tabellen, Portale).
 • Escape → abbrechen
 
 Der Screenshot entsteht nur auf Ihren Klick, zeigt nur den sichtbaren Tab und bleibt in Ihrer Zwischenablage.
@@ -54,6 +55,7 @@ Usage:
 • Nothing selected: icon or shortcut → start the picker; the element under the cursor gets an outline; click copies
 • Right-click → "LLMent Picker: copy this element" → copies directly, no picker mode (on selected text: with the text)
 • Camera icon in the outline, Shift+click or "… copy with screenshot" → adds a cropped image of the element plus viewport info, for layout questions ("this overlaps")
+• Code icon, Alt+click or "… save rendered HTML as file" → the element's HTML as currently rendered, saved to your downloads folder; the path goes into the clipboard too. For content that only exists logged in or after rendering (timetables, tables, portals).
 • Escape → cancel
 
 Screenshots are taken only on your click, cover only the visible tab and stay in your clipboard.
@@ -73,12 +75,14 @@ Privacy: the extension does nothing until you invoke it. It runs only on the pag
 | `scripting` | Das Picker-Skript wird erst nach dem Aufruf in den aktiven Tab injiziert (kein dauerhaftes Content-Script). |
 | `contextMenus` / `menus` | Ein Eintrag im Kontextmenü, um das rechtsgeklickte Element direkt zu kopieren. |
 | `clipboardWrite` | Die drei Zeilen werden in die Zwischenablage geschrieben. Beim Kontextmenü-Weg gibt es keine Klick-Geste auf der Seite; ohne diese Berechtigung würde das Schreiben dort scheitern. |
+| `downloads` | Auf ausdrücklichen Klick (Code-Icon, Alt+Klick, Menüeintrag) wird das gerenderte HTML des gewählten Elements als Datei in den Download-Ordner des Browsers gelegt. Kein anderer Download, kein Öffnen von Dateien. |
+| `storage` | Speichert zwei Einstellungen (Unterordner-Name, „Speichern unter"-Dialog ja/nein). Keine Nutzerdaten. |
 
 **Single purpose (Chrome):** Kopiert für ein angeklicktes Seitenelement URL, eindeutigen CSS-Selektor und optional den markierten Text in die Zwischenablage.
 
 **Remote code (Chrome):** Nein – kein Nachladen, kein eval externer Inhalte.
 
-**Datennutzung (Chrome „Privacy practices"):** Es werden keinerlei Nutzerdaten erhoben, verarbeitet oder übertragen. Alle Kästchen leer lassen; die drei Zusicherungen (keine zweckfremde Nutzung, kein Verkauf, keine Kreditwürdigkeit) bestätigen.
+**Datennutzung (Chrome „Privacy practices"):** Es werden keinerlei Nutzerdaten erhoben, verarbeitet oder übertragen. Die HTML-Datei entsteht nur auf Klick des Nutzers und bleibt auf seinem Gerät. Alle Kästchen leer lassen; die drei Zusicherungen (keine zweckfremde Nutzung, kein Verkauf, keine Kreditwürdigkeit) bestätigen.
 
 **AMO:** `data_collection_permissions: none` ist im Manifest deklariert; Firefox zeigt „Keine Datenerhebung" automatisch an. Privacy-Policy-Feld kann leer bleiben oder auf den Datenschutz-Absatz im GitHub-README verweisen.
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LLMent Picker",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Klick auf ein Seitenelement kopiert URL und eindeutigen CSS-Selektor, markierter Text kommt mit – für KI-Chats und Coding-Agenten.",
   "author": "Henning Pähtz",
   "homepage_url": "https://github.com/paehtz/llment-picker",
@@ -22,7 +22,9 @@
     "activeTab",
     "scripting",
     "menus",
-    "clipboardWrite"
+    "clipboardWrite",
+    "downloads",
+    "storage"
   ],
   "background": {
     "scripts": [
@@ -47,5 +49,9 @@
         ]
       }
     }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
   }
 }

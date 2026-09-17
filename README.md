@@ -12,6 +12,7 @@ https://www.paehtz.de/#leistungen
 1. vollständige Seiten-URL (inkl. Hash)
 2. kürzester CSS-Selektor, der das Element eindeutig trifft
 3. **nur wenn vorher Text markiert war:** der markierte Text in Anführungszeichen (max. 240 Zeichen)
+5. **nur im HTML-Modus:** `HTML: D:\Downloads\LLMent Picker6-09-17_0853_paehtz.de_service-body.html` – das gerenderte HTML des Elements liegt als Datei im Download-Ordner; Claude Code liest sie über den Pfad
 4. **nur im Screenshot-Modus:** `Viewport 1440×900, DPR 1.25, Screenshot 454×239 px (+24 px Rand)` – dazu liegt ein PNG-Ausschnitt des Elements mit in der Zwischenablage; ein Strg+V in Claude fügt Bild und Text zusammen ein
 
 ## Warum es das gibt
@@ -32,9 +33,14 @@ Der erste Stand entstand am 15. September 2026 in einer Sitzung mit Claude Code,
 | Toolbar-Icon oder **Strg+Alt+P** (Firefox) / **Alt+Shift+P** (Chrome), nichts markiert | Picker starten – Cursor wird zum Fadenkreuz, Element unter der Maus bekommt einen Rahmen |
 | Klick | kopiert die drei Zeilen, Picker beendet sich, Toast „Kopiert" |
 | **Kamera-Icon im Rahmen** oder **Shift+Klick** | wie Klick, zusätzlich Screenshot des Elements (+24 px Rand) als Bild in der Zwischenablage und Viewport-Angaben als vierte Zeile – für Layout-Rückmeldungen („überlappt", „verschoben") |
+| **Code-Icon `</>` im Rahmen** oder **Alt+Klick** | wie Klick, zusätzlich das gerenderte HTML des Elements (ohne Skripte, mit Kopfzeile: URL, Selektor, Zeit) als Datei im Download-Ordner und der Pfad als Zeile 5 – für Inhalte, die es nur im Browser gibt: eingeloggte Portale, per JS gerenderte Tabellen |
+| **Shift+Alt+Klick** | Screenshot und HTML zusammen |
 | **Escape** oder erneut Icon/Kürzel | Abbruch ohne Kopieren |
 | **Rechtsklick → „LLMent Picker: dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus; liegt der Rechtsklick auf markiertem Text, kommt der Text als dritte Zeile mit |
 | **Rechtsklick → „LLMent Picker: mit Screenshot kopieren"** | dasselbe mit Bild |
+| **Rechtsklick → „LLMent Picker: gerendertes HTML als Datei speichern"** | dasselbe mit HTML-Datei |
+
+**Einstellungen** (Add-on-/Erweiterungsverwaltung → LLMent Picker → Einstellungen): Unterordner im Download-Ordner (Standard `LLMent Picker`) und ob ein „Speichern unter"-Dialog erscheinen soll. Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben; ein freier Zielpfad ist nicht möglich.
 
 Die dritte Zeile gibt es also nur, wenn Du sie durch eine Markierung ausdrücklich verlangst. Ein angeklickter Block ohne Markierung liefert nur URL und Selektor – sonst läse ein Chat „dieser Satz ist gemeint", obwohl der Block gemeint war.
 
@@ -54,17 +60,19 @@ Zustands-/Animationsklassen (`active`, `rv`, `is-*`, `js-*`, `aos-*`, …) und g
 ## Technik
 
 - WebExtension, Manifest V3. Firefox ≥ 142 (Event-Page) und Chrome (Service-Worker) aus denselben Skripten; nur das Manifest unterscheidet sich (`manifest.json` Firefox, `chrome/manifest.json` Chrome).
-- Berechtigungen: `activeTab` + `scripting` (Injektion nur nach Aufruf), `menus`/`contextMenus` (Kontextmenü-Eintrag), `clipboardWrite` (Schreiben ohne Klick-Geste, nötig für den Kontextmenü-Weg) – keine Host-Berechtigung, kein dauerhaftes Content-Script.
+- Berechtigungen: `activeTab` + `scripting` (Injektion nur nach Aufruf), `menus`/`contextMenus` (Kontextmenü-Einträge), `clipboardWrite` (Schreiben ohne Klick-Geste, nötig für den Kontextmenü-Weg), `downloads` (HTML-Datei ablegen), `storage` (Einstellungen) – keine Host-Berechtigung, kein dauerhaftes Content-Script.
 - Kontextmenü-Ziel: Firefox liefert `targetElementId` → `menus.getTargetElement`. Chrome kennt das nicht; dort bleibt der `:hover`-Zustand der Seite stehen, solange das native Menü offen ist, und das tiefste `:hover`-Element ist das rechtsgeklickte. Lässt sich kein Ziel bestimmen, startet stattdessen der Picker-Modus.
 - Screenshot: `tabs.captureVisibleTab` im Hintergrundskript (durch `activeTab` gedeckt, keine weitere Berechtigung), Zuschnitt auf Element + Rand im Content-Script, Ablage als `ClipboardItem` mit `image/png` **und** `text/plain`. Elemente außerhalb des Fensters werden vorher in den Blick gescrollt; ist ein Element höher als das Fenster, sagt die vierte Zeile „nur sichtbarer Teil". Ob ein Ziel beide Teile mit einem Einfügen übernimmt, entscheidet das Ziel – Claude Code tut es (geprüft 17.09.2026 aus Firefox mit `test/clipboard-test.html`).
-- Keine Netzwerkzugriffe, kein Speicher, keine Datenerhebung (`data_collection_permissions: none`).
+- HTML-Datei: `downloads.download` mit `data:`-URL aus dem Hintergrundskript, Dateiname `JJJJ-MM-TT_HHMM_<host>_<id-oder-klasse>.html`, absoluter Pfad aus `downloads.search`.
+- Keine Netzwerkzugriffe, keine Datenerhebung (`data_collection_permissions: none`); gespeichert werden nur die zwei Einstellungen.
 - Reines JavaScript, kein Build-Schritt, keine Abhängigkeiten.
 
 ```
 manifest.json         Firefox-Manifest (Repo-Wurzel ist direkt als temporäres Add-on ladbar)
 chrome/manifest.json  Chrome-Manifest (Service-Worker, contextMenus, Alt+Shift+P)
 background.js         Kontextmenü-Eintrag; injiziert picker.js bei Icon / Kürzel / Menü
-picker.js             Overlay, Selektor-Erzeugung, Zwischenablage, Toast
+picker.js             Overlay, Selektor-Erzeugung, Zwischenablage, Screenshot, HTML-Export, Toast
+options.html/.js      Einstellungen (Unterordner, Speichern-unter-Dialog)
 icons/                PNG 16/32/48/128 (aus icon.svg gerastert)
 build.ps1             baut dist/firefox/*.zip (via web-ext) und dist/chrome/*.zip
 store/                Listing-Texte, Berechtigungsbegründungen, Screenshots, Demo-Seite

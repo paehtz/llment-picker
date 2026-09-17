@@ -14,7 +14,7 @@ npx --yes web-ext build --source-dir . --artifacts-dir dist/firefox --overwrite-
 $out = "dist/chrome/llment-picker"
 if (Test-Path $out) { Remove-Item -Recurse -Force $out }
 New-Item -ItemType Directory -Force "$out/icons" | Out-Null
-Copy-Item background.js, picker.js $out
+Copy-Item background.js, picker.js, options.html, options.js $out
 Copy-Item icons/*.png "$out/icons"
 Copy-Item chrome/manifest.json $out
 $zip = "dist/chrome/llment-picker-chrome-$v.zip"
