@@ -362,7 +362,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
   }
 
   // Modifier-Anzeige rechts oben außerhalb des Rahmens. Nicht klickbar –
-  // die Chips zeigen nur, was Umschalt (Screenshot) und Strg (HTML-Datei)
+  // die Chips zeigen nur, was Alt (Screenshot) und Strg (HTML-Datei)
   // beim Klick zusätzlich auslösen, und leuchten, solange die Taste gehalten wird.
   // Symbole als DOM-Knoten (kein innerHTML – AMO-Review)
   const NS = "http://www.w3.org/2000/svg";
@@ -415,11 +415,11 @@ Titel: ${document.title.replace(/--/g, "- -")}
       if (current) placeHud(current.getBoundingClientRect());
     });
   } catch {}
-  let mods = { shift: false, ctrl: false };
-  function setMods(shift, ctrl) {
-    if (mods.shift === shift && mods.ctrl === ctrl) return;
-    mods = { shift, ctrl };
-    camChip.style.background = shift ? "#0a84ff" : "rgba(70,80,95,.85)";
+  let mods = { alt: false, ctrl: false };
+  function setMods(alt, ctrl) {
+    if (mods.alt === alt && mods.ctrl === ctrl) return;
+    mods = { alt, ctrl };
+    camChip.style.background = alt ? "#0a84ff" : "rgba(70,80,95,.85)";
     codeChip.style.background = ctrl ? "#0a84ff" : "rgba(70,80,95,.85)";
   }
   function placeHud(r) {
@@ -473,7 +473,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
 
   let lastXY = null;
   function onMove(e) {
-    setMods(e.shiftKey, e.ctrlKey || e.metaKey);
+    setMods(e.altKey, e.ctrlKey || e.metaKey);
     lastXY = [e.clientX, e.clientY];
     const el = targetAt(e.clientX, e.clientY);
     if (el) highlight(el);
@@ -506,7 +506,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
 
   async function onClick(e) {
     swallow(e);
-    const withShot = e.shiftKey, withHtml = e.ctrlKey || e.metaKey;
+    const withShot = e.altKey, withHtml = e.ctrlKey || e.metaKey;
     const el = targetAt(e.clientX, e.clientY) || current;
     if (!el) return;
     cleanup();
@@ -530,10 +530,12 @@ Titel: ${document.title.replace(/--/g, "- -")}
       toast("Abgebrochen", false);
       return;
     }
-    if (e.key === "Shift" || e.key === "Control" || e.key === "Meta") setMods(e.shiftKey, e.ctrlKey || e.metaKey);
+    if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
+    if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") setMods(e.altKey, e.ctrlKey || e.metaKey);
   }
   function onKeyUp(e) {
-    setMods(e.shiftKey, e.ctrlKey || e.metaKey);
+    if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
+    setMods(e.altKey, e.ctrlKey || e.metaKey);
   }
 
   const opts = { capture: true };

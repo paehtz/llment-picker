@@ -28,7 +28,7 @@ Bedienung:
 • Text markieren, dann Icon oder Tastenkürzel → Element der Markierung + Text sofort kopiert
 • Nichts markiert: Icon oder Tastenkürzel → Picker starten, Element unter der Maus wird umrahmt, Klick kopiert
 • Rechtsklick → „LLMent Picker: dieses Element kopieren" → ohne Picker-Modus direkt kopieren (auf markiertem Text: mit Text)
-• Umschalt+Klick oder „… mit Screenshot kopieren" → zusätzlich ein Bildausschnitt des Elements samt Viewport-Angaben, für Layout-Fragen („das überlappt hier")
+• Alt+Klick oder „… mit Screenshot kopieren" → zusätzlich ein Bildausschnitt des Elements samt Viewport-Angaben, für Layout-Fragen („das überlappt hier")
 • Strg+Klick oder „… gerendertes HTML als Datei speichern" → das HTML des Elements, so wie es gerade im Browser steht, als Datei im Download-Ordner; der Pfad kommt mit in die Zwischenablage. Für Inhalte, die es nur eingeloggt oder nur nach dem Rendern gibt (Stundenpläne, Tabellen, Portale).
 • Escape → abbrechen
 
@@ -54,7 +54,7 @@ Usage:
 • Select text, then icon or shortcut → element containing the selection + text copied immediately
 • Nothing selected: icon or shortcut → start the picker; the element under the cursor gets an outline; click copies
 • Right-click → "LLMent Picker: copy this element" → copies directly, no picker mode (on selected text: with the text)
-• Shift+click or "… copy with screenshot" → adds a cropped image of the element plus viewport info, for layout questions ("this overlaps")
+• Alt+click or "… copy with screenshot" → adds a cropped image of the element plus viewport info, for layout questions ("this overlaps")
 • Ctrl+click or "… save rendered HTML as file" → the element's HTML as currently rendered, saved to your downloads folder; the path goes into the clipboard too. For content that only exists logged in or after rendering (timetables, tables, portals).
 • Escape → cancel
 
