@@ -14,6 +14,7 @@
 const api = globalThis.browser ?? globalThis.chrome;
 const menus = api.menus ?? api.contextMenus;
 const MENU_ID = "llment-picker-copy";
+const MENU_SHOT_ID = "llment-picker-copy-shot";
 
 async function inject(tabId, frameId, prelude) {
   const target = { tabId, frameIds: [frameId || 0] };
@@ -36,21 +37,30 @@ api.action.onClicked.addListener((tab) => {
 // Firefox liefert info.targetElementId (Auflösung im Content-Script über
 // menus.getTargetElement); Chrome kennt das nicht – dort ermittelt picker.js
 // das Element über den :hover-Zustand, der während des offenen Menüs stehen bleibt.
-menus.removeAll().then(() =>
-  menus.create({
-    id: MENU_ID,
-    title: "LLMent Picker: dieses Element kopieren",
-    contexts: ["all"],
-  })
-);
+menus.removeAll().then(() => {
+  menus.create({ id: MENU_ID, title: "LLMent Picker: dieses Element kopieren", contexts: ["all"] });
+  menus.create({ id: MENU_SHOT_ID, title: "LLMent Picker: mit Screenshot kopieren", contexts: ["all"] });
+});
 
 menus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId !== MENU_ID || !tab || tab.id == null) return;
+  if ((info.menuItemId !== MENU_ID && info.menuItemId !== MENU_SHOT_ID) || !tab || tab.id == null) return;
   inject(tab.id, info.frameId, {
     // onSelection: Rechtsklick lag auf markiertem Text -> dritte Zeile mit dem Text
     func: (ctx) => {
       window.__elementPickerContextTarget = ctx;
     },
-    args: [{ id: info.targetElementId ?? -1, onSelection: !!info.selectionText }],
+    args: [{ id: info.targetElementId ?? -1, onSelection: !!info.selectionText, shot: info.menuItemId === MENU_SHOT_ID }],
   });
+});
+
+// Screenshot-Anfrage des Content-Scripts: sichtbaren Tab als PNG liefern.
+// captureVisibleTab ist durch activeTab gedeckt (Icon-, Kürzel- oder Menü-Aufruf).
+api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!msg || msg.type !== "llment-capture") return;
+  const windowId = sender.tab && sender.tab.windowId;
+  api.tabs.captureVisibleTab(windowId, { format: "png" }).then(
+    (dataUrl) => sendResponse({ dataUrl }),
+    (err) => sendResponse({ error: String((err && err.message) || err) })
+  );
+  return true; // asynchrone Antwort
 });

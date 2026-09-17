@@ -7,8 +7,8 @@ $cv = (Get-Content chrome/manifest.json -Raw | ConvertFrom-Json).version
 if ($v -ne $cv) { throw "Versionen weichen ab: manifest.json=$v, chrome/manifest.json=$cv" }
 
 # Firefox: web-ext prüft und packt (nur die Laufzeitdateien)
-npx --yes web-ext lint --source-dir . --ignore-files "dist/**" "chrome/**" "store/**" "build.ps1" "README.md" ".gitignore" "icons/icon.svg"
-npx --yes web-ext build --source-dir . --artifacts-dir dist/firefox --overwrite-dest --ignore-files "dist/**" "chrome/**" "store/**" "build.ps1" "README.md" ".gitignore" "icons/icon.svg"
+npx --yes web-ext lint --source-dir . --ignore-files "dist/**" "chrome/**" "store/**" "test/**" "build.ps1" "README.md" ".gitignore" "icons/icon.svg"
+npx --yes web-ext build --source-dir . --artifacts-dir dist/firefox --overwrite-dest --ignore-files "dist/**" "chrome/**" "store/**" "test/**" "build.ps1" "README.md" ".gitignore" "icons/icon.svg"
 
 # Chrome: gleiche Laufzeitdateien, eigenes Manifest
 $out = "dist/chrome/llment-picker"

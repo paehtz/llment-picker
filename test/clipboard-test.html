@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Zwischenablage-Test: Bild + Text gleichzeitig</title>
+<style>
+  body{font:16px/1.5 system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;color:#14181f}
+  button{font:inherit;padding:10px 16px;border-radius:8px;border:1px solid #c9d1dc;background:#fff;cursor:pointer;margin:4px 6px 4px 0}
+  button.primary{background:#0a84ff;color:#fff;border-color:#0a84ff}
+  pre{background:#f4f6f9;padding:12px;border-radius:8px;white-space:pre-wrap}
+  #log{min-height:3em}
+  canvas{border:1px solid #c9d1dc;border-radius:6px;display:block;margin:12px 0}
+</style>
+</head>
+<body>
+<h1>Zwischenablage-Test</h1>
+<p>Prüft, ob ein Ziel (Claude Web, Claude Code, VS Code, …) bei <strong>einem</strong> Strg+V sowohl das Bild als auch den Text übernimmt. Knopf drücken, dann im Ziel Strg+V.</p>
+
+<canvas id="c" width="420" height="120"></canvas>
+
+<p>
+  <button class="primary" id="both">A: Bild + Text (ein ClipboardItem)</button>
+  <button id="text">B: nur Text</button>
+  <button id="img">C: nur Bild</button>
+  <button id="html">D: HTML (Bild eingebettet) + Text</button>
+</p>
+<pre id="log">Bereit.</pre>
+<pre id="support"></pre>
+
+<script>
+const TEXT = "https://www.paehtz.de/#leistungen\n#leistungen .service-list > .service:nth-of-type(2) > .service__body\nViewport 1440×900, DPR 1.25, Screenshot 420×120 px (+24 px Rand)";
+const log = (m) => (document.getElementById("log").textContent = m);
+
+const c = document.getElementById("c"), x = c.getContext("2d");
+x.fillStyle = "#fff"; x.fillRect(0, 0, 420, 120);
+x.fillStyle = "#dbe9ff"; x.fillRect(24, 24, 372, 72);
+x.strokeStyle = "#0a84ff"; x.lineWidth = 2; x.strokeRect(24, 24, 372, 72);
+x.fillStyle = "#14181f"; x.font = "bold 18px system-ui"; x.fillText("Test-Element " + new Date().toLocaleTimeString("de-DE"), 40, 56);
+x.font = "13px system-ui"; x.fillText("Wenn Du dieses Bild siehst, kam das Bild an.", 40, 80);
+
+const pngBlob = () => new Promise((r) => c.toBlob(r, "image/png"));
+const sup = [];
+sup.push("navigator.clipboard.write: " + (typeof navigator.clipboard?.write === "function"));
+sup.push("ClipboardItem: " + (typeof ClipboardItem !== "undefined"));
+if (typeof ClipboardItem !== "undefined" && ClipboardItem.supports) {
+  for (const t of ["text/plain", "text/html", "image/png"]) sup.push(`ClipboardItem.supports(${t}): ` + ClipboardItem.supports(t));
+}
+sup.push("Browser: " + navigator.userAgent);
+document.getElementById("support").textContent = sup.join("\n");
+
+async function write(items, label) {
+  try {
+    await navigator.clipboard.write([new ClipboardItem(items)]);
+    log(`${label}: geschrieben (${Object.keys(items).join(" + ")}). Jetzt im Ziel Strg+V.`);
+  } catch (e) {
+    log(`${label}: FEHLER – ${e.name}: ${e.message}`);
+  }
+}
+document.getElementById("both").onclick = async () =>
+  write({ "image/png": await pngBlob(), "text/plain": new Blob([TEXT], { type: "text/plain" }) }, "A");
+document.getElementById("text").onclick = () =>
+  write({ "text/plain": new Blob([TEXT], { type: "text/plain" }) }, "B");
+document.getElementById("img").onclick = async () =>
+  write({ "image/png": await pngBlob() }, "C");
+document.getElementById("html").onclick = async () => {
+  const dataUrl = c.toDataURL("image/png");
+  const html = `<p><img src="${dataUrl}" alt="Screenshot"></p><pre>${TEXT.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`;
+  write({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([TEXT], { type: "text/plain" }) }, "D");
+};
+</script>
+</body>
+</html>

@@ -12,6 +12,7 @@ https://www.paehtz.de/#leistungen
 1. vollständige Seiten-URL (inkl. Hash)
 2. kürzester CSS-Selektor, der das Element eindeutig trifft
 3. **nur wenn vorher Text markiert war:** der markierte Text in Anführungszeichen (max. 240 Zeichen)
+4. **nur im Screenshot-Modus:** `Viewport 1440×900, DPR 1.25, Screenshot 454×239 px (+24 px Rand)` – dazu liegt ein PNG-Ausschnitt des Elements mit in der Zwischenablage; ein Strg+V in Claude fügt Bild und Text zusammen ein
 
 ## Warum es das gibt
 
@@ -30,8 +31,10 @@ Der erste Stand entstand am 15. September 2026 in einer Sitzung mit Claude Code,
 | Text auf der Seite markieren, dann Toolbar-Icon oder Kürzel | kopiert sofort das Element, das die Markierung enthält, plus den markierten Text als dritte Zeile – kein Picker-Modus |
 | Toolbar-Icon oder **Strg+Alt+P** (Firefox) / **Alt+Shift+P** (Chrome), nichts markiert | Picker starten – Cursor wird zum Fadenkreuz, Element unter der Maus bekommt einen Rahmen |
 | Klick | kopiert die drei Zeilen, Picker beendet sich, Toast „Kopiert" |
+| **Kamera-Icon im Rahmen** oder **Shift+Klick** | wie Klick, zusätzlich Screenshot des Elements (+24 px Rand) als Bild in der Zwischenablage und Viewport-Angaben als vierte Zeile – für Layout-Rückmeldungen („überlappt", „verschoben") |
 | **Escape** oder erneut Icon/Kürzel | Abbruch ohne Kopieren |
 | **Rechtsklick → „LLMent Picker: dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus; liegt der Rechtsklick auf markiertem Text, kommt der Text als dritte Zeile mit |
+| **Rechtsklick → „LLMent Picker: mit Screenshot kopieren"** | dasselbe mit Bild |
 
 Die dritte Zeile gibt es also nur, wenn Du sie durch eine Markierung ausdrücklich verlangst. Ein angeklickter Block ohne Markierung liefert nur URL und Selektor – sonst läse ein Chat „dieser Satz ist gemeint", obwohl der Block gemeint war.
 
@@ -53,6 +56,7 @@ Zustands-/Animationsklassen (`active`, `rv`, `is-*`, `js-*`, `aos-*`, …) und g
 - WebExtension, Manifest V3. Firefox ≥ 142 (Event-Page) und Chrome (Service-Worker) aus denselben Skripten; nur das Manifest unterscheidet sich (`manifest.json` Firefox, `chrome/manifest.json` Chrome).
 - Berechtigungen: `activeTab` + `scripting` (Injektion nur nach Aufruf), `menus`/`contextMenus` (Kontextmenü-Eintrag), `clipboardWrite` (Schreiben ohne Klick-Geste, nötig für den Kontextmenü-Weg) – keine Host-Berechtigung, kein dauerhaftes Content-Script.
 - Kontextmenü-Ziel: Firefox liefert `targetElementId` → `menus.getTargetElement`. Chrome kennt das nicht; dort bleibt der `:hover`-Zustand der Seite stehen, solange das native Menü offen ist, und das tiefste `:hover`-Element ist das rechtsgeklickte. Lässt sich kein Ziel bestimmen, startet stattdessen der Picker-Modus.
+- Screenshot: `tabs.captureVisibleTab` im Hintergrundskript (durch `activeTab` gedeckt, keine weitere Berechtigung), Zuschnitt auf Element + Rand im Content-Script, Ablage als `ClipboardItem` mit `image/png` **und** `text/plain`. Elemente außerhalb des Fensters werden vorher in den Blick gescrollt; ist ein Element höher als das Fenster, sagt die vierte Zeile „nur sichtbarer Teil". Ob ein Ziel beide Teile mit einem Einfügen übernimmt, entscheidet das Ziel – Claude Code und Claude Web tun es (geprüft 17.09.2026 mit `test/clipboard-test.html`).
 - Keine Netzwerkzugriffe, kein Speicher, keine Datenerhebung (`data_collection_permissions: none`).
 - Reines JavaScript, kein Build-Schritt, keine Abhängigkeiten.
 
@@ -64,6 +68,7 @@ picker.js             Overlay, Selektor-Erzeugung, Zwischenablage, Toast
 icons/                PNG 16/32/48/128 (aus icon.svg gerastert)
 build.ps1             baut dist/firefox/*.zip (via web-ext) und dist/chrome/*.zip
 store/                Listing-Texte, Berechtigungsbegründungen, Screenshots, Demo-Seite
+test/                 clipboard-test.html: prüft, ob ein Ziel Bild + Text aus einem Strg+V übernimmt
 ```
 
 ## Installation
