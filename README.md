@@ -73,6 +73,10 @@ test/                 clipboard-test.html: prüft, ob ein Ziel Bild + Text aus e
 
 ## Installation
 
+**Chrome:** im Chrome Web Store – https://chromewebstore.google.com/detail/llment-picker/oikfninjgnggbbhbdeefdlmeidminbnm
+
+**Firefox:** Store-Listing folgt; bis dahin signierte Fassung über die Releases oder wie unten beschrieben.
+
 ### Zum Testen
 
 **Firefox (temporär – nach Neustart wieder weg):** `about:debugging` → „Dieser Firefox" → „Temporäres Add-on laden…" → `manifest.json` aus diesem Ordner. Nach Code-Änderungen dort „Neu laden" klicken – es gibt keine automatische Aktualisierung.
