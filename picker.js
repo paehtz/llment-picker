@@ -376,7 +376,7 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
       try {
         htmlPath = await saveHtml(el, selector);
       } catch (e) {
-        htmlErr = (e && e.message) || String(e);
+        htmlErr = ((e && e.message) || String(e)).replace(/data:[^\s]+/g, "data:…").slice(0, 120);
         console.warn("LLMent Picker: HTML nicht gespeichert –", htmlErr);
       }
     }

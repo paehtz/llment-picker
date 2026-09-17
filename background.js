@@ -131,13 +131,23 @@ async function saveHtml(filename, content) {
   const cfg = Object.assign({}, DEFAULTS, await api.storage.sync.get(DEFAULTS));
   const safe = filename.replace(/[\\/:*?"<>|]/g, "-");
   const sub = (cfg.subfolder || "").trim().replace(/[\\/:*?"<>|]/g, "-").replace(/^\.+/, "");
-  const url = "data:text/html;charset=utf-8," + encodeURIComponent(content);
-  const id = await api.downloads.download({
-    url,
-    filename: sub ? sub + "/" + safe : safe,
-    saveAs: !!cfg.saveAs,
-    conflictAction: "uniquify",
-  });
+  // Firefox lehnt data:-URLs für downloads.download ab → Blob-URL (Event-Page hat
+  // URL.createObjectURL); Chromes Service-Worker hat das nicht → data:-URL.
+  const canBlob = typeof URL.createObjectURL === "function";
+  const url = canBlob
+    ? URL.createObjectURL(new Blob([content], { type: "text/html;charset=utf-8" }))
+    : "data:text/html;charset=utf-8," + encodeURIComponent(content);
+  let id;
+  try {
+    id = await api.downloads.download({
+      url,
+      filename: sub ? sub + "/" + safe : safe,
+      saveAs: !!cfg.saveAs,
+      conflictAction: "uniquify",
+    });
+  } finally {
+    if (canBlob) setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
   // auf Abschluss warten, dann absoluten Pfad holen
   for (let i = 0; i < 100; i++) {
     const [item] = await api.downloads.search({ id });
