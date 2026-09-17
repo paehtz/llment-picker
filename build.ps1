@@ -16,6 +16,9 @@ if (Test-Path $out) { Remove-Item -Recurse -Force $out }
 New-Item -ItemType Directory -Force "$out/icons" | Out-Null
 Copy-Item background.js, picker.js, options.html, options.js $out
 Copy-Item icons/*.png "$out/icons"
+New-Item -ItemType Directory -Force "$out/_locales/en","$out/_locales/de" | Out-Null
+Copy-Item _locales/en/messages.json "$out/_locales/en"
+Copy-Item _locales/de/messages.json "$out/_locales/de"
 Copy-Item chrome/manifest.json $out
 $zip = "dist/chrome/llment-picker-chrome-$v.zip"
 if (Test-Path $zip) { Remove-Item $zip }

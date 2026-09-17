@@ -1,0 +1,194 @@
+{
+  "extName": {
+    "message": "LLMent Picker"
+  },
+  "extDescription": {
+    "message": "Klick auf ein Seitenelement kopiert URL und eindeutigen CSS-Selektor – dazu markierter Text, Screenshot oder gerendertes HTML – für KI-Chats und Coding-Agenten."
+  },
+  "actionTitle": {
+    "message": "LLMent Picker"
+  },
+  "actionTitleActive": {
+    "message": "LLMent Picker – aktiv (Esc beendet)"
+  },
+  "commandDescription": {
+    "message": "LLMent Picker auf der aktuellen Seite starten / abbrechen"
+  },
+  "menuCopy": {
+    "message": "Dieses Element kopieren"
+  },
+  "menuCopyShot": {
+    "message": "Mit Screenshot kopieren"
+  },
+  "menuCopyHtml": {
+    "message": "Als HTML-Datei speichern (mit CSS-Kontext)"
+  },
+  "menuPick": {
+    "message": "Element wählen"
+  },
+  "menuPickShot": {
+    "message": "Element wählen – mit Screenshot"
+  },
+  "menuPickHtml": {
+    "message": "Element wählen – als HTML-Datei"
+  },
+  "hintHtml": {
+    "message": "Strg HTML"
+  },
+  "hintHtmlMac": {
+    "message": "⌘ HTML"
+  },
+  "hintShot": {
+    "message": "Alt Screenshot"
+  },
+  "toastCopied": {
+    "message": "Kopiert"
+  },
+  "toastCopiedShot": {
+    "message": "Kopiert (mit Screenshot)"
+  },
+  "toastTextOnly": {
+    "message": "Nur Text kopiert (Screenshot nicht möglich)"
+  },
+  "toastCopyFailed": {
+    "message": "Kopieren fehlgeschlagen"
+  },
+  "toastHtmlSaved": {
+    "message": "HTML gespeichert"
+  },
+  "toastHtmlFailed": {
+    "message": "HTML nicht gespeichert"
+  },
+  "toastCancelled": {
+    "message": "Abgebrochen"
+  },
+  "toastPickElement": {
+    "message": "Element anklicken"
+  },
+  "lineShot": {
+    "message": "Viewport $W$×$H$, DPR $DPR$, Screenshot $SW$×$SH$ px (+$PAD$ px Rand)",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      },
+      "dpr": {
+        "content": "$3"
+      },
+      "sw": {
+        "content": "$4"
+      },
+      "sh": {
+        "content": "$5"
+      },
+      "pad": {
+        "content": "$6"
+      }
+    }
+  },
+  "lineShotClipped": {
+    "message": ", Element größer als das Fenster: nur sichtbarer Teil"
+  },
+  "lineHtml": {
+    "message": "HTML: "
+  },
+  "lineFrame": {
+    "message": "Im Frame: "
+  },
+  "lineFrameNote": {
+    "message": " (Selektor gilt im Frame-Dokument)"
+  },
+  "fileUrl": {
+    "message": "URL"
+  },
+  "fileSelector": {
+    "message": "Selektor"
+  },
+  "fileTitle": {
+    "message": "Titel"
+  },
+  "fileViewport": {
+    "message": "Viewport"
+  },
+  "fileFrame": {
+    "message": "Frame"
+  },
+  "fileEffective": {
+    "message": "== Effektive Werte (Element) =="
+  },
+  "fileRules": {
+    "message": "== Angewandte CSS-Regeln (Element) =="
+  },
+  "fileParent": {
+    "message": "== Elternelement $EL$ ==",
+    "placeholders": {
+      "el": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileParentEffective": {
+    "message": "Effektive Werte: "
+  },
+  "fileParentRules": {
+    "message": "Regeln"
+  },
+  "fileNone": {
+    "message": "(keine)"
+  },
+  "fileBlocked": {
+    "message": "Hinweis: $N$ Stylesheet(s) nicht lesbar (fremde Herkunft): $LIST$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      },
+      "list": {
+        "content": "$2"
+      }
+    }
+  },
+  "fileInlineStyle": {
+    "message": "style-Attribut"
+  },
+  "fileCssUnavailable": {
+    "message": "(CSS-Kontext nicht ermittelbar)"
+  },
+  "mediaActive": {
+    "message": "aktiv"
+  },
+  "mediaInactive": {
+    "message": "inaktiv"
+  },
+  "optTitle": {
+    "message": "LLMent Picker – Einstellungen"
+  },
+  "optSubfolder": {
+    "message": "Unterordner für HTML-Dateien"
+  },
+  "optSubfolderHint": {
+    "message": "Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben. Der Unterordner wird dort angelegt; leer lassen = direkt in den Download-Ordner."
+  },
+  "optSaveAs": {
+    "message": "Beim Speichern „Speichern unter“-Dialog zeigen"
+  },
+  "optSaveAsHint": {
+    "message": "Aus: Datei landet ohne Nachfrage im Unterordner, der Pfad kommt als letzte Zeile in die Zwischenablage."
+  },
+  "optCss": {
+    "message": "CSS-Kontext in die HTML-Datei aufnehmen"
+  },
+  "optCssHint": {
+    "message": "Effektive Layout-Werte und die angewandten Stylesheet-Regeln für Element und Elternelement, als Kommentar über dem Markup. Für Portal-Inhalte (Tabellen, Stundenpläne) entbehrlich."
+  },
+  "optHideHints": {
+    "message": "Tastenhinweise am Rahmen ausblenden"
+  },
+  "optHideHintsHint": {
+    "message": "Standard: „Strg HTML“ und „Alt Screenshot“ bleiben neben den Symbolen sichtbar."
+  },
+  "optSaved": {
+    "message": "Gespeichert."
+  }
+}

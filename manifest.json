@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "LLMent Picker",
-  "version": "1.5.7",
-  "description": "Klick auf ein Seitenelement kopiert URL und eindeutigen CSS-Selektor, markierter Text kommt mit – für KI-Chats und Coding-Agenten.",
+  "name": "__MSG_extName__",
+  "version": "1.6.0",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
   "author": "Henning Pähtz",
   "homepage_url": "https://github.com/paehtz/llment-picker",
   "icons": {
@@ -16,7 +17,11 @@
       "16": "icons/16.png",
       "32": "icons/32.png"
     },
-    "default_title": "LLMent Picker (Strg+Alt+P)"
+    "default_title": "__MSG_actionTitle__"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
   },
   "permissions": [
     "activeTab",
@@ -36,7 +41,7 @@
       "suggested_key": {
         "default": "Ctrl+Alt+P"
       },
-      "description": "LLMent Picker auf der aktuellen Seite starten / abbrechen"
+      "description": "__MSG_commandDescription__"
     }
   },
   "browser_specific_settings": {
@@ -49,9 +54,5 @@
         ]
       }
     }
-  },
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": false
   }
 }

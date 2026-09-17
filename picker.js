@@ -20,6 +20,48 @@
 (() => {
   const KEY = "__elementPickerInstance";
   const api = globalThis.browser ?? globalThis.chrome;
+  // Übersetzung (_locales); Schlüssel als Rückfall, damit nie Leeres erscheint
+  const t = (key, ...subs) => {
+    try { return api.i18n.getMessage(key, subs.map(String)) || key; } catch { return key; }
+  };
+  const IN_FRAME = window !== window.top;
+  // Beschreibung des umgebenden Frames für Zeile „Im Frame: …"
+  function frameLine() {
+    if (!IN_FRAME) return null;
+    let desc = location.href;
+    try {
+      const fe = window.frameElement;
+      if (fe) desc += " \u2190 <" + fe.tagName.toLowerCase() + (fe.id ? ' id="' + fe.id + '"' : "") + (fe.name ? ' name="' + fe.name + '"' : "") + ">";
+    } catch {}
+    return t("lineFrame") + desc + t("lineFrameNote");
+  }
+  // Versatz dieses Frames im Tab (nur bei gleicher Herkunft ermittelbar)
+  function frameOffset() {
+    let x = 0, y = 0, w = window;
+    try {
+      while (w !== w.top) {
+        const fe = w.frameElement;
+        if (!fe) return null;
+        const r = fe.getBoundingClientRect(), cs = w.parent.getComputedStyle(fe);
+        x += r.left + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft);
+        y += r.top + parseFloat(cs.borderTopWidth) + parseFloat(cs.paddingTop);
+        w = w.parent;
+      }
+      return { x, y, topWidth: w.innerWidth };
+    } catch { return null; }
+  }
+  // Zweiter Durchlauf (alle Frames): ein bereits aktiver Picker wird nicht umgeschaltet
+  const PASS2 = !!window.__llmentPass2;
+  delete window.__llmentPass2;
+  // Abbruch-Broadcast aus dem Hintergrund (ein anderer Frame hat kopiert/abgebrochen)
+  if (!window.__llmentListening) {
+    window.__llmentListening = true;
+    try {
+      api.runtime.onMessage.addListener((m) => {
+        if (m && m.type === "llment-cancel" && window[KEY]) window[KEY].cancel(true, true);
+      });
+    } catch {}
+  }
   // Aktivzustand ans Hintergrundskript melden (Badge am Toolbar-Icon)
   const reportState = (active) => {
     try { api.runtime.sendMessage({ type: "llment-state", active }); } catch {}
@@ -155,7 +197,9 @@
     const lines = [location.href, buildSelector(el)];
     if (text) lines.push(JSON.stringify(text));
     if (shotInfo) lines.push(shotInfo);
-    if (htmlPath) lines.push("HTML: " + htmlPath);
+    if (htmlPath) lines.push(t("lineHtml") + htmlPath);
+    const fl = frameLine();
+    if (fl) lines.push(fl);
     return lines.join("\n");
   }
 
@@ -194,7 +238,7 @@
           } catch {}
         } else if (r instanceof CSSMediaRule) {
           const cond = r.conditionText || r.media.mediaText;
-          const on = matchMedia(cond).matches ? "aktiv" : "inaktiv";
+          const on = matchMedia(cond).matches ? t("mediaActive") : t("mediaInactive");
           walk(r.cssRules, sheet, (ctx ? ctx + " · " : "") + `@media ${cond} [${on}]`);
         } else if (r.cssRules) {
           try { walk(r.cssRules, sheet, ctx); } catch {}
@@ -209,7 +253,7 @@
       walk(rules, name, "");
     }
     const inline = el.getAttribute("style");
-    if (inline) found.unshift({ sheet: "style-Attribut", ctx: "", css: inline });
+    if (inline) found.unshift({ sheet: t("fileInlineStyle"), ctx: "", css: inline });
     return { rules: found.slice(0, limit), total: found.length, blocked };
   }
 
@@ -220,16 +264,16 @@
 
   function cssContext(el) {
     const safe = (t) => t.replace(/-->/g, "--&gt;");
-    const fmt = (m) => m.rules.map((r) => `/* ${r.sheet}${r.ctx ? " · " + r.ctx : ""} */ ${safe(r.css.length > 1500 ? r.css.slice(0, 1500) + " …" : r.css)}`).join("\n") || "(keine)";
+    const fmt = (m) => m.rules.map((r) => `/* ${r.sheet}${r.ctx ? " · " + r.ctx : ""} */ ${safe(r.css.length > 1500 ? r.css.slice(0, 1500) + " …" : r.css)}`).join("\n") || t("fileNone");
     const me = matchedRules(el, 60);
-    const lines = ["== Effektive Werte (Element) ==", ...effectiveStyles(el, LAYOUT_PROPS), "",
-      `== Angewandte CSS-Regeln (Element) == ${me.total > me.rules.length ? `[${me.rules.length} von ${me.total}]` : `[${me.total}]`}`, fmt(me)];
+    const lines = [t("fileEffective"), ...effectiveStyles(el, LAYOUT_PROPS), "",
+      `${t("fileRules")} ${me.total > me.rules.length ? `[${me.rules.length}/${me.total}]` : `[${me.total}]`}`, fmt(me)];
     const parent = el.parentElement;
     if (parent && parent !== document.documentElement) {
       const pm = matchedRules(parent, 30);
-      lines.push("", `== Elternelement ${describe(parent)} ==`, "Effektive Werte: " + effectiveStyles(parent, CONTAINER_PROPS).join("; "), `Regeln [${pm.total}]:`, fmt(pm));
+      lines.push("", t("fileParent", describe(parent)), t("fileParentEffective") + effectiveStyles(parent, CONTAINER_PROPS).join("; "), `${t("fileParentRules")} [${pm.total}]:`, fmt(pm));
     }
-    if (me.blocked.length) lines.push("", `Hinweis: ${me.blocked.length} Stylesheet(s) nicht lesbar (fremde Herkunft): ${me.blocked.join(", ")}`);
+    if (me.blocked.length) lines.push("", t("fileBlocked", me.blocked.length, me.blocked.join(", ")));
     return lines.join("\n");
   }
 
@@ -237,13 +281,14 @@
     const clone = el.cloneNode(true);
     clone.querySelectorAll("script, noscript").forEach((n) => n.remove());
     let head = `<!-- LLMent Picker · ${new Date().toISOString()}
-URL: ${location.href}
-Selektor: ${selector}
-Titel: ${document.title.replace(/-->/g, "--&gt;")}
-Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100) / 100}
+${t("fileUrl")}: ${location.href}
+${t("fileSelector")}: ${selector}
+${t("fileTitle")}: ${document.title.replace(/-->/g, "--&gt;")}
+${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100) / 100}
 `;
+    if (IN_FRAME) head += `${t("fileFrame")}: ${location.href}\n`;
     if (withCss) {
-      let ctx = "(CSS-Kontext nicht ermittelbar)";
+      let ctx = t("fileCssUnavailable");
       try { ctx = cssContext(el); } catch (e) { ctx += ": " + (e && e.message); }
       head += "\n" + ctx + "\n";
     }
@@ -283,8 +328,10 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
       r = el.getBoundingClientRect();
     }
     const clipped = outOfView(r);
-    const x0 = Math.max(0, r.left - SHOT_PAD), y0 = Math.max(0, r.top - SHOT_PAD);
-    const x1 = Math.min(innerWidth, r.right + SHOT_PAD), y1 = Math.min(innerHeight, r.bottom + SHOT_PAD);
+    const off = IN_FRAME ? frameOffset() : { x: 0, y: 0, topWidth: innerWidth };
+    if (!off) throw new Error("frame offset unavailable (cross-origin)");
+    const x0 = Math.max(0, r.left - SHOT_PAD) + off.x, y0 = Math.max(0, r.top - SHOT_PAD) + off.y;
+    const x1 = Math.min(innerWidth, r.right + SHOT_PAD) + off.x, y1 = Math.min(innerHeight, r.bottom + SHOT_PAD) + off.y;
     // Eigene Overlays (Blitz, Toast) für die Aufnahme ausblenden
     const own = Array.from(document.querySelectorAll("[data-llment-picker]"));
     own.forEach((n) => (n.style.visibility = "hidden"));
@@ -298,15 +345,14 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
     if (!res || !res.dataUrl) throw new Error((res && res.error) || "keine Aufnahme");
     const img = new Image();
     await new Promise((ok, err) => { img.onload = ok; img.onerror = err; img.src = res.dataUrl; });
-    const k = img.naturalWidth / innerWidth; // tatsächlicher Pixelfaktor der Aufnahme
+    const k = img.naturalWidth / off.topWidth; // tatsächlicher Pixelfaktor der Aufnahme
     const cv = document.createElement("canvas");
     cv.width = Math.max(1, Math.round((x1 - x0) * k));
     cv.height = Math.max(1, Math.round((y1 - y0) * k));
     cv.getContext("2d").drawImage(img, x0 * k, y0 * k, (x1 - x0) * k, (y1 - y0) * k, 0, 0, cv.width, cv.height);
     const blob = await new Promise((f) => cv.toBlob(f, "image/png"));
     const dpr = String(Math.round(devicePixelRatio * 100) / 100);
-    const info = `Viewport ${innerWidth}×${innerHeight}, DPR ${dpr}, Screenshot ${cv.width}×${cv.height} px (+${SHOT_PAD} px Rand)` +
-      (clipped ? ", Element größer als das Fenster: nur sichtbarer Teil" : "");
+    const info = t("lineShot", innerWidth, innerHeight, dpr, cv.width, cv.height, SHOT_PAD) + (clipped ? t("lineShotClipped") : "");
     return { blob, info };
   }
 
@@ -385,9 +431,9 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
     if (shot && (await copyWithImage(payload, shot.blob))) ok = true;
     else ok = await copy(payload);
     const parts = [];
-    if (!ok) parts.push("Kopieren fehlgeschlagen");
-    else parts.push(shot ? "Kopiert (mit Screenshot)" : withShot ? "Nur Text kopiert (Screenshot nicht möglich)" : "Kopiert");
-    if (withHtml) parts.push(htmlPath ? "HTML gespeichert" : "HTML nicht gespeichert" + (htmlErr ? ": " + htmlErr : ""));
+    if (!ok) parts.push(t("toastCopyFailed"));
+    else parts.push(shot ? t("toastCopiedShot") : withShot ? t("toastTextOnly") : t("toastCopied"));
+    if (withHtml) parts.push(htmlPath ? t("toastHtmlSaved") : t("toastHtmlFailed") + (htmlErr ? ": " + htmlErr : ""));
     const good = ok && !(withShot && !shot) && !(withHtml && !htmlPath);
     toast(parts.join(" · "), good);
     window.__elementPickerLast = payload; // für Tests / Debugging
@@ -418,13 +464,13 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
     // Rechtsklick lag auf markiertem Text → Element der Markierung + Text
     const marked = onSelection ? selectionTarget() : null;
     if (marked) {
-      copyElement(marked.el, marked.text, { shot, html });
-      return;
+      copyElement(marked.el, marked.text, { shot, html }).then(() => reportState(false));
+      return "picked";
     }
     const el = contextTarget(id);
     if (el) {
-      copyElement(el, undefined, { shot, html });
-      return;
+      copyElement(el, undefined, { shot, html }).then(() => reportState(false));
+      return "picked";
     }
     // Kein Ziel bestimmbar → in den Picker-Modus fallen statt aufzugeben.
     contextFallback = true;
@@ -432,8 +478,9 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
 
   // ───────────────────────── Weg a: Picker-Modus (Toggle) ─────────────────
   if (window[KEY]) {
+    if (PASS2) return "skip"; // zweiter Durchlauf: laufenden Picker nicht umschalten
     window[KEY].cancel();
-    return;
+    return "cancelled";
   }
 
   // Voreinstellung aus dem Icon-Menü („Element wählen – mit Screenshot" usw.)
@@ -445,8 +492,8 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
   if (!contextFallback) {
     const marked = selectionTarget();
     if (marked) {
-      copyElement(marked.el, marked.text, preset);
-      return;
+      copyElement(marked.el, marked.text, preset).then(() => reportState(false));
+      return "picked";
     }
   }
 
@@ -490,10 +537,10 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
   const codeChip = chip(), camChip = chip();
   hud.append(codeChip, camChip);
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
-  const CTRL_LABEL = isMac ? "\u2318" : "Strg";
+  const CTRL_LABEL = isMac ? t("hintHtmlMac") : t("hintHtml");
   function applyHints() {
-    fillChip(codeChip, ICON_CODE(), showHints ? CTRL_LABEL + " HTML" : "");
-    fillChip(camChip, ICON_CAM(), showHints ? "Alt Screenshot" : "");
+    fillChip(codeChip, ICON_CODE(), showHints ? CTRL_LABEL : "");
+    fillChip(camChip, ICON_CAM(), showHints ? t("hintShot") : "");
   }
   applyHints();
   try {
@@ -608,7 +655,7 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
     if (e.key === "Escape") {
       swallow(e);
       cleanup();
-      toast("Abgebrochen", false);
+      toast(t("toastCancelled"), false);
       return;
     }
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
@@ -620,7 +667,7 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
   }
 
   const opts = { capture: true };
-  function cleanup() {
+  function cleanup(noReport) {
     window.removeEventListener("mousemove", onMove, opts);
     window.removeEventListener("scroll", onScroll, opts);
     window.removeEventListener("click", onClick, opts);
@@ -632,7 +679,7 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
     box.remove();
     label.remove();
     hud.remove();
-    reportState(false);
+    if (!noReport) reportState(false);
     style.remove();
     delete window[KEY];
   }
@@ -647,15 +694,17 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
   window.addEventListener("keyup", onKeyUp, opts);
   reportState(true);
   setMods(false, false); // zeigt eine Voreinstellung sofort an
-  if (contextFallback) toast("Element anklicken", false);
+  if (contextFallback) toast(t("toastPickElement"), false);
 
   window[KEY] = {
-    cancel(silent) {
-      cleanup();
-      if (!silent) toast("Abgebrochen", false);
+    // silent: kein Toast; noReport: kein Abbruch-Broadcast (kam selbst aus einem)
+    cancel(silent, noReport) {
+      cleanup(noReport);
+      if (!silent) toast(t("toastCancelled"), false);
     },
     // für Tests: Selektor eines beliebigen Elements berechnen
     buildSelector,
     selectionTarget,
   };
+  return "picker";
 })();

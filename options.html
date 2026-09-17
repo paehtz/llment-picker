@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="de">
+<html>
 <head>
 <meta charset="utf-8">
-<title>LLMent Picker – Einstellungen</title>
+<title data-i18n="optTitle">LLMent Picker – Settings</title>
 <style>
   body{font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:#14181f;margin:0;padding:16px 20px;min-width:360px;max-width:520px}
   h1{font-size:16px;margin:0 0 14px}
@@ -16,33 +16,33 @@
 </style>
 </head>
 <body>
-<h1>LLMent Picker – Einstellungen</h1>
+<h1 data-i18n="optTitle">LLMent Picker – Settings</h1>
 
-<label for="subfolder">Unterordner für HTML-Dateien</label>
+<label for="subfolder" data-i18n="optSubfolder">Subfolder for HTML files</label>
 <input type="text" id="subfolder" placeholder="LLMent Picker">
-<div class="hint">Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben. Der Unterordner wird dort angelegt; leer lassen = direkt in den Download-Ordner.</div>
+<div class="hint" data-i18n="optSubfolderHint"></div>
 
 <div class="row">
   <input type="checkbox" id="saveAs">
   <div>
-    <label for="saveAs">Beim Speichern „Speichern unter"-Dialog zeigen</label>
-    <div class="hint">Aus: Datei landet ohne Nachfrage im Unterordner, der Pfad kommt als fünfte Zeile in die Zwischenablage.</div>
+    <label for="saveAs" data-i18n="optSaveAs"></label>
+    <div class="hint" data-i18n="optSaveAsHint"></div>
   </div>
 </div>
 
 <div class="row">
   <input type="checkbox" id="cssInHtml">
   <div>
-    <label for="cssInHtml">CSS-Kontext in die HTML-Datei aufnehmen</label>
-    <div class="hint">Effektive Layout-Werte und die angewandten Stylesheet-Regeln für Element und Elternelement, als Kommentar über dem Markup. Für Portal-Inhalte (Tabellen, Stundenpläne) entbehrlich.</div>
+    <label for="cssInHtml" data-i18n="optCss"></label>
+    <div class="hint" data-i18n="optCssHint"></div>
   </div>
 </div>
 
 <div class="row">
   <input type="checkbox" id="hideHints">
   <div>
-    <label for="hideHints">Tastenhinweise am Rahmen ausblenden</label>
-    <div class="hint">Standard: „Strg HTML" und „Alt Screenshot" bleiben neben den Symbolen sichtbar. Wer die Tasten kennt, kann sie hier ausblenden.</div>
+    <label for="hideHints" data-i18n="optHideHints"></label>
+    <div class="hint" data-i18n="optHideHintsHint"></div>
   </div>
 </div>
 

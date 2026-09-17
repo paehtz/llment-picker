@@ -2,6 +2,9 @@
 const api = globalThis.browser ?? globalThis.chrome;
 const DEFAULTS = { subfolder: "LLMent Picker", saveAs: false, cssInHtml: true, hideHints: false };
 const $ = (id) => document.getElementById(id);
+const t = (k) => api.i18n.getMessage(k) || k;
+document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
+document.documentElement.lang = api.i18n.getUILanguage();
 
 async function load() {
   const cfg = Object.assign({}, DEFAULTS, await api.storage.sync.get(DEFAULTS));
@@ -16,7 +19,7 @@ function save() {
   clearTimeout(timer);
   timer = setTimeout(async () => {
     await api.storage.sync.set({ subfolder: $("subfolder").value.trim(), saveAs: $("saveAs").checked, cssInHtml: $("cssInHtml").checked, hideHints: $("hideHints").checked });
-    $("status").textContent = "Gespeichert.";
+    $("status").textContent = t("optSaved");
     setTimeout(() => ($("status").textContent = ""), 1500);
   }, 300);
 }

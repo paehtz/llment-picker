@@ -18,11 +18,22 @@ const MENU_SHOT_ID = "llment-picker-copy-shot";
 const MENU_HTML_ID = "llment-picker-copy-html";
 const DEFAULTS = { subfolder: "LLMent Picker", saveAs: false };
 
-async function inject(tabId, frameId, prelude) {
+const T = (k, ...subs) => api.i18n.getMessage(k, subs.map(String)) || k;
+
+// Injektion: erst der Hauptframe; startet dort der Picker-Modus, folgen alle
+// weiteren Frames (iframes), damit auch Elemente darin wählbar sind. Ein
+// laufender Picker im Hauptframe wird im zweiten Durchlauf nicht umgeschaltet.
+async function inject(tabId, frameId, prelude, allFrames) {
   const target = { tabId, frameIds: [frameId || 0] };
   try {
     if (prelude) await api.scripting.executeScript({ target, ...prelude });
-    await api.scripting.executeScript({ target, files: ["picker.js"] });
+    const res = await api.scripting.executeScript({ target, files: ["picker.js"] });
+    if (allFrames && res && res[0] && res[0].result === "picker") {
+      const all = { tabId, allFrames: true };
+      if (prelude) await api.scripting.executeScript({ target: all, ...prelude });
+      await api.scripting.executeScript({ target: all, func: () => { window.__llmentPass2 = true; } });
+      await api.scripting.executeScript({ target: all, files: ["picker.js"] });
+    }
   } catch (err) {
     // Typisch: privilegierte Seiten (about:*, chrome://, Add-on-Stores,
     // PDF-Viewer), auf denen der Browser kein Content-Script zulässt.
@@ -32,7 +43,7 @@ async function inject(tabId, frameId, prelude) {
 
 // Icon-Klick und Tastenkürzel → Picker-Modus
 api.action.onClicked.addListener((tab) => {
-  if (tab && tab.id != null) inject(tab.id, 0);
+  if (tab && tab.id != null) inject(tab.id, 0, null, true);
 });
 
 // Kontextmenü → rechtsgeklicktes Element direkt kopieren.
@@ -47,13 +58,13 @@ const PICK_ID = "llment-pick", PICK_SHOT_ID = "llment-pick-shot", PICK_HTML_ID =
 const PRESETS = { [PICK_ID]: { shot: false, html: false }, [PICK_SHOT_ID]: { shot: true, html: false }, [PICK_HTML_ID]: { shot: false, html: true } };
 
 menus.removeAll().then(() => {
-  menus.create({ id: MENU_ID, title: "Dieses Element kopieren", contexts: PAGE_CTX });
-  menus.create({ id: MENU_SHOT_ID, title: "Mit Screenshot kopieren", contexts: PAGE_CTX });
-  menus.create({ id: MENU_HTML_ID, title: "Als HTML-Datei speichern (mit CSS-Kontext)", contexts: PAGE_CTX });
+  menus.create({ id: MENU_ID, title: T("menuCopy"), contexts: PAGE_CTX });
+  menus.create({ id: MENU_SHOT_ID, title: T("menuCopyShot"), contexts: PAGE_CTX });
+  menus.create({ id: MENU_HTML_ID, title: T("menuCopyHtml"), contexts: PAGE_CTX });
   const actionCtx = (ctx) => {
-    menus.create({ id: PICK_ID, title: "Element w\u00e4hlen", contexts: [ctx] });
-    menus.create({ id: PICK_SHOT_ID, title: "Element w\u00e4hlen \u2013 mit Screenshot", contexts: [ctx] });
-    menus.create({ id: PICK_HTML_ID, title: "Element w\u00e4hlen \u2013 als HTML-Datei", contexts: [ctx] });
+    menus.create({ id: PICK_ID, title: T("menuPick"), contexts: [ctx] });
+    menus.create({ id: PICK_SHOT_ID, title: T("menuPickShot"), contexts: [ctx] });
+    menus.create({ id: PICK_HTML_ID, title: T("menuPickHtml"), contexts: [ctx] });
   };
   try { actionCtx("action"); } catch { try { actionCtx("browser_action"); } catch {} }
 });
@@ -66,7 +77,7 @@ menus.onClicked.addListener((info, tab) => {
         window.__elementPickerPreset = preset;
       },
       args: [PRESETS[info.menuItemId]],
-    });
+    }, true);
     return;
   }
   if (![MENU_ID, MENU_SHOT_ID, MENU_HTML_ID].includes(info.menuItemId)) return;
@@ -89,8 +100,7 @@ async function setActiveBadge(tabId, active) {
       await api.action.setBadgeBackgroundColor({ tabId, color: "#0a84ff" });
       if (api.action.setBadgeTextColor) await api.action.setBadgeTextColor({ tabId, color: "#0a84ff" });
     }
-    const def = (api.runtime.getManifest().action || {}).default_title || "LLMent Picker";
-    await api.action.setTitle({ tabId, title: active ? "LLMent Picker \u2013 aktiv (Esc beendet)" : def });
+    await api.action.setTitle({ tabId, title: active ? T("actionTitleActive") : T("actionTitle") });
   } catch (err) {
     console.warn("LLMent Picker: Badge nicht gesetzt \u2013", err && err.message);
   }
@@ -104,7 +114,11 @@ api.tabs.onUpdated.addListener((tabId, info) => {
 api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg) return;
   if (msg.type === "llment-state") {
-    if (sender.tab && sender.tab.id != null) setActiveBadge(sender.tab.id, !!msg.active);
+    if (sender.tab && sender.tab.id != null) {
+      setActiveBadge(sender.tab.id, !!msg.active);
+      // Ein Frame ist fertig → Picker in allen anderen Frames des Tabs beenden
+      if (!msg.active) api.tabs.sendMessage(sender.tab.id, { type: "llment-cancel" }).catch(() => {});
+    }
     return;
   }
   if (msg.type === "llment-capture") {

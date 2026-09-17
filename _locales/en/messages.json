@@ -1,0 +1,194 @@
+{
+  "extName": {
+    "message": "LLMent Picker"
+  },
+  "extDescription": {
+    "message": "Click a page element to copy its URL and a unique CSS selector – plus selected text, a screenshot or the rendered HTML – for AI chats and coding agents."
+  },
+  "actionTitle": {
+    "message": "LLMent Picker"
+  },
+  "actionTitleActive": {
+    "message": "LLMent Picker – active (Esc to stop)"
+  },
+  "commandDescription": {
+    "message": "Start or stop LLMent Picker on the current page"
+  },
+  "menuCopy": {
+    "message": "Copy this element"
+  },
+  "menuCopyShot": {
+    "message": "Copy with screenshot"
+  },
+  "menuCopyHtml": {
+    "message": "Save as HTML file (with CSS context)"
+  },
+  "menuPick": {
+    "message": "Pick an element"
+  },
+  "menuPickShot": {
+    "message": "Pick an element – with screenshot"
+  },
+  "menuPickHtml": {
+    "message": "Pick an element – as HTML file"
+  },
+  "hintHtml": {
+    "message": "Ctrl HTML"
+  },
+  "hintHtmlMac": {
+    "message": "⌘ HTML"
+  },
+  "hintShot": {
+    "message": "Alt Screenshot"
+  },
+  "toastCopied": {
+    "message": "Copied"
+  },
+  "toastCopiedShot": {
+    "message": "Copied (with screenshot)"
+  },
+  "toastTextOnly": {
+    "message": "Text copied only (screenshot not possible)"
+  },
+  "toastCopyFailed": {
+    "message": "Copy failed"
+  },
+  "toastHtmlSaved": {
+    "message": "HTML saved"
+  },
+  "toastHtmlFailed": {
+    "message": "HTML not saved"
+  },
+  "toastCancelled": {
+    "message": "Cancelled"
+  },
+  "toastPickElement": {
+    "message": "Click an element"
+  },
+  "lineShot": {
+    "message": "Viewport $W$×$H$, DPR $DPR$, screenshot $SW$×$SH$ px (+$PAD$ px margin)",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      },
+      "dpr": {
+        "content": "$3"
+      },
+      "sw": {
+        "content": "$4"
+      },
+      "sh": {
+        "content": "$5"
+      },
+      "pad": {
+        "content": "$6"
+      }
+    }
+  },
+  "lineShotClipped": {
+    "message": ", element taller than the window: visible part only"
+  },
+  "lineHtml": {
+    "message": "HTML: "
+  },
+  "lineFrame": {
+    "message": "Inside frame: "
+  },
+  "lineFrameNote": {
+    "message": " (selector refers to the frame document)"
+  },
+  "fileUrl": {
+    "message": "URL"
+  },
+  "fileSelector": {
+    "message": "Selector"
+  },
+  "fileTitle": {
+    "message": "Title"
+  },
+  "fileViewport": {
+    "message": "Viewport"
+  },
+  "fileFrame": {
+    "message": "Frame"
+  },
+  "fileEffective": {
+    "message": "== Effective values (element) =="
+  },
+  "fileRules": {
+    "message": "== Applied CSS rules (element) =="
+  },
+  "fileParent": {
+    "message": "== Parent element $EL$ ==",
+    "placeholders": {
+      "el": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileParentEffective": {
+    "message": "Effective values: "
+  },
+  "fileParentRules": {
+    "message": "Rules"
+  },
+  "fileNone": {
+    "message": "(none)"
+  },
+  "fileBlocked": {
+    "message": "Note: $N$ stylesheet(s) not readable (cross-origin): $LIST$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      },
+      "list": {
+        "content": "$2"
+      }
+    }
+  },
+  "fileInlineStyle": {
+    "message": "style attribute"
+  },
+  "fileCssUnavailable": {
+    "message": "(CSS context not available)"
+  },
+  "mediaActive": {
+    "message": "active"
+  },
+  "mediaInactive": {
+    "message": "inactive"
+  },
+  "optTitle": {
+    "message": "LLMent Picker – Settings"
+  },
+  "optSubfolder": {
+    "message": "Subfolder for HTML files"
+  },
+  "optSubfolderHint": {
+    "message": "Extensions may only write to the browser's download folder. The subfolder is created there; leave empty to save directly into the download folder."
+  },
+  "optSaveAs": {
+    "message": "Show a \"Save as\" dialog when saving"
+  },
+  "optSaveAsHint": {
+    "message": "Off: the file is saved to the subfolder without asking and its path is added as the last clipboard line."
+  },
+  "optCss": {
+    "message": "Include CSS context in the HTML file"
+  },
+  "optCssHint": {
+    "message": "Effective layout values and the applied stylesheet rules for the element and its parent, as a comment above the markup. Not needed for portal content (tables, timetables)."
+  },
+  "optHideHints": {
+    "message": "Hide key hints next to the outline"
+  },
+  "optHideHintsHint": {
+    "message": "Default: \"Ctrl HTML\" and \"Alt Screenshot\" stay visible next to the icons."
+  },
+  "optSaved": {
+    "message": "Saved."
+  }
+}
