@@ -38,7 +38,7 @@ Der erste Stand entstand am 15. September 2026 in einer Sitzung mit Claude Code,
 
 Solange der Picker läuft, trägt das Toolbar-Icon einen blauen Punkt (Tooltip „aktiv – Esc beendet"); beim Klick blitzt der Rahmen kurz auf, dann kommt der Toast.
 
-Über dem Rahmen zeigen zwei Symbole (`</>` und Kamera), was der Klick zusätzlich auslöst; sie leuchten blau, solange die Taste gehalten wird, und tragen anfangs den Tastenhinweis, bis jede Funktion dreimal benutzt wurde. Sie sind bewusst nicht klickbar – die Maus müsste sonst über andere Elemente dorthin, und der Rahmen spränge um.
+Über dem Rahmen zeigen zwei Symbole (`</>` und Kamera), was der Klick zusätzlich auslöst; sie leuchten blau, solange die Taste gehalten wird, und tragen den Tastenhinweis („Strg HTML", „Alt Screenshot") – dauerhaft, abschaltbar in den Einstellungen. Sie sind bewusst nicht klickbar – die Maus müsste sonst über andere Elemente dorthin, und der Rahmen spränge um.
 | **Escape** oder erneut Icon/Kürzel | Abbruch ohne Kopieren |
 | **Rechtsklick auf der Seite → LLMent Picker → „Dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus; liegt der Rechtsklick auf markiertem Text, kommt der Text als dritte Zeile mit |
 | … → „Mit Screenshot kopieren" / „Als HTML-Datei speichern" | dasselbe mit Bild bzw. HTML-Datei |

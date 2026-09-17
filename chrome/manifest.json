@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LLMent Picker",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "Klick auf ein Seitenelement kopiert URL und eindeutigen CSS-Selektor, markierter Text kommt mit – für KI-Chats und Coding-Agenten.",
   "homepage_url": "https://github.com/paehtz/llment-picker",
   "icons": {

@@ -467,7 +467,6 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
   }
   const ICON_CAM = () => svgIcon([["path", { d: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" }], ["circle", { cx: "12", cy: "13", r: "4" }]]);
   const ICON_CODE = () => svgIcon([["polyline", { points: "16 18 22 12 16 6" }], ["polyline", { points: "8 6 2 12 8 18" }]]);
-  const HINT_LIMIT = 3; // Tastenhinweise verschwinden, sobald jede Funktion so oft benutzt wurde
   const hud = document.createElement("div");
   hud.setAttribute("data-llment-picker", "");
   hud.style.cssText = `position:fixed;z-index:${Z};display:none;pointer-events:none;gap:4px;
@@ -487,19 +486,19 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
       c.appendChild(t);
     }
   }
-  let hints = { shot: 0, html: 0 };
+  let showHints = true; // Tastenhinweise dauerhaft, abschaltbar in den Einstellungen
   const codeChip = chip(), camChip = chip();
   hud.append(codeChip, camChip);
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
   const CTRL_LABEL = isMac ? "\u2318" : "Strg";
   function applyHints() {
-    fillChip(codeChip, ICON_CODE(), hints.html < HINT_LIMIT ? CTRL_LABEL + " HTML" : "");
-    fillChip(camChip, ICON_CAM(), hints.shot < HINT_LIMIT ? "Alt Screenshot" : "");
+    fillChip(codeChip, ICON_CODE(), showHints ? CTRL_LABEL + " HTML" : "");
+    fillChip(camChip, ICON_CAM(), showHints ? "Alt Screenshot" : "");
   }
   applyHints();
   try {
-    api.storage.sync.get({ hintsShot: 0, hintsHtml: 0 }).then((v) => {
-      hints = { shot: v.hintsShot || 0, html: v.hintsHtml || 0 };
+    api.storage.sync.get({ hideHints: false }).then((v) => {
+      showHints = !v.hideHints;
       applyHints();
       if (current) placeHud(current.getBoundingClientRect());
     });
@@ -602,16 +601,7 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
     if (!el) return;
     cleanup();
     flash(el);
-    const ok = await copyElement(el, undefined, { shot: withShot, html: withHtml });
-    // Tastenhinweise nach ein paar erfolgreichen Nutzungen ausblenden
-    if (ok && (withShot || withHtml)) {
-      try {
-        const upd = {};
-        if (withShot) upd.hintsShot = Math.min(HINT_LIMIT, hints.shot + 1);
-        if (withHtml) upd.hintsHtml = Math.min(HINT_LIMIT, hints.html + 1);
-        api.storage.sync.set(upd);
-      } catch {}
-    }
+    await copyElement(el, undefined, { shot: withShot, html: withHtml });
   }
 
   function onKey(e) {
