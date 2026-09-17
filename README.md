@@ -48,6 +48,8 @@ Solange der Picker läuft, trägt das Toolbar-Icon einen blauen Punkt (Tooltip �
 
 Die dritte Zeile gibt es also nur, wenn Du sie durch eine Markierung ausdrücklich verlangst. Ein angeklickter Block ohne Markierung liefert nur URL und Selektor – sonst läse ein Chat „dieser Satz ist gemeint", obwohl der Block gemeint war.
 
+Umgekehrt gilt: Markierung + Icon/Kürzel kopiert **nur** Text und Selektor, ohne Screenshot oder HTML – wer eine Textstelle markiert, will fast immer den Inhalt ändern, und der Text steht schon in Zeile 3. Für den seltenen Fall „dieser Satz bricht hässlich um" geht **Rechtsklick auf die Markierung → „mit Screenshot kopieren"**: Selektor, Text und Bild zusammen.
+
 Kürzel ändern: Firefox `about:addons` → Zahnrad → „Tastenkombinationen für Erweiterungen verwalten"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P öffnet in Firefox die Profilverwaltung; Chrome erlaubt keine Strg+Alt-Kombinationen – daher zwei Standards.)
 
 ## Selektor-Logik
