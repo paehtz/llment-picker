@@ -1,135 +1,126 @@
-# LLMent Picker (Firefox & Chrome)
+# LLMent Picker
 
-Ein Klick auf ein Seitenelement kopiert drei Zeilen in die Zwischenablage – zum
-Einfügen in einen Chat mit einem Coding-Agenten („dieses Element meine ich"):
+**Tell your AI agent exactly which element you mean.** One click on any page element copies its URL and a unique, readable CSS selector – and, when you want it, the selected text, a screenshot of the element or its rendered HTML with the CSS that applies to it. Paste into Claude, ChatGPT, Copilot, Cursor or any coding agent.
+
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-LLMent%20Picker-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/llment-picker/oikfninjgnggbbhbdeefdlmeidminbnm)
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox%20Add--ons-in%20review-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/llment-picker/)
+
+Deutsche Fassung: [README.de.md](README.de.md)
 
 ```
 https://www.paehtz.de/#leistungen
 #leistungen .service-list > .service:nth-of-type(2) > .service__body
 "Unternehmenswebseiten: von der Sitemap über die Nutzerführung und Content-Architektur bis"
+Viewport 1440×900, DPR 1.25, screenshot 454×239 px (+24 px margin)
+HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 ```
 
-1. vollständige Seiten-URL (inkl. Hash)
-2. kürzester CSS-Selektor, der das Element eindeutig trifft
-3. **nur wenn vorher Text markiert war:** der markierte Text in Anführungszeichen (max. 240 Zeichen)
-4. **nur im Screenshot-Modus:** `Viewport 1440×900, DPR 1.25, Screenshot 454×239 px (+24 px Rand)` – dazu liegt ein PNG-Ausschnitt des Elements mit in der Zwischenablage; ein Strg+V in Claude fügt Bild und Text zusammen ein
-5. **nur im HTML-Modus:** `HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html` – das gerenderte HTML des Elements liegt als Datei im Download-Ordner; Claude Code liest sie über den Pfad
+1. the full page URL (including hash)
+2. the shortest CSS selector that matches exactly this element
+3. **only if text was selected first:** the selected text in quotes (max. 240 characters)
+4. **only in screenshot mode:** viewport, device pixel ratio and image size – a PNG crop of the element is in the clipboard alongside the text; one Ctrl+V in Claude pastes both
+5. **only in HTML mode:** the path of the saved file – the element's rendered HTML with its CSS context, ready for Claude Code to read from disk
 
-## Warum es das gibt
+## What sets it apart
 
-LLMent Picker ist aus der täglichen Arbeit von [Henning Pähtz](https://www.paehtz.de) entstanden: Webseiten für kleine und mittlere Unternehmen, seit 2025 zunehmend zusammen mit agentischer KI (Claude Code und vergleichbare Werkzeuge). Der Agent baut und ändert die Seite, der Mensch prüft im Browser und gibt Änderungswünsche zurück.
+- **It sees nothing until you click.** Only `activeTab` – no host permissions, no content script running on every page. Chrome shows no "read and change all your data" warning.
+- **Screenshot and text in a single paste.** The agent gets what it cannot render itself: how the element actually looks in your browser, at your viewport.
+- **Rendered HTML with CSS context.** For content that exists only in the browser (logged-in portals, JavaScript-rendered tables) and for "why does it look like this": the applied stylesheet rules with file and media query, plus the effective layout values – what the inspector shows, as a file.
+- **Readable selectors, verified.** IDs and meaningful classes as anchors, positions only where needed, state and animation classes ignored, uniqueness checked before copying.
+- **Firefox and Chrome**, ~30 KB, four plain files, no build step.
 
-Genau an dieser Rückgabe hakte es. „Der zweite Kasten unter der Überschrift, der Absatz darin" ist für einen Menschen eindeutig, für einen Agenten nicht – er sieht die Seite nicht, er sieht Quelltext. Die Behelfe waren ein Screenshot (der Agent muss raten, welches DOM-Element gemeint ist) oder „Copy XPath" aus den DevTools: drei Klicks, ein Pfad, der bei jeder Layoutänderung bricht, und die URL musste separat mit. Bei dreißig Rückmeldungen am Tag summiert sich das, und jede Unschärfe kostet eine Korrekturrunde.
+## Why it exists
 
-Das Werkzeug macht daraus einen Klick, der genau das liefert, was der Agent braucht: die Seite, einen eindeutigen und lesbaren Selektor, und – wenn es um eine konkrete Textstelle geht – den markierten Text. Der Name verbindet „Element" und „LLM": Es sagt einem Sprachmodell, welches Element gemeint ist.
+LLMent Picker grew out of the daily work of [Henning Pähtz](https://www.paehtz.de): websites for small and medium-sized businesses, since 2025 increasingly built together with agentic AI (Claude Code and similar tools). The agent builds and changes the page; the human reviews it in the browser and hands back change requests.
 
-Der erste Stand entstand am 15. September 2026 in einer Sitzung mit Claude Code, getestet am DOM echter Kundenseiten; die Entscheidungen zum Selektor-Algorithmus (IDs als Anker, Zustandsklassen ignorieren, Positionen nur wo nötig, Eindeutigkeit vor dem Kopieren prüfen) kommen aus den Fehlern, die dabei auftraten. Die dritte Zeile war anfangs immer dabei und wurde nach dem ersten Praxistag auf „nur bei Markierung" umgestellt: Ein Block ohne Textzeile ist ein Block, ein Block mit Textzeile liest sich wie „dieser Satz ist gemeint".
+That hand-back is where it kept breaking. "The second box under the heading, the paragraph inside" is unambiguous for a person and useless for an agent – it does not see the page, it sees source. The workarounds were a screenshot (the agent has to guess which DOM element is meant) or "Copy XPath" from DevTools: three clicks, a path that breaks with every layout change, and the URL had to be copied separately. At thirty pieces of feedback a day that adds up, and every ambiguity costs a correction round.
 
-## Bedienung
+The tool turns that into one click that delivers exactly what the agent needs: the page, a unique and readable selector and – when the request is about a specific passage – the selected text. The name joins "element" and "LLM": it tells a language model which element you mean.
 
-| Aktion | Wirkung |
+The first version was built on 15 September 2026 in a session with Claude Code and tested against the DOM of real client sites; the selector rules (IDs as anchors, ignore state classes, positions only where necessary, verify uniqueness before copying) come from the mistakes found along the way. The text line was originally always included and was changed to "only when selected" after the first day of use: a block without a text line is a block; a block with one reads like "this sentence is meant".
+
+## Usage
+
+| Action | Result |
 |---|---|
-| Text auf der Seite markieren, dann Toolbar-Icon oder Kürzel | kopiert sofort das Element, das die Markierung enthält, plus den markierten Text als dritte Zeile – kein Picker-Modus |
-| Toolbar-Icon oder **Strg+Alt+P** (Firefox) / **Alt+Shift+P** (Chrome), nichts markiert | Picker starten – Cursor wird zum Fadenkreuz, Element unter der Maus bekommt einen Rahmen |
-| Klick | kopiert die drei Zeilen, Picker beendet sich, Toast „Kopiert" |
-| **Alt+Klick** | wie Klick, zusätzlich Screenshot des Elements (+24 px Rand) als Bild in der Zwischenablage und Viewport-Angaben als vierte Zeile – für Layout-Rückmeldungen („überlappt", „verschoben") |
-| **Strg+Klick** (Mac: ⌘) | wie Klick, zusätzlich das gerenderte HTML des Elements als Datei im Download-Ordner und der Pfad als Zeile 5. Die Datei trägt im Kopf den **CSS-Kontext wie im Inspektor**: die layoutrelevanten effektiven Werte und alle Stylesheet-Regeln, die auf Element und Elternelement greifen, mit Datei und Media-Query-Zustand – für „warum sieht das so aus" und für Inhalte, die es nur im Browser gibt (eingeloggte Portale, per JS gerenderte Tabellen) |
-| **Strg+Alt+Klick** | Screenshot und HTML zusammen |
+| Select text on the page, then toolbar icon or shortcut | copies the element containing the selection plus the selected text as line 3 – no picker mode |
+| Toolbar icon or **Ctrl+Alt+P** (Firefox) / **Alt+Shift+P** (Chrome), nothing selected | starts the picker – crosshair cursor, the element under the mouse gets an outline |
+| Click | copies URL and selector, the picker ends, toast "Copied" |
+| **Alt+click** | plus a screenshot of the element (+24 px margin) as an image in the clipboard and the viewport details as line 4 – for layout feedback ("overlaps", "misaligned") |
+| **Ctrl+click** (Mac: ⌘) | plus the element's rendered HTML as a file in your downloads folder, path as line 5; the file head carries the **CSS context as in the inspector** |
+| **Ctrl+Alt+click** | screenshot and HTML together |
+| **Escape** or icon/shortcut again | cancel without copying |
+| Right-click on the page → LLMent Picker → "Copy this element" / "Copy with screenshot" / "Save as HTML file" | acts on the right-clicked element directly, no picker mode; on selected text the text comes along |
+| Right-click the toolbar icon → "Pick an element – with screenshot" / "– as HTML file" | starts the picker with a preset: the symbol above the outline is already lit, a plain click triggers it |
 
-Solange der Picker läuft, trägt das Toolbar-Icon einen blauen Punkt (Tooltip „aktiv – Esc beendet"); beim Klick blitzt der Rahmen kurz auf, dann kommt der Toast.
+Above the outline two symbols (`</>` and camera) show what the click will add; they light up while the key is held and carry the key hints ("Ctrl HTML", "Alt Screenshot") – permanently, switchable off in the settings. They are deliberately not clickable: the mouse would have to cross other elements to reach them and the outline would jump.
 
-Über dem Rahmen zeigen zwei Symbole (`</>` und Kamera), was der Klick zusätzlich auslöst; sie leuchten blau, solange die Taste gehalten wird, und tragen den Tastenhinweis („Strg HTML", „Alt Screenshot") – dauerhaft, abschaltbar in den Einstellungen. Sie sind bewusst nicht klickbar – die Maus müsste sonst über andere Elemente dorthin, und der Rahmen spränge um.
-| **Escape** oder erneut Icon/Kürzel | Abbruch ohne Kopieren |
-| **Rechtsklick auf der Seite → LLMent Picker → „Dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus; liegt der Rechtsklick auf markiertem Text, kommt der Text als dritte Zeile mit |
-| … → „Mit Screenshot kopieren" / „Als HTML-Datei speichern" | dasselbe mit Bild bzw. HTML-Datei |
-| **Rechtsklick auf das Toolbar-Icon → „Element wählen – mit Screenshot" / „– als HTML-Datei"** | startet den Picker mit Voreinstellung: das Symbol über dem Rahmen leuchtet schon, der Klick auf der Seite löst es ohne Taste aus |
+The text line appears only when you ask for it by selecting text. A block clicked without a selection gives URL and selector only – otherwise a chat would read "this sentence is meant" although the block was meant. Conversely, selection + icon copies text and selector only; for the rare "this sentence wraps badly" use right-click on the selection → "Copy with screenshot".
 
-**Einstellungen** (Add-on-/Erweiterungsverwaltung → LLMent Picker → Einstellungen): Unterordner im Download-Ordner (Standard `LLMent Picker`) und ob ein „Speichern unter"-Dialog erscheinen soll. Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben; ein freier Zielpfad ist nicht möglich.
+**Elements inside iframes** can be picked too; the clipboard then carries an extra line `Inside frame: <url> ← <iframe id="…">` and the selector refers to the frame document. The screenshot works for same-origin frames.
 
-Die dritte Zeile gibt es also nur, wenn Du sie durch eine Markierung ausdrücklich verlangst. Ein angeklickter Block ohne Markierung liefert nur URL und Selektor – sonst läse ein Chat „dieser Satz ist gemeint", obwohl der Block gemeint war.
+**Settings** (extension management → LLMent Picker → Options): subfolder inside the downloads folder (default `LLMent Picker`), "Save as" dialog, CSS context on/off, key hints on/off. Extensions may only write to the browser's download folder; a free target path is not possible.
 
-Umgekehrt gilt: Markierung + Icon/Kürzel kopiert **nur** Text und Selektor, ohne Screenshot oder HTML – wer eine Textstelle markiert, will fast immer den Inhalt ändern, und der Text steht schon in Zeile 3. Für den seltenen Fall „dieser Satz bricht hässlich um" geht **Rechtsklick auf die Markierung → „mit Screenshot kopieren"**: Selektor, Text und Bild zusammen.
+Change the shortcut: Firefox `about:addons` → gear → "Manage Extension Shortcuts"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P opens the profile manager in Firefox; Chrome does not allow Ctrl+Alt combinations – hence two defaults.)
 
-Kürzel ändern: Firefox `about:addons` → Zahnrad → „Tastenkombinationen für Erweiterungen verwalten"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P öffnet in Firefox die Profilverwaltung; Chrome erlaubt keine Strg+Alt-Kombinationen – daher zwei Standards.)
+## Selector logic
 
-## Selektor-Logik
+1. **ID** on the element itself → `#id`, done.
+2. Otherwise: the nearest ancestor with an ID as **anchor** (`#leistungen …`), below it a chain of **meaningful classes** (`.service-list > .service`) or tag names.
+3. `:nth-of-type(n)` only where siblings would be ambiguous – and then always with the parent segment in front, so "the second of what" stays readable.
+4. The chain is extended segment by segment from the target upwards until `document.querySelectorAll(sel).length === 1`.
 
-Reihenfolge der Bevorzugung:
+State and animation classes (`active`, `in`, `is-*`, `js-*`, `aos-*`, …) and generated-looking names (hashes, long digit runs) are skipped.
 
-1. **ID** am Element selbst → `#id`, fertig.
-2. Sonst: nächster Vorfahr mit ID als **Anker** (`#leistungen …`), darunter Kette aus **sprechenden Klassen** (`.service-list > .service`) oder Tag-Namen.
-3. `:nth-of-type(n)` nur, wenn Geschwister sonst mehrdeutig wären – und dann immer mit dem Elternsegment davor, damit lesbar bleibt, „das zweite wovon".
-4. Die Kette wird vom Ziel her Segment für Segment verlängert, bis `document.querySelectorAll(sel).length === 1`.
+## Technical
 
-Zustands-/Animationsklassen (`active`, `rv`, `is-*`, `js-*`, `aos-*`, …) und generiert aussehende Namen (Hashes, lange Ziffern) werden übersprungen.
-
-## Technik
-
-- WebExtension, Manifest V3. Firefox ≥ 142 (Event-Page) und Chrome (Service-Worker) aus denselben Skripten; nur das Manifest unterscheidet sich (`manifest.json` Firefox, `chrome/manifest.json` Chrome).
-- Berechtigungen: `activeTab` + `scripting` (Injektion nur nach Aufruf), `menus`/`contextMenus` (Kontextmenü-Einträge), `clipboardWrite` (Schreiben ohne Klick-Geste, nötig für den Kontextmenü-Weg), `downloads` (HTML-Datei ablegen), `storage` (Einstellungen) – keine Host-Berechtigung, kein dauerhaftes Content-Script.
-- Kontextmenü-Ziel: Firefox liefert `targetElementId` → `menus.getTargetElement`. Chrome kennt das nicht; dort bleibt der `:hover`-Zustand der Seite stehen, solange das native Menü offen ist, und das tiefste `:hover`-Element ist das rechtsgeklickte. Lässt sich kein Ziel bestimmen, startet stattdessen der Picker-Modus.
-- Screenshot: `tabs.captureVisibleTab` im Hintergrundskript (durch `activeTab` gedeckt, keine weitere Berechtigung), Zuschnitt auf Element + Rand im Content-Script, Ablage als `ClipboardItem` mit `image/png` **und** `text/plain`. Elemente außerhalb des Fensters werden vorher in den Blick gescrollt; ist ein Element höher als das Fenster, sagt die vierte Zeile „nur sichtbarer Teil". Ob ein Ziel beide Teile mit einem Einfügen übernimmt, entscheidet das Ziel – Claude Code tut es (geprüft 17.09.2026 aus Firefox mit `test/clipboard-test.html`).
-- HTML-Datei: `downloads.download` mit `data:`-URL aus dem Hintergrundskript, Dateiname `JJJJ-MM-TT_HHMM_<host>_<id-oder-klasse>.html`, absoluter Pfad aus `downloads.search`. CSS-Kontext: `getComputedStyle` (Auswahl von ~45 Layout-Eigenschaften) und ein Durchlauf über `document.styleSheets` mit `el.matches(rule.selectorText)`, Media-Queries per `matchMedia` als aktiv/inaktiv markiert; Stylesheets fremder Herkunft sind nicht lesbar und werden als solche genannt. Abschaltbar in den Einstellungen.
-- Keine Netzwerkzugriffe, keine Datenerhebung (`data_collection_permissions: none`); gespeichert werden nur die zwei Einstellungen.
-- Reines JavaScript, kein Build-Schritt, keine Abhängigkeiten.
+- WebExtension, Manifest V3. Firefox ≥ 142 (event page) and Chrome (service worker) from the same scripts; only the manifest differs (`manifest.json` Firefox, `chrome/manifest.json` Chrome).
+- Permissions: `activeTab` + `scripting` (injection only on request), `menus`/`contextMenus` (context menu entries), `clipboardWrite` (writing without a click gesture, needed for the context-menu path), `downloads` (HTML file), `storage` (settings) – no host permissions, no persistent content script.
+- Context-menu target: Firefox provides `targetElementId` → `menus.getTargetElement`. Chrome does not; there the page's `:hover` state stays put while the native menu is open, and the deepest `:hover` element is the right-clicked one. If no target can be determined, the picker mode starts instead.
+- Screenshot: `tabs.captureVisibleTab` in the background script (covered by `activeTab`), cropped to element + margin in the content script, written as a `ClipboardItem` with `image/png` **and** `text/plain`. Elements outside the window are scrolled into view first; if an element is taller than the window, line 4 says so. Whether a target takes both parts from one paste is up to the target – Claude Code does (checked 17 September 2026 from Firefox with `test/clipboard-test.html`).
+- HTML file: `downloads.download` from the background script (blob URL in Firefox, `data:` URL in Chrome's service worker), filename `YYYY-MM-DD_HHMM_<host>_<id-or-class>.html`, absolute path from `downloads.search`. CSS context: `getComputedStyle` (a selection of ~45 layout properties) and a pass over `document.styleSheets` with `el.matches(rule.selectorText)`, media queries marked active/inactive via `matchMedia`; cross-origin stylesheets cannot be read and are listed as such.
+- iframes: the script is injected into the main frame first; if the picker mode starts there, into all frames of the tab. A frame that finishes tells the background script, which ends the pickers in the other frames.
+- Languages: English (default) and German via `_locales`; the browser's UI language decides.
+- No network access, no data collection (`data_collection_permissions: none`); only the settings are stored.
 
 ```
-manifest.json         Firefox-Manifest (Repo-Wurzel ist direkt als temporäres Add-on ladbar)
-chrome/manifest.json  Chrome-Manifest (Service-Worker, contextMenus, Alt+Shift+P)
-background.js         Kontextmenü-Eintrag; injiziert picker.js bei Icon / Kürzel / Menü
-picker.js             Overlay, Selektor-Erzeugung, Zwischenablage, Screenshot, HTML-Export, Toast
-options.html/.js      Einstellungen (Unterordner, Speichern-unter-Dialog)
-icons/                PNG 16/32/48/128 (aus icon.svg gerastert)
-build.ps1             baut dist/firefox/*.zip (via web-ext) und dist/chrome/*.zip
-store/                Listing-Texte, Berechtigungsbegründungen, Screenshots, Demo-Seite
-test/                 clipboard-test.html: prüft, ob ein Ziel Bild + Text aus einem Strg+V übernimmt
+manifest.json         Firefox manifest (the repo root loads directly as a temporary add-on)
+chrome/manifest.json  Chrome manifest (service worker, contextMenus, Alt+Shift+P)
+background.js         context menus, badge, screenshot capture, file download; injects picker.js
+picker.js             overlay, selector generation, clipboard, screenshot, HTML export, toast
+options.html/.js      settings
+_locales/             en, de
+icons/                PNG 16/32/48/128 (rasterised from icon.svg)
+build.ps1             builds dist/firefox/*.zip (via web-ext) and dist/chrome/*.zip
+store/                listing texts, permission justifications, screenshots, demo page
+test/                 clipboard-test.html (does a target take image + text from one paste?), iframe-test.html
 ```
 
 ## Installation
 
-**Chrome:** im Chrome Web Store – https://chromewebstore.google.com/detail/llment-picker/oikfninjgnggbbhbdeefdlmeidminbnm
+**Chrome:** [Chrome Web Store](https://chromewebstore.google.com/detail/llment-picker/oikfninjgnggbbhbdeefdlmeidminbnm)
 
-**Firefox:** Store-Listing folgt; bis dahin signierte Fassung über die Releases oder wie unten beschrieben.
+**Firefox:** [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/llment-picker/) (listing in review); until then the signed `.xpi` from the [releases](https://github.com/paehtz/llment-picker/releases).
 
-### Zum Testen
+### For testing
 
-**Firefox (temporär – nach Neustart wieder weg):** `about:debugging` → „Dieser Firefox" → „Temporäres Add-on laden…" → `manifest.json` aus diesem Ordner. Nach Code-Änderungen dort „Neu laden" klicken – es gibt keine automatische Aktualisierung.
+**Firefox (temporary – gone after a restart):** `about:debugging` → "This Firefox" → "Load Temporary Add-on…" → `manifest.json` from this folder. After code changes click "Reload" there – there is no automatic refresh.
 
-**Chrome (bleibt, solange der Ordner existiert):** erst `.\build.ps1`, dann `chrome://extensions` → „Entwicklermodus" an → „Entpackte Erweiterung laden" → Ordner `dist/chrome/llment-picker`. Nach Änderungen: neu bauen und auf der Karte „Aktualisieren" klicken.
+**Chrome (stays as long as the folder exists):** run `.\build.ps1`, then `chrome://extensions` → enable "Developer mode" → "Load unpacked" → folder `dist/chrome/llment-picker`. After changes: rebuild and click "Update" on the card.
 
-### Dauerhaft: bei Mozilla signieren lassen (empfohlen)
+### Signing for Firefox yourself
 
-Firefox installiert nur signierte Add-ons dauerhaft. Die Signierung ist kostenlos, braucht keine Veröffentlichung („self-distributed") und dauert meist wenige Minuten:
+Firefox installs only signed add-ons permanently. Signing is free, needs no publication ("self-distributed") and takes minutes: https://addons.mozilla.org/developers/ → "Submit a New Add-on" → **"On your own"** → upload `dist/firefox/llment_picker-<version>.zip` → download the signed `.xpi` → drag it onto a Firefox window. Increase `version` in both manifests for every new build – AMO does not accept the same number twice.
 
-1. Konto anlegen unter https://addons.mozilla.org (AMO), dann https://addons.mozilla.org/developers/ → „Submit a New Add-on" → **„On your own"** (nicht „On this site").
-2. `.\build.ps1` ausführen und `dist/firefox/llment_picker-<version>.zip` hochladen.
-3. Nach der automatischen Prüfung die signierte `.xpi` herunterladen und per Doppelklick bzw. Drag & Drop auf ein Firefox-Fenster installieren.
-
-Alternativ per Kommandozeile (API-Key unter https://addons.mozilla.org/developers/addon/api/key/):
-
-```bash
-npx web-ext sign --channel unlisted --api-key <JWT issuer> --api-secret <JWT secret>
-```
-
-Bei jeder neuen Version `version` im Manifest erhöhen – AMO nimmt dieselbe Versionsnummer nicht zweimal.
-
-### Alternative ohne Signierung
-
-Firefox Developer Edition oder Nightly mit `xpinstall.signatures.required = false` in `about:config`. Nachteil: zweiter Browser bzw. Nightly-Kanal.
-
-### Chrome Web Store
-
-Einmalig 5 USD Entwickler-Registrierung unter https://chrome.google.com/webstore/devconsole. Dann „Neues Element" → `dist/chrome/llment-picker-chrome-<version>.zip` hochladen, Listing-Texte, Screenshots und Berechtigungsbegründungen aus `store/listing.md` eintragen. Review dauert typisch 1–3 Tage. Chrome installiert nur Erweiterungen aus dem Store dauerhaft (entpackte Erweiterungen bleiben, solange der Ordner existiert, mit Hinweisbanner).
-
-## Entwicklung
+## Development
 
 ```powershell
-.\build.ps1          # lint + beide Store-Pakete nach dist/
-npx web-ext run       # Firefox mit dem Add-on starten, lädt bei Änderungen neu
+.\build.ps1          # lint + both store packages into dist/
+npx web-ext run       # start Firefox with the add-on, reloads on changes
 ```
 
-`store/demo.html` ist eine neutrale Testseite ohne echte Daten (auch Quelle der Listing-Screenshots).
+`store/demo.html` is a neutral test page without real data.
 
-## Lizenz
+## License
 
-MIT – siehe `LICENSE`.
+MIT – see `LICENSE`.
