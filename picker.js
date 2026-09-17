@@ -357,20 +357,54 @@ Titel: ${document.title.replace(/--/g, "- -")}
     }
   }
 
-  // Kamera-Knopf in der rechten oberen Ecke des Rahmens: Klick = mit Screenshot
-  const cam = document.createElement("div");
-  cam.setAttribute("data-llment-picker", "");
-  cam.title = "Mit Screenshot kopieren (auch: Shift+Klick)";
-  cam.innerHTML = '<svg style="pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
-  cam.style.cssText = `position:fixed;z-index:${Z};display:none;width:24px;height:24px;box-sizing:border-box;
-    padding:5px;border-radius:4px;background:#0a84ff;pointer-events:auto;cursor:pointer !important;
-    box-shadow:0 1px 4px rgba(0,0,0,.3);`;
-  // Code-Knopf links neben der Kamera: Klick = gerendertes HTML als Datei
-  const code = document.createElement("div");
-  code.setAttribute("data-llment-picker", "");
-  code.title = "Gerendertes HTML als Datei speichern (auch: Alt+Klick)";
-  code.innerHTML = '<svg style="pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
-  code.style.cssText = cam.style.cssText;
+  // Modifier-Anzeige rechts oben außerhalb des Rahmens. Nicht klickbar –
+  // die Chips zeigen nur, was Umschalt (Screenshot) und Strg (HTML-Datei)
+  // beim Klick zusätzlich auslösen, und leuchten, solange die Taste gehalten wird.
+  const SVG_CAM = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+  const SVG_CODE = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+  const HINT_LIMIT = 3; // Tastenhinweise verschwinden, sobald jede Funktion so oft benutzt wurde
+  const hud = document.createElement("div");
+  hud.setAttribute("data-llment-picker", "");
+  hud.style.cssText = `position:fixed;z-index:${Z};display:none;pointer-events:none;gap:4px;
+    font:11px/1 ui-monospace,Menlo,Consolas,monospace;white-space:nowrap;`;
+  const chip = (svg, hint) => {
+    const c = document.createElement("span");
+    c.innerHTML = svg + (hint ? `<span style="margin-left:5px">${hint}</span>` : "");
+    c.style.cssText = `display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:3px;
+      background:rgba(70,80,95,.85);color:#fff;transition:background .1s;`;
+    return c;
+  };
+  let hints = { shot: 0, html: 0 };
+  const codeChip = chip(SVG_CODE, ""), camChip = chip(SVG_CAM, "");
+  hud.append(codeChip, camChip);
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+  const CTRL_LABEL = isMac ? "\u2318" : "Strg";
+  function applyHints() {
+    codeChip.innerHTML = SVG_CODE + (hints.html < HINT_LIMIT ? `<span style="margin-left:5px">${CTRL_LABEL} HTML</span>` : "");
+    camChip.innerHTML = SVG_CAM + (hints.shot < HINT_LIMIT ? '<span style="margin-left:5px">\u21e7 Screenshot</span>' : "");
+  }
+  applyHints();
+  try {
+    api.storage.sync.get({ hintsShot: 0, hintsHtml: 0 }).then((v) => {
+      hints = { shot: v.hintsShot || 0, html: v.hintsHtml || 0 };
+      applyHints();
+      if (current) placeHud(current.getBoundingClientRect());
+    });
+  } catch {}
+  let mods = { shift: false, ctrl: false };
+  function setMods(shift, ctrl) {
+    if (mods.shift === shift && mods.ctrl === ctrl) return;
+    mods = { shift, ctrl };
+    camChip.style.background = shift ? "#0a84ff" : "rgba(70,80,95,.85)";
+    codeChip.style.background = ctrl ? "#0a84ff" : "rgba(70,80,95,.85)";
+  }
+  function placeHud(r) {
+    hud.style.display = "inline-flex";
+    const w = hud.getBoundingClientRect().width || 60;
+    const above = r.top > 24;
+    hud.style.left = Math.max(0, Math.min(innerWidth - w - 2, r.right - w)) + "px";
+    hud.style.top = (above ? r.top - 22 : r.bottom + 2) + "px";
+  }
   const box = document.createElement("div");
   box.setAttribute("data-llment-picker", "");
   box.style.cssText = `position:fixed;pointer-events:none;z-index:${Z};box-sizing:border-box;
@@ -385,7 +419,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
   const style = document.createElement("style");
   style.setAttribute("data-llment-picker", "");
   style.textContent = `*, *::before, *::after { cursor: crosshair !important; }`;
-  document.documentElement.append(box, label, cam, code, style);
+  document.documentElement.append(box, label, hud, style);
 
   let current = null;
 
@@ -404,16 +438,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
     const above = r.top > 24;
     label.style.left = Math.max(0, r.left) + "px";
     label.style.top = (above ? r.top - 22 : r.bottom + 2) + "px";
-    // Kamera innen rechts oben; bei sehr kleinen Elementen außen rechts daneben
-    const inside = r.width >= 90 && r.height >= 36;
-    const camLeft = Math.min(innerWidth - 26, inside ? r.right - 28 : r.right + 4);
-    const top = Math.max(0, inside ? r.top + 4 : r.top);
-    cam.style.display = "block";
-    cam.style.left = camLeft + "px";
-    cam.style.top = top + "px";
-    code.style.display = "block";
-    code.style.left = (inside ? camLeft - 28 : Math.min(innerWidth - 26, camLeft + 28)) + "px";
-    code.style.top = top + "px";
+    placeHud(r);
   }
 
   function targetAt(x, y) {
@@ -424,6 +449,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
 
   let lastXY = null;
   function onMove(e) {
+    setMods(e.shiftKey, e.ctrlKey || e.metaKey);
     lastXY = [e.clientX, e.clientY];
     const el = targetAt(e.clientX, e.clientY);
     if (el) highlight(el);
@@ -442,13 +468,20 @@ Titel: ${document.title.replace(/--/g, "- -")}
 
   async function onClick(e) {
     swallow(e);
-    const hit = document.elementFromPoint(e.clientX, e.clientY);
-    const withShot = e.shiftKey || (hit && cam.contains(hit));
-    const withHtml = e.altKey || (hit && code.contains(hit));
+    const withShot = e.shiftKey, withHtml = e.ctrlKey || e.metaKey;
     const el = targetAt(e.clientX, e.clientY) || current;
     if (!el) return;
     cleanup();
-    await copyElement(el, undefined, { shot: withShot, html: withHtml });
+    const ok = await copyElement(el, undefined, { shot: withShot, html: withHtml });
+    // Tastenhinweise nach ein paar erfolgreichen Nutzungen ausblenden
+    if (ok && (withShot || withHtml)) {
+      try {
+        const upd = {};
+        if (withShot) upd.hintsShot = Math.min(HINT_LIMIT, hints.shot + 1);
+        if (withHtml) upd.hintsHtml = Math.min(HINT_LIMIT, hints.html + 1);
+        api.storage.sync.set(upd);
+      } catch {}
+    }
   }
 
   function onKey(e) {
@@ -456,7 +489,12 @@ Titel: ${document.title.replace(/--/g, "- -")}
       swallow(e);
       cleanup();
       toast("Abgebrochen", false);
+      return;
     }
+    if (e.key === "Shift" || e.key === "Control" || e.key === "Meta") setMods(e.shiftKey, e.ctrlKey || e.metaKey);
+  }
+  function onKeyUp(e) {
+    setMods(e.shiftKey, e.ctrlKey || e.metaKey);
   }
 
   const opts = { capture: true };
@@ -468,10 +506,10 @@ Titel: ${document.title.replace(/--/g, "- -")}
     window.removeEventListener("mouseup", swallow, opts);
     window.removeEventListener("pointerdown", swallow, opts);
     window.removeEventListener("keydown", onKey, opts);
+    window.removeEventListener("keyup", onKeyUp, opts);
     box.remove();
     label.remove();
-    cam.remove();
-    code.remove();
+    hud.remove();
     style.remove();
     delete window[KEY];
   }
@@ -483,6 +521,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
   window.addEventListener("mouseup", swallow, opts);
   window.addEventListener("pointerdown", swallow, opts);
   window.addEventListener("keydown", onKey, opts);
+  window.addEventListener("keyup", onKeyUp, opts);
   if (contextFallback) toast("Element anklicken", false);
 
   window[KEY] = {
