@@ -360,28 +360,48 @@ Titel: ${document.title.replace(/--/g, "- -")}
   // Modifier-Anzeige rechts oben außerhalb des Rahmens. Nicht klickbar –
   // die Chips zeigen nur, was Umschalt (Screenshot) und Strg (HTML-Datei)
   // beim Klick zusätzlich auslösen, und leuchten, solange die Taste gehalten wird.
-  const SVG_CAM = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
-  const SVG_CODE = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+  // Symbole als DOM-Knoten (kein innerHTML – AMO-Review)
+  const NS = "http://www.w3.org/2000/svg";
+  function svgIcon(paths) {
+    const svg = document.createElementNS(NS, "svg");
+    for (const [k, v] of Object.entries({ width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2.3", "stroke-linecap": "round", "stroke-linejoin": "round" })) svg.setAttribute(k, v);
+    for (const [tag, attrs] of paths) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      svg.appendChild(n);
+    }
+    return svg;
+  }
+  const ICON_CAM = () => svgIcon([["path", { d: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" }], ["circle", { cx: "12", cy: "13", r: "4" }]]);
+  const ICON_CODE = () => svgIcon([["polyline", { points: "16 18 22 12 16 6" }], ["polyline", { points: "8 6 2 12 8 18" }]]);
   const HINT_LIMIT = 3; // Tastenhinweise verschwinden, sobald jede Funktion so oft benutzt wurde
   const hud = document.createElement("div");
   hud.setAttribute("data-llment-picker", "");
   hud.style.cssText = `position:fixed;z-index:${Z};display:none;pointer-events:none;gap:4px;
     font:11px/1 ui-monospace,Menlo,Consolas,monospace;white-space:nowrap;`;
-  const chip = (svg, hint) => {
+  const chip = () => {
     const c = document.createElement("span");
-    c.innerHTML = svg + (hint ? `<span style="margin-left:5px">${hint}</span>` : "");
     c.style.cssText = `display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:3px;
       background:rgba(70,80,95,.85);color:#fff;transition:background .1s;`;
     return c;
   };
+  function fillChip(c, icon, hint) {
+    c.replaceChildren(icon);
+    if (hint) {
+      const t = document.createElement("span");
+      t.style.marginLeft = "5px";
+      t.textContent = hint;
+      c.appendChild(t);
+    }
+  }
   let hints = { shot: 0, html: 0 };
-  const codeChip = chip(SVG_CODE, ""), camChip = chip(SVG_CAM, "");
+  const codeChip = chip(), camChip = chip();
   hud.append(codeChip, camChip);
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
   const CTRL_LABEL = isMac ? "\u2318" : "Strg";
   function applyHints() {
-    codeChip.innerHTML = SVG_CODE + (hints.html < HINT_LIMIT ? `<span style="margin-left:5px">${CTRL_LABEL} HTML</span>` : "");
-    camChip.innerHTML = SVG_CAM + (hints.shot < HINT_LIMIT ? '<span style="margin-left:5px">\u21e7 Screenshot</span>' : "");
+    fillChip(codeChip, ICON_CODE(), hints.html < HINT_LIMIT ? CTRL_LABEL + " HTML" : "");
+    fillChip(camChip, ICON_CAM(), hints.shot < HINT_LIMIT ? "\u21e7 Screenshot" : "");
   }
   applyHints();
   try {
