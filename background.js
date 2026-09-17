@@ -58,8 +58,32 @@ menus.onClicked.addListener((info, tab) => {
 
 // Screenshot-Anfrage des Content-Scripts: sichtbaren Tab als PNG liefern.
 // captureVisibleTab ist durch activeTab gedeckt (Icon-, Kürzel- oder Menü-Aufruf).
+// Aktivzustand am Toolbar-Icon: blauer Punkt + Tooltip, solange der Picker läuft
+async function setActiveBadge(tabId, active) {
+  try {
+    await api.action.setBadgeText({ tabId, text: active ? "\u25cf" : "" });
+    if (active) {
+      await api.action.setBadgeBackgroundColor({ tabId, color: "#0a84ff" });
+      if (api.action.setBadgeTextColor) await api.action.setBadgeTextColor({ tabId, color: "#0a84ff" });
+    }
+    const def = (api.runtime.getManifest().action || {}).default_title || "LLMent Picker";
+    await api.action.setTitle({ tabId, title: active ? "LLMent Picker \u2013 aktiv (Esc beendet)" : def });
+  } catch (err) {
+    console.warn("LLMent Picker: Badge nicht gesetzt \u2013", err && err.message);
+  }
+}
+
+// Seitenwechsel beendet den Picker implizit → Badge zurücksetzen
+api.tabs.onUpdated.addListener((tabId, info) => {
+  if (info.status === "loading") setActiveBadge(tabId, false);
+});
+
 api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg) return;
+  if (msg.type === "llment-state") {
+    if (sender.tab && sender.tab.id != null) setActiveBadge(sender.tab.id, !!msg.active);
+    return;
+  }
   if (msg.type === "llment-capture") {
     const windowId = sender.tab && sender.tab.windowId;
     api.tabs.captureVisibleTab(windowId, { format: "png" }).then(

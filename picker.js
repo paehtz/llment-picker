@@ -20,6 +20,10 @@
 (() => {
   const KEY = "__elementPickerInstance";
   const api = globalThis.browser ?? globalThis.chrome;
+  // Aktivzustand ans Hintergrundskript melden (Badge am Toolbar-Icon)
+  const reportState = (active) => {
+    try { api.runtime.sendMessage({ type: "llment-state", active }); } catch {}
+  };
   const CTX = "__elementPickerContextTarget";
 
   // ───────────────────────── Selektor-Erzeugung ───────────────────────────
@@ -486,12 +490,27 @@ Titel: ${document.title.replace(/--/g, "- -")}
     e.stopImmediatePropagation();
   }
 
+  // Kurzes Aufleuchten des Rahmens: „Element erfasst"
+  function flash(el) {
+    const r = el.getBoundingClientRect();
+    const f = document.createElement("div");
+    f.setAttribute("data-llment-picker", "");
+    f.style.cssText = `position:fixed;pointer-events:none;z-index:${Z};box-sizing:border-box;border-radius:2px;
+      left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;
+      border:2px solid #0a84ff;background:rgba(10,132,255,.45);box-shadow:0 0 0 4px rgba(10,132,255,.35);`;
+    document.documentElement.appendChild(f);
+    const anim = f.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.02)" }], { duration: 350, easing: "ease-out" });
+    anim.onfinish = () => f.remove();
+    setTimeout(() => f.remove(), 500);
+  }
+
   async function onClick(e) {
     swallow(e);
     const withShot = e.shiftKey, withHtml = e.ctrlKey || e.metaKey;
     const el = targetAt(e.clientX, e.clientY) || current;
     if (!el) return;
     cleanup();
+    flash(el);
     const ok = await copyElement(el, undefined, { shot: withShot, html: withHtml });
     // Tastenhinweise nach ein paar erfolgreichen Nutzungen ausblenden
     if (ok && (withShot || withHtml)) {
@@ -530,6 +549,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
     box.remove();
     label.remove();
     hud.remove();
+    reportState(false);
     style.remove();
     delete window[KEY];
   }
@@ -542,6 +562,7 @@ Titel: ${document.title.replace(/--/g, "- -")}
   window.addEventListener("pointerdown", swallow, opts);
   window.addEventListener("keydown", onKey, opts);
   window.addEventListener("keyup", onKeyUp, opts);
+  reportState(true);
   if (contextFallback) toast("Element anklicken", false);
 
   window[KEY] = {

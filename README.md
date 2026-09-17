@@ -36,6 +36,8 @@ Der erste Stand entstand am 15. September 2026 in einer Sitzung mit Claude Code,
 | **Strg+Klick** (Mac: ⌘) | wie Klick, zusätzlich das gerenderte HTML des Elements (ohne Skripte, mit Kopfzeile: URL, Selektor, Zeit) als Datei im Download-Ordner und der Pfad als Zeile 5 – für Inhalte, die es nur im Browser gibt: eingeloggte Portale, per JS gerenderte Tabellen |
 | **Umschalt+Strg+Klick** | Screenshot und HTML zusammen |
 
+Solange der Picker läuft, trägt das Toolbar-Icon einen blauen Punkt (Tooltip „aktiv – Esc beendet"); beim Klick blitzt der Rahmen kurz auf, dann kommt der Toast.
+
 Über dem Rahmen zeigen zwei Symbole (`</>` und Kamera), was der Klick zusätzlich auslöst; sie leuchten blau, solange die Taste gehalten wird, und tragen anfangs den Tastenhinweis, bis jede Funktion dreimal benutzt wurde. Sie sind bewusst nicht klickbar – die Maus müsste sonst über andere Elemente dorthin, und der Rahmen spränge um.
 | **Escape** oder erneut Icon/Kürzel | Abbruch ohne Kopieren |
 | **Rechtsklick → „LLMent Picker: dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus; liegt der Rechtsklick auf markiertem Text, kommt der Text als dritte Zeile mit |
