@@ -613,10 +613,19 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
 
   let lastXY = null;
+  // Zeiger auf einem eingebetteten Frame: eigenen Rahmen ausblenden, dort
+  // übernimmt der Picker des Frames (er bekommt die Mausbewegungen).
+  function hideHighlight() {
+    current = null;
+    box.style.display = "none";
+    label.style.display = "none";
+    hud.style.display = "none";
+  }
   function onMove(e) {
     setMods(e.altKey, e.ctrlKey || e.metaKey);
     lastXY = [e.clientX, e.clientY];
     const el = targetAt(e.clientX, e.clientY);
+    if (el && (el.tagName === "IFRAME" || el.tagName === "FRAME")) { hideHighlight(); return; }
     if (el) highlight(el);
   }
   function onScroll() {
@@ -649,7 +658,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     swallow(e);
     const withShot = e.altKey || preset.shot, withHtml = e.ctrlKey || e.metaKey || preset.html;
     const el = targetAt(e.clientX, e.clientY) || current;
-    if (!el) return;
+    if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
     cleanup();
     flash(el);
     await copyElement(el, undefined, { shot: withShot, html: withHtml });
