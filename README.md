@@ -40,9 +40,9 @@ Solange der Picker läuft, trägt das Toolbar-Icon einen blauen Punkt (Tooltip �
 
 Über dem Rahmen zeigen zwei Symbole (`</>` und Kamera), was der Klick zusätzlich auslöst; sie leuchten blau, solange die Taste gehalten wird, und tragen anfangs den Tastenhinweis, bis jede Funktion dreimal benutzt wurde. Sie sind bewusst nicht klickbar – die Maus müsste sonst über andere Elemente dorthin, und der Rahmen spränge um.
 | **Escape** oder erneut Icon/Kürzel | Abbruch ohne Kopieren |
-| **Rechtsklick → „LLMent Picker: dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus; liegt der Rechtsklick auf markiertem Text, kommt der Text als dritte Zeile mit |
-| **Rechtsklick → „LLMent Picker: mit Screenshot kopieren"** | dasselbe mit Bild |
-| **Rechtsklick → „LLMent Picker: gerendertes HTML als Datei speichern"** | dasselbe mit HTML-Datei |
+| **Rechtsklick auf der Seite → LLMent Picker → „Dieses Element kopieren"** | kopiert das rechtsgeklickte Element direkt, ohne Picker-Modus; liegt der Rechtsklick auf markiertem Text, kommt der Text als dritte Zeile mit |
+| … → „Mit Screenshot kopieren" / „Als HTML-Datei speichern" | dasselbe mit Bild bzw. HTML-Datei |
+| **Rechtsklick auf das Toolbar-Icon → „Element wählen – mit Screenshot" / „– als HTML-Datei"** | startet den Picker mit Voreinstellung: das Symbol über dem Rahmen leuchtet schon, der Klick auf der Seite löst es ohne Taste aus |
 
 **Einstellungen** (Add-on-/Erweiterungsverwaltung → LLMent Picker → Einstellungen): Unterordner im Download-Ordner (Standard `LLMent Picker`) und ob ein „Speichern unter"-Dialog erscheinen soll. Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben; ein freier Zielpfad ist nicht möglich.
 

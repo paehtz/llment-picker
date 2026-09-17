@@ -39,14 +39,37 @@ api.action.onClicked.addListener((tab) => {
 // Firefox liefert info.targetElementId (Auflösung im Content-Script über
 // menus.getTargetElement); Chrome kennt das nicht – dort ermittelt picker.js
 // das Element über den :hover-Zustand, der während des offenen Menüs stehen bleibt.
+// Seitenmenü: wirkt auf das rechtsgeklickte Element. Mehrere Einträge bündeln
+// Chrome und Firefox unter dem Add-on-Namen, daher kein Präfix im Titel.
+const PAGE_CTX = ["page", "frame", "selection", "link", "image", "video", "audio", "editable"];
+// Icon-Menü: startet den Picker mit Voreinstellung (Symbol leuchtet, Klick löst aus).
+const PICK_ID = "llment-pick", PICK_SHOT_ID = "llment-pick-shot", PICK_HTML_ID = "llment-pick-html";
+const PRESETS = { [PICK_ID]: { shot: false, html: false }, [PICK_SHOT_ID]: { shot: true, html: false }, [PICK_HTML_ID]: { shot: false, html: true } };
+
 menus.removeAll().then(() => {
-  menus.create({ id: MENU_ID, title: "LLMent Picker: dieses Element kopieren", contexts: ["all"] });
-  menus.create({ id: MENU_SHOT_ID, title: "LLMent Picker: mit Screenshot kopieren", contexts: ["all"] });
-  menus.create({ id: MENU_HTML_ID, title: "LLMent Picker: gerendertes HTML als Datei speichern", contexts: ["all"] });
+  menus.create({ id: MENU_ID, title: "Dieses Element kopieren", contexts: PAGE_CTX });
+  menus.create({ id: MENU_SHOT_ID, title: "Mit Screenshot kopieren", contexts: PAGE_CTX });
+  menus.create({ id: MENU_HTML_ID, title: "Als HTML-Datei speichern (mit CSS-Kontext)", contexts: PAGE_CTX });
+  const actionCtx = (ctx) => {
+    menus.create({ id: PICK_ID, title: "Element w\u00e4hlen", contexts: [ctx] });
+    menus.create({ id: PICK_SHOT_ID, title: "Element w\u00e4hlen \u2013 mit Screenshot", contexts: [ctx] });
+    menus.create({ id: PICK_HTML_ID, title: "Element w\u00e4hlen \u2013 als HTML-Datei", contexts: [ctx] });
+  };
+  try { actionCtx("action"); } catch { try { actionCtx("browser_action"); } catch {} }
 });
 
 menus.onClicked.addListener((info, tab) => {
-  if (![MENU_ID, MENU_SHOT_ID, MENU_HTML_ID].includes(info.menuItemId) || !tab || tab.id == null) return;
+  if (!tab || tab.id == null) return;
+  if (PRESETS[info.menuItemId]) {
+    inject(tab.id, 0, {
+      func: (preset) => {
+        window.__elementPickerPreset = preset;
+      },
+      args: [PRESETS[info.menuItemId]],
+    });
+    return;
+  }
+  if (![MENU_ID, MENU_SHOT_ID, MENU_HTML_ID].includes(info.menuItemId)) return;
   inject(tab.id, info.frameId, {
     // onSelection: Rechtsklick lag auf markiertem Text -> dritte Zeile mit dem Text
     func: (ctx) => {

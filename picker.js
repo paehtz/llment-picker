@@ -436,12 +436,16 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
     return;
   }
 
+  // Voreinstellung aus dem Icon-Menü („Element wählen – mit Screenshot" usw.)
+  const preset = Object.assign({ shot: false, html: false }, window.__elementPickerPreset || {});
+  delete window.__elementPickerPreset;
+
   // Ist Text markiert, ist das Ziel schon klar: Element + Markierung kopieren,
   // kein Picker-Modus. (Für den Picker-Modus vorher die Markierung aufheben.)
   if (!contextFallback) {
     const marked = selectionTarget();
     if (marked) {
-      copyElement(marked.el, marked.text);
+      copyElement(marked.el, marked.text, preset);
       return;
     }
   }
@@ -502,6 +506,8 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
   } catch {}
   let mods = { alt: false, ctrl: false };
   function setMods(alt, ctrl) {
+    alt = alt || preset.shot;
+    ctrl = ctrl || preset.html;
     if (mods.alt === alt && mods.ctrl === ctrl) return;
     mods = { alt, ctrl };
     camChip.style.background = alt ? "#0a84ff" : "rgba(70,80,95,.85)";
@@ -591,7 +597,7 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
 
   async function onClick(e) {
     swallow(e);
-    const withShot = e.altKey, withHtml = e.ctrlKey || e.metaKey;
+    const withShot = e.altKey || preset.shot, withHtml = e.ctrlKey || e.metaKey || preset.html;
     const el = targetAt(e.clientX, e.clientY) || current;
     if (!el) return;
     cleanup();
@@ -650,6 +656,7 @@ Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100
   window.addEventListener("keydown", onKey, opts);
   window.addEventListener("keyup", onKeyUp, opts);
   reportState(true);
+  setMods(false, false); // zeigt eine Voreinstellung sofort an
   if (contextFallback) toast("Element anklicken", false);
 
   window[KEY] = {
