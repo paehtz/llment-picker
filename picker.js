@@ -513,7 +513,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     }
     return svg;
   }
-  const ICON_CAM = () => svgIcon([["path", { d: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" }], ["circle", { cx: "12", cy: "13", r: "4" }]]);
+  const ICON_CAM = () => { const i = svgIcon([["path", { d: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" }], ["circle", { cx: "12", cy: "13", r: "4" }]]); i.style.marginTop = "-1px"; return i; };
   const ICON_CODE = () => svgIcon([["polyline", { points: "16 18 22 12 16 6" }], ["polyline", { points: "8 6 2 12 8 18" }]]);
   const hud = document.createElement("div");
   hud.setAttribute("data-llment-picker", "");
@@ -532,7 +532,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       t.style.marginLeft = "5px";
       t.style.lineHeight = "1";
       t.style.position = "relative";
-      t.style.top = "0.5px";
+      t.style.top = "0px";
       t.textContent = hint;
       c.appendChild(t);
     }
