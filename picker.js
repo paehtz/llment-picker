@@ -163,16 +163,91 @@
   // Für Inhalte, die es nur im Browser gibt (eingeloggte Portale, per JS
   // gerenderte Tabellen): outerHTML des Elements ohne Skripte, mit Kopfzeile,
   // gespeichert über das Hintergrundskript (downloads) in den Download-Ordner.
-  function htmlFor(el, selector) {
+  // ── CSS-Kontext: was der Inspektor zeigt ─────────────────────────────────
+  // Effektive Werte (layoutrelevante Auswahl der Computed Styles) und die
+  // angewandten Regeln aus den Stylesheets der Seite – für Element und
+  // Elternelement, weil Layoutfehler meist im Container sitzen.
+  const LAYOUT_PROPS = [
+    "display", "position", "top", "right", "bottom", "left", "z-index", "float", "clear",
+    "width", "height", "min-width", "max-width", "min-height", "max-height", "box-sizing",
+    "margin", "padding", "border", "border-radius", "overflow",
+    "flex", "flex-direction", "flex-wrap", "align-items", "align-self", "justify-content", "align-content", "gap", "order",
+    "grid-template-columns", "grid-template-rows", "grid-column", "grid-row",
+    "font-family", "font-size", "font-weight", "line-height", "letter-spacing", "text-align", "white-space", "text-overflow",
+    "color", "background-color", "opacity", "visibility", "transform", "transition",
+  ];
+  const CONTAINER_PROPS = ["display", "position", "width", "max-width", "padding", "gap", "flex-direction", "flex-wrap",
+    "align-items", "justify-content", "grid-template-columns", "grid-template-rows", "overflow", "box-sizing"];
+
+  function effectiveStyles(el, props) {
+    const cs = getComputedStyle(el);
+    return props.map((p) => `${p}: ${cs.getPropertyValue(p)}`);
+  }
+
+  function matchedRules(el, limit) {
+    const found = [], blocked = [];
+    const walk = (rules, sheet, ctx) => {
+      for (const r of rules) {
+        if (r instanceof CSSStyleRule) {
+          try {
+            if (el.matches(r.selectorText)) found.push({ sheet, ctx, css: r.cssText });
+          } catch {}
+        } else if (r instanceof CSSMediaRule) {
+          const cond = r.conditionText || r.media.mediaText;
+          const on = matchMedia(cond).matches ? "aktiv" : "inaktiv";
+          walk(r.cssRules, sheet, (ctx ? ctx + " · " : "") + `@media ${cond} [${on}]`);
+        } else if (r.cssRules) {
+          try { walk(r.cssRules, sheet, ctx); } catch {}
+        }
+      }
+    };
+    for (const sh of Array.from(document.styleSheets)) {
+      let rules;
+      try { rules = sh.cssRules; } catch { blocked.push(sh.href || "<style>"); continue; }
+      const node = sh.ownerNode;
+      const name = sh.href ? sh.href.replace(location.origin, "") : node && node.id ? `<style id="${node.id}">` : "<style>";
+      walk(rules, name, "");
+    }
+    const inline = el.getAttribute("style");
+    if (inline) found.unshift({ sheet: "style-Attribut", ctx: "", css: inline });
+    return { rules: found.slice(0, limit), total: found.length, blocked };
+  }
+
+  function describe(el) {
+    const cls = bestClass(el);
+    return `<${el.tagName.toLowerCase()}${el.id ? " id=\"" + el.id + "\"" : ""}${cls ? " class=\"" + cls + "\"" : ""}>`;
+  }
+
+  function cssContext(el) {
+    const safe = (t) => t.replace(/-->/g, "--&gt;");
+    const fmt = (m) => m.rules.map((r) => `/* ${r.sheet}${r.ctx ? " · " + r.ctx : ""} */ ${safe(r.css.length > 1500 ? r.css.slice(0, 1500) + " …" : r.css)}`).join("\n") || "(keine)";
+    const me = matchedRules(el, 60);
+    const lines = ["== Effektive Werte (Element) ==", ...effectiveStyles(el, LAYOUT_PROPS), "",
+      `== Angewandte CSS-Regeln (Element) == ${me.total > me.rules.length ? `[${me.rules.length} von ${me.total}]` : `[${me.total}]`}`, fmt(me)];
+    const parent = el.parentElement;
+    if (parent && parent !== document.documentElement) {
+      const pm = matchedRules(parent, 30);
+      lines.push("", `== Elternelement ${describe(parent)} ==`, "Effektive Werte: " + effectiveStyles(parent, CONTAINER_PROPS).join("; "), `Regeln [${pm.total}]:`, fmt(pm));
+    }
+    if (me.blocked.length) lines.push("", `Hinweis: ${me.blocked.length} Stylesheet(s) nicht lesbar (fremde Herkunft): ${me.blocked.join(", ")}`);
+    return lines.join("\n");
+  }
+
+  function htmlFor(el, selector, withCss) {
     const clone = el.cloneNode(true);
     clone.querySelectorAll("script, noscript").forEach((n) => n.remove());
-    const head = `<!-- LLMent Picker · ${new Date().toISOString()}
+    let head = `<!-- LLMent Picker · ${new Date().toISOString()}
 URL: ${location.href}
 Selektor: ${selector}
-Titel: ${document.title.replace(/--/g, "- -")}
--->
+Titel: ${document.title.replace(/-->/g, "--&gt;")}
+Viewport: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100) / 100}
 `;
-    return head + clone.outerHTML + "\n";
+    if (withCss) {
+      let ctx = "(CSS-Kontext nicht ermittelbar)";
+      try { ctx = cssContext(el); } catch (e) { ctx += ": " + (e && e.message); }
+      head += "\n" + ctx + "\n";
+    }
+    return head + "-->\n" + clone.outerHTML + "\n";
   }
 
   function slugFor(el) {
@@ -187,7 +262,9 @@ Titel: ${document.title.replace(/--/g, "- -")}
     const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
     const host = location.hostname.replace(/^www\./, "");
     const filename = `${stamp}_${host}_${slugFor(el)}.html`;
-    const res = await api.runtime.sendMessage({ type: "llment-save-html", filename, content: htmlFor(el, selector) });
+    let withCss = true;
+    try { withCss = (await api.storage.sync.get({ cssInHtml: true })).cssInHtml !== false; } catch {}
+    const res = await api.runtime.sendMessage({ type: "llment-save-html", filename, content: htmlFor(el, selector, withCss) });
     if (!res || !res.path) throw new Error((res && res.error) || "nicht gespeichert");
     return res.path;
   }
