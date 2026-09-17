@@ -504,6 +504,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   const NS = "http://www.w3.org/2000/svg";
   function svgIcon(paths) {
     const svg = document.createElementNS(NS, "svg");
+    svg.style.cssText = "display:block;flex:none";
     for (const [k, v] of Object.entries({ width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2.3", "stroke-linecap": "round", "stroke-linejoin": "round" })) svg.setAttribute(k, v);
     for (const [tag, attrs] of paths) {
       const n = document.createElementNS(NS, tag);
@@ -529,6 +530,9 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (hint) {
       const t = document.createElement("span");
       t.style.marginLeft = "5px";
+      t.style.lineHeight = "1";
+      t.style.position = "relative";
+      t.style.top = "0.5px";
       t.textContent = hint;
       c.appendChild(t);
     }
