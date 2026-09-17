@@ -208,8 +208,16 @@ Titel: ${document.title.replace(/--/g, "- -")}
     const clipped = outOfView(r);
     const x0 = Math.max(0, r.left - SHOT_PAD), y0 = Math.max(0, r.top - SHOT_PAD);
     const x1 = Math.min(innerWidth, r.right + SHOT_PAD), y1 = Math.min(innerHeight, r.bottom + SHOT_PAD);
+    // Eigene Overlays (Blitz, Toast) für die Aufnahme ausblenden
+    const own = Array.from(document.querySelectorAll("[data-llment-picker]"));
+    own.forEach((n) => (n.style.visibility = "hidden"));
     await new Promise((f) => requestAnimationFrame(() => requestAnimationFrame(f)));
-    const res = await api.runtime.sendMessage({ type: "llment-capture" });
+    let res;
+    try {
+      res = await api.runtime.sendMessage({ type: "llment-capture" });
+    } finally {
+      own.forEach((n) => (n.style.visibility = ""));
+    }
     if (!res || !res.dataUrl) throw new Error((res && res.error) || "keine Aufnahme");
     const img = new Image();
     await new Promise((ok, err) => { img.onload = ok; img.onerror = err; img.src = res.dataUrl; });
