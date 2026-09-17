@@ -12,8 +12,8 @@ https://www.paehtz.de/#leistungen
 1. vollständige Seiten-URL (inkl. Hash)
 2. kürzester CSS-Selektor, der das Element eindeutig trifft
 3. **nur wenn vorher Text markiert war:** der markierte Text in Anführungszeichen (max. 240 Zeichen)
-5. **nur im HTML-Modus:** `HTML: D:\Downloads\LLMent Picker6-09-17_0853_paehtz.de_service-body.html` – das gerenderte HTML des Elements liegt als Datei im Download-Ordner; Claude Code liest sie über den Pfad
 4. **nur im Screenshot-Modus:** `Viewport 1440×900, DPR 1.25, Screenshot 454×239 px (+24 px Rand)` – dazu liegt ein PNG-Ausschnitt des Elements mit in der Zwischenablage; ein Strg+V in Claude fügt Bild und Text zusammen ein
+5. **nur im HTML-Modus:** `HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html` – das gerenderte HTML des Elements liegt als Datei im Download-Ordner; Claude Code liest sie über den Pfad
 
 ## Warum es das gibt
 
