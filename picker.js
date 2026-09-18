@@ -1503,9 +1503,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
   function onKeyUp(e) {
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
-    if (tap === e.key && performance.now() - tapAt < TAP_MS) {
-      if (e.key === "Alt") armShot = !armShot;
-      else armHtml = !armHtml;
+    // Antippen schaltet um; Loslassen nach längerem Halten ist immer „aus"
+    if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") {
+      const short = tap === e.key && performance.now() - tapAt < TAP_MS;
+      if (e.key === "Alt") armShot = short ? !armShot : false;
+      else armHtml = short ? !armHtml : false;
     }
     tap = null;
     setMods(e.altKey, e.ctrlKey || e.metaKey, true);

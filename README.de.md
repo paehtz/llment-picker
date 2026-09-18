@@ -52,7 +52,7 @@ Der erste Stand entstand am 15. September 2026 in einer Sitzung mit Claude Code,
 | **Linke Taste halten und ziehen** | **Lasso**: der aufgezogene Bereich wird statt eines Elements als Screenshot erfasst – wenn der Rahmen nicht trifft, was gemeint ist. Der Selektor zeigt auf den Container mit der größten Überdeckung, Zeile 3 sagt das samt Prozentwert; Strg legt das HTML dieses Containers dazu |
 | **Strg+Klick** (Mac: ⌘) | wie Klick, zusätzlich das gerenderte HTML des Elements als Datei im Download-Ordner und der Pfad als Zeile 5. Die Datei trägt im Kopf den **CSS-Kontext wie im Inspektor**: die layoutrelevanten effektiven Werte und alle Stylesheet-Regeln, die auf Element und Elternelement greifen, mit Datei und Media-Query-Zustand – für „warum sieht das so aus" und für Inhalte, die es nur im Browser gibt (eingeloggte Portale, per JS gerenderte Tabellen) |
 | **Strg+Alt+Klick** | Screenshot und HTML zusammen |
-| **Alt, Strg oder R antippen** (drücken und loslassen, ohne Klick) | schaltet den Modus scharf: der Chip leuchtet dauerhaft, der nächste Klick oder das Lasso löst aus – die Taste muss beim Zielen nicht gehalten werden. Nochmal antippen schaltet ab; gehalten (länger als 400 ms) ist immer „an" und schaltet nie um |
+| **Alt, Strg oder R antippen** (drücken und loslassen, ohne Klick) | schaltet den Modus scharf: der Chip leuchtet dauerhaft, der nächste Klick oder das Lasso löst aus – die Taste muss beim Zielen nicht gehalten werden. Nochmal antippen schaltet ab; gehalten (länger als 400 ms) ist „an", solange die Taste unten ist, und „aus" nach dem Loslassen |
 
 Solange der Picker läuft, trägt das Toolbar-Icon einen blauen Punkt (Tooltip „aktiv – Esc beendet"); beim Klick blitzt der Rahmen kurz auf, dann kommt der Toast.
 
