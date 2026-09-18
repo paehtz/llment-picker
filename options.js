@@ -1,6 +1,6 @@
 // Einstellungen: werden bei jeder Änderung sofort gespeichert (storage.sync).
 const api = globalThis.browser ?? globalThis.chrome;
-const DEFAULTS = { subfolder: "LLMent Picker", saveAs: false, cssInHtml: true, hideHints: false, shotTarget: "both", htmlSlim: true, clipEnglish: false };
+const DEFAULTS = { subfolder: "LLMent Picker", saveAs: false, cssInHtml: true, hideHints: false, shotTarget: "file", htmlSlim: true, clipEnglish: false };
 const $ = (id) => document.getElementById(id);
 const t = (k) => api.i18n.getMessage(k) || k;
 document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
@@ -14,10 +14,10 @@ async function load() {
   $("hideHints").checked = !!cfg.hideHints;
   $("htmlSlim").checked = cfg.htmlSlim !== false;
   $("clipEnglish").checked = !!cfg.clipEnglish;
-  const r = document.querySelector(`input[name=shotTarget][value="${cfg.shotTarget}"]`) || document.querySelector('input[name=shotTarget][value="both"]');
+  const r = document.querySelector(`input[name=shotTarget][value="${cfg.shotTarget}"]`) || document.querySelector('input[name=shotTarget][value="file"]');
   r.checked = true;
 }
-const shotTargetValue = () => (document.querySelector("input[name=shotTarget]:checked") || {}).value || "both";
+const shotTargetValue = () => (document.querySelector("input[name=shotTarget]:checked") || {}).value || "file";
 
 let timer;
 function save() {

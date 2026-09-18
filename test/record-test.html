@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>LLMent Picker – Aufnahmetest</title>
+<style>
+  body { margin: 0; font: 15px/1.5 system-ui, sans-serif; padding: 60px; background: #f4f4f5; }
+  .cards { display: flex; gap: 24px; }
+  .card { position: relative; width: 240px; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.15); transition: all .3s ease; cursor: pointer; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,.18); }
+  .card .tip { display: none; position: absolute; left: 20px; top: 100%; margin-top: 8px; background: #111; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+  .card:hover .tip { display: block; }
+  .card .btn { margin-top: 12px; padding: 8px 14px; border: 0; border-radius: 6px; background: #0a84ff; color: #fff; font: inherit; transition: background .2s, height .4s; height: 36px; }
+  .card .btn:hover { background: #0060c0; height: 44px; }
+  .card.is-open .panel { max-height: 120px; }
+  .panel { max-height: 0; overflow: hidden; transition: max-height .5s ease; color: #555; }
+</style>
+</head>
+<body>
+<div class="cards">
+  <div class="card" id="karte-a">
+    <h3>Karte A</h3>
+    <p>Hover hebt die Karte, Tooltip erscheint.</p>
+    <button class="btn">Öffnen</button>
+    <div class="panel">Panel-Inhalt, der beim Klick aufklappt.</div>
+    <div class="tip">Tooltip zu Karte A</div>
+  </div>
+  <div class="card" id="karte-b"><h3>Karte B</h3><p>Ruhig.</p></div>
+</div>
+<script>
+  document.querySelectorAll(".btn").forEach((b) => b.addEventListener("click", (e) => {
+    e.target.closest(".card").classList.toggle("is-open");
+    const t = performance.now(); while (performance.now() - t < 120) {} // künstlicher langer Frame
+  }));
+</script>
+</body>
+</html>

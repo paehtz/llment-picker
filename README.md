@@ -19,7 +19,7 @@ HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 1. the full page URL (including hash)
 2. the shortest CSS selector that matches exactly this element
 3. **only if text was selected first:** the selected text in quotes (max. 240 characters)
-4. **only in screenshot mode:** viewport, device pixel ratio and image size – a PNG crop of the element is in the clipboard alongside the text; one Ctrl+V in Claude pastes both. By default the PNG is also saved to the downloads folder and its path is the next line – a file cannot get lost between clipboard and chat, and Claude Code reads it from disk (setting: clipboard, file or both)
+4. **only in screenshot mode:** viewport, device pixel ratio and image size, and the path of the PNG in the downloads folder (next line). A file is the token-friendly form: the agent reads it only when it needs it, it does not sit in the conversation for every later turn, other chats can read it too, and the agent can crop the full-size original. Setting: file (default), clipboard (image and text in one Ctrl+V, for web chats that cannot open local files) or both
 5. **only in HTML mode:** the path of the saved file – the element's rendered HTML with its CSS context, ready for Claude Code to read from disk
 
 ## What sets it apart
@@ -48,6 +48,7 @@ The first version was built on 15 September 2026 in a session with Claude Code a
 | Toolbar icon or **Ctrl+Alt+P** (Firefox) / **Alt+Shift+P** (Chrome), nothing selected | starts the picker – crosshair cursor, the element under the mouse gets an outline |
 | Click | copies URL and selector, the picker ends, toast "Copied" |
 | **Alt+click** | plus a screenshot of the element (+24 px margin) as an image in the clipboard and the viewport details as line 4 – for layout feedback ("overlaps", "misaligned"). Elements larger than the window are captured **whole**: the page is scrolled tile by tile and the captures stitched (long tables, wide tables in scroll containers) |
+| **R** while an element is outlined (or icon menu "record interaction", or right-click → "Record interaction here") | **interaction recording**, 5 s: hover, click, press keys – the picker logs what the page does (`:hover`/`:focus`/`:active` rules that apply, declared transitions and animations with warnings such as `transition: all` or animated layout properties, a computed-style diff 450 ms after the pointer enters, DOM changes, running animations from `getAnimations()` with duration and easing, frame timing with long frames and `long-animation-frame` entries) and takes a frame every 0.55 s; the frames become a contact sheet with timestamps and the pointer as a blue dot. For "the hover stutters", "the popup sits wrong": a video is nothing an LLM can read, frames plus data are. Esc ends early |
 | **Hold the left button and drag** | **lasso**: the drawn region is captured as a screenshot instead of an element – for when the outline does not catch what you mean. The selector points to the container with the largest overlap, line 3 says so with the overlap percentage; Ctrl adds the HTML of that container |
 | **Ctrl+click** (Mac: ⌘) | plus the element's rendered HTML as a file in your downloads folder, path as line 5; the file head carries the **CSS context as in the inspector** |
 | **Ctrl+Alt+click** | screenshot and HTML together |
@@ -55,13 +56,13 @@ The first version was built on 15 September 2026 in a session with Claude Code a
 | Right-click on the page → LLMent Picker → "Copy this element" / "Copy with screenshot" / "Save as HTML file" | acts on the right-clicked element directly, no picker mode; on selected text the text comes along |
 | Right-click the toolbar icon → "Pick an element – with screenshot" / "– as HTML file" | starts the picker with a preset: the symbol above the outline is already lit, a plain click triggers it |
 
-Above the outline three symbols (`</>`, camera, dashed box) show what the click will add; they light up while the key is held or the lasso is being drawn and carry the hints ("Ctrl HTML", "Alt Screenshot", "Drag region") – permanently, switchable off in the settings. They are deliberately not clickable: the mouse would have to cross other elements to reach them and the outline would jump.
+Above the outline four symbols (`</>`, camera, dashed box, record dot) show what the click will add; they light up while the key is held or the lasso is being drawn and carry the hints ("Ctrl HTML", "Alt Screenshot", "Drag region", "R Record") – permanently, switchable off in the settings. They are deliberately not clickable: the mouse would have to cross other elements to reach them and the outline would jump.
 
 The text line appears only when you ask for it by selecting text. A block clicked without a selection gives URL and selector only – otherwise a chat would read "this sentence is meant" although the block was meant. Conversely, selection + icon copies text and selector only; for the rare "this sentence wraps badly" use right-click on the selection → "Copy with screenshot".
 
 **Elements inside iframes** can be picked too; the clipboard then carries an extra line `Inside frame: <url> ← <iframe id="…">` and the selector refers to the frame document. The screenshot works for same-origin frames.
 
-**Settings** (extension management → LLMent Picker → Options): subfolder inside the downloads folder (default `LLMent Picker`), "Save as" dialog, screenshot target (clipboard and PNG file – the default –, clipboard only, file only), CSS context on/off, **slim HTML files** on/off (default on: hidden form fields, event handlers, long data attributes, srcset lists, SVG paths, `<style>` blocks, comments, long `data:` URIs and repeated `<select>` option lists are removed; the file header lists what was dropped – a DNS table of 113 KB became 52 KB with the same content), **clipboard and files always in English** (default off: the browser language decides; the extension UI keeps the browser language either way), key hints on/off. Extensions may only write to the browser's download folder; a free target path is not possible.
+**Settings** (extension management → LLMent Picker → Options): subfolder inside the downloads folder (default `LLMent Picker`), "Save as" dialog, screenshot target (PNG file – the default –, clipboard, both), CSS context on/off, **slim HTML files** on/off (default on: hidden form fields, event handlers, long data attributes, srcset lists, SVG paths, `<style>` blocks, comments, long `data:` URIs and repeated `<select>` option lists are removed; the file header lists what was dropped – a DNS table of 113 KB became 52 KB with the same content), **clipboard and files always in English** (default off: the browser language decides; the extension UI keeps the browser language either way), key hints on/off. Extensions may only write to the browser's download folder; a free target path is not possible.
 
 Change the shortcut: Firefox `about:addons` → gear → "Manage Extension Shortcuts"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P opens the profile manager in Firefox; Chrome does not allow Ctrl+Alt combinations – hence two defaults.)
 
@@ -95,7 +96,7 @@ _locales/             en, de
 icons/                PNG 16/32/48/128 (rasterised from icon.svg)
 build.ps1             builds dist/firefox/*.zip (via web-ext) and dist/chrome/*.zip
 store/                listing texts, permission justifications, screenshots, demo page
-test/                 clipboard-test.html (does a target take image + text from one paste?), iframe-test.html, stitch-test.html (long/wide tables, lasso)
+test/                 clipboard-test.html (does a target take image + text from one paste?), iframe-test.html, stitch-test.html (long/wide tables, lasso), record-test.html (hover card, tooltip, panel, long frame)
 ```
 
 ## Installation

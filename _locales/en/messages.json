@@ -233,16 +233,16 @@
     "message": "Screenshots (Alt+click, lasso)"
   },
   "optShotBoth": {
-    "message": "Clipboard and PNG file (default)"
+    "message": "Clipboard and PNG file"
   },
   "optShotClipboard": {
-    "message": "Clipboard only – image and text in one Ctrl+V"
+    "message": "Clipboard only – image and text in one Ctrl+V (for chats that cannot read local files)"
   },
   "optShotFile": {
-    "message": "PNG file only – the path goes into the clipboard text"
+    "message": "PNG file only, path in the clipboard text (default) – other chats can read it too, nothing bloats the conversation, and the agent can crop the full-size file"
   },
   "optShotHint": {
-    "message": "As a file the screenshot is safe from focus changes while copying, and Claude Code reads it straight from disk. In the clipboard it can be pasted into any chat."
+    "message": "Claude Code and other coding agents read the file from disk when they need it. Web chats (claude.ai, ChatGPT) cannot open local paths – use the clipboard there."
   },
   "lineShotFile": {
     "message": "Screenshot: "
@@ -356,6 +356,170 @@
       },
       "list": {
         "content": "$4"
+      }
+    }
+  },
+  "menuPickRecord": {
+    "message": "Pick an element – record interaction (5 s)"
+  },
+  "menuRecord": {
+    "message": "Record interaction here (5 s)"
+  },
+  "hintRecord": {
+    "message": "R Record"
+  },
+  "toastRecording": {
+    "message": "Recording: hover, click … Esc ends it"
+  },
+  "toastRecorded": {
+    "message": "Interaction copied"
+  },
+  "recStatus": {
+    "message": "Recording $T$ · Esc",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      }
+    }
+  },
+  "recLine": {
+    "message": "Interaction recorded: $D$, $N$ frames every 0.55 s (pointer = blue dot)",
+    "placeholders": {
+      "d": {
+        "content": "$1"
+      },
+      "n": {
+        "content": "$2"
+      }
+    }
+  },
+  "recSheet": {
+    "message": "Contact sheet $W$×$H$ px in the same clipboard entry",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      }
+    }
+  },
+  "recEvents": {
+    "message": "Timeline (pointer, clicks, keys)"
+  },
+  "recPointer": {
+    "message": "pointer on"
+  },
+  "recClick": {
+    "message": "click"
+  },
+  "recKey": {
+    "message": "key"
+  },
+  "recScroll": {
+    "message": "scroll"
+  },
+  "recRules": {
+    "message": ":hover / :focus / :active rules from the stylesheets"
+  },
+  "recInside": {
+    "message": "on descendants"
+  },
+  "recAncestor": {
+    "message": "on an ancestor"
+  },
+  "recDeclared": {
+    "message": "Declared transitions and animations"
+  },
+  "recNoteAll": {
+    "message": "\"all\" includes layout properties"
+  },
+  "recNoteLayout": {
+    "message": "animates a layout property (reflow every frame)"
+  },
+  "recNotePaint": {
+    "message": "expensive to paint (box-shadow/filter)"
+  },
+  "recHover": {
+    "message": "State diff on hover (450 ms after entering, against the rest state)"
+  },
+  "recHoverAt": {
+    "message": "entered at $T$",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      }
+    }
+  },
+  "recNoChange": {
+    "message": "– no change"
+  },
+  "recHoverNone": {
+    "message": "(the pointer did not enter the element during the recording)"
+  },
+  "recBaseStart": {
+    "message": "rest state taken with the pointer on the element (it never left)"
+  },
+  "recBaseLeft": {
+    "message": "rest state taken after the pointer left at $T$",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      }
+    }
+  },
+  "recAfterLeave": {
+    "message": "Remains after leaving (450 ms)"
+  },
+  "recDom": {
+    "message": "DOM changes"
+  },
+  "recAdded": {
+    "message": "added"
+  },
+  "recRemoved": {
+    "message": "removed"
+  },
+  "recAttr": {
+    "message": "attribute"
+  },
+  "recNew": {
+    "message": "new"
+  },
+  "recAnims": {
+    "message": "Running animations (getAnimations)"
+  },
+  "recFps": {
+    "message": "Frame timing"
+  },
+  "recFpsLine": {
+    "message": "$N$ frames in $D$; $L$ frames over 33 ms, longest $M$ ms at $T$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      },
+      "d": {
+        "content": "$2"
+      },
+      "l": {
+        "content": "$3"
+      },
+      "m": {
+        "content": "$4"
+      },
+      "t": {
+        "content": "$5"
+      }
+    }
+  },
+  "recLoaf": {
+    "message": "long-animation-frames: $N$ ($LIST$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      },
+      "list": {
+        "content": "$2"
       }
     }
   }

@@ -49,7 +49,7 @@
   };
   const t = (key, ...subs) => {
     try {
-      if (EN && /^(line|file|media)/.test(key)) { const v = fromEN(key, subs); if (v != null) return v; }
+      if (EN && /^(line|file|media|rec)/.test(key)) { const v = fromEN(key, subs); if (v != null) return v; }
       return api.i18n.getMessage(key, subs.map(String)) || key;
     } catch { return key; }
   };
@@ -407,7 +407,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
   // Wohin der Screenshot geht: Zwischenablage, Datei oder beides (Einstellung)
   async function shotTarget() {
-    try { return (await api.storage.sync.get({ shotTarget: "both" })).shotTarget || "both"; } catch { return "both"; }
+    try { return (await api.storage.sync.get({ shotTarget: "file" })).shotTarget || "file"; } catch { return "file"; }
   }
 
   // ───────────────────────── Screenshot ───────────────────────────────────
@@ -667,7 +667,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     await enReady;
     const withShot = !!opts.shot, withHtml = !!opts.html;
     let shot = null, htmlPath = null, htmlErr = null, shotErr = null, shotPath = null, shotFileErr = null;
-    const target = withShot ? await shotTarget() : "both";
+    const target = withShot ? await shotTarget() : "file";
     const toClip = target !== "file", toFile = target !== "clipboard";
     if (withShot) {
       try {
@@ -764,6 +764,373 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     return copyElement(el, undefined, { shot: true, html: !!opts.html, region: { measure, line } });
   }
 
+  // ───────────────────────── Interaktions-Aufnahme ─────────────────────────
+  // Element wählen, dann fünf Sekunden hovern und klicken: der Picker schreibt
+  // mit, was die Seite dabei tut (Hover-Regeln, deklarierte Übergänge, Zustands-
+  // diff, DOM-Änderungen, laufende Animationen, Bildrate) und nimmt alle 550 ms
+  // ein Bild auf – als Kontaktbogen im selben Zwischenablage-Eintrag. Für „das
+  // ruckelt", „das Pop-up sitzt falsch": ein Video könnte ein Sprachmodell nicht
+  // lesen, Bilder und Daten schon.
+  const REC_MS = 5000, REC_FRAME_MS = 550, REC_MAX_EL = 150, REC_PAD = 48, REC_SETTLE = 450;
+  const STATE_PROPS = ["display", "visibility", "opacity", "transform", "color", "background-color", "border-color", "box-shadow",
+    "width", "height", "top", "left", "right", "bottom", "margin", "padding", "max-height", "font-size", "font-weight",
+    "text-decoration-line", "outline-width", "filter", "z-index", "cursor"];
+  const PSEUDO = /:(hover|focus-within|focus-visible|focus|active)\b/g;
+  const LAYOUT_RE = /\b(width|height|top|left|right|bottom|margin|padding|max-height|max-width|min-height|min-width|font-size|line-height|border-width|inset|flex|gap)\b/;
+  const secs = (ms) => (ms / 1000).toFixed(2) + " s";
+  const selOf = (el) => { try { return buildSelector(el); } catch { return el && el.tagName ? el.tagName.toLowerCase() : String(el); } };
+  const isOwn = (n) => !!(n && n.nodeType === 1 && n.closest("[data-llment-picker]"));
+  const shortVal = (v) => (v.length > 60 ? v.slice(0, 57) + "…" : v);
+  const descOf = (n) => n.tagName.toLowerCase() + (n.id ? "#" + n.id : "") + Array.from(n.classList).slice(0, 2).map((c) => "." + c).join("");
+
+  // Regeln mit :hover/:focus/:active, die das Element, Nachkommen oder Vorfahren treffen
+  function pseudoRules(root, limit) {
+    const found = [];
+    const walk = (rules, sheet, ctx) => {
+      for (const r of rules) {
+        if (found.length >= limit) return;
+        if (r instanceof CSSStyleRule) {
+          const st = r.selectorText || "";
+          PSEUDO.lastIndex = 0;
+          if (!PSEUDO.test(st)) continue;
+          for (const part of st.split(",")) {
+            PSEUDO.lastIndex = 0;
+            if (!PSEUDO.test(part)) continue;
+            const base = part.replace(PSEUDO, "").trim();
+            if (!base || /^[>+~]/.test(base)) continue;
+            let where = null;
+            try {
+              if (root.matches(base)) where = "";
+              else if (root.querySelector(base)) where = t("recInside");
+              else if (root.closest(base)) where = t("recAncestor");
+            } catch {}
+            if (where == null) continue;
+            const css = r.cssText.length > 500 ? r.cssText.slice(0, 500) + " …" : r.cssText;
+            found.push(`/* ${sheet}${ctx ? " · " + ctx : ""}${where ? " · " + where : ""} */ ${css}`);
+            break;
+          }
+        } else if (r instanceof CSSMediaRule) {
+          const cond = r.conditionText || r.media.mediaText;
+          walk(r.cssRules, sheet, (ctx ? ctx + " · " : "") + `@media ${cond} [${matchMedia(cond).matches ? t("mediaActive") : t("mediaInactive")}]`);
+        } else if (r.cssRules) {
+          try { walk(r.cssRules, sheet, ctx); } catch {}
+        }
+      }
+    };
+    for (const sh of Array.from(document.styleSheets)) {
+      let rules;
+      try { rules = sh.cssRules; } catch { continue; }
+      const node = sh.ownerNode;
+      walk(rules, sh.href ? sh.href.replace(location.origin, "") : node && node.id ? `<style id="${node.id}">` : "<style>", "");
+    }
+    return found;
+  }
+
+  // Deklarierte Übergänge/Animationen im Teilbaum, gruppiert, mit Hinweisen
+  function declaredMotion(root) {
+    const els = [root, ...root.querySelectorAll("*")].filter((e) => !isOwn(e)).slice(0, REC_MAX_EL);
+    const groups = new Map();
+    for (const e of els) {
+      const cs = getComputedStyle(e);
+      const items = [];
+      // Kurzform ausgeschrieben – Chrome lässt „all" in cs.transition weg
+      if (/[1-9]/.test(cs.transitionDuration)) items.push(`transition: ${cs.transitionProperty} ${cs.transitionDuration} ${cs.transitionTimingFunction}${/[1-9]/.test(cs.transitionDelay) ? " delay " + cs.transitionDelay : ""}`);
+      if (cs.animationName && cs.animationName !== "none") items.push("animation: " + cs.animation);
+      for (const it of items) {
+        const g = groups.get(it) || { els: [], n: 0 };
+        g.n++;
+        if (g.els.length < 3) g.els.push(selOf(e));
+        groups.set(it, g);
+      }
+    }
+    const lines = [];
+    for (const [decl, g] of groups) {
+      const notes = [];
+      if (/^transition/.test(decl)) {
+        if (/\ball\b/.test(decl)) notes.push(t("recNoteAll"));
+        else if (LAYOUT_RE.test(decl)) notes.push(t("recNoteLayout"));
+        if (/box-shadow|filter/.test(decl)) notes.push(t("recNotePaint"));
+      }
+      lines.push(`${g.els.join(", ")}${g.n > g.els.length ? ` (+${g.n - g.els.length})` : ""}: ${decl}${notes.length ? "  ← " + notes.join("; ") : ""}`);
+    }
+    return lines;
+  }
+
+  function snapshot(root) {
+    const m = new Map();
+    for (const e of [root, ...root.querySelectorAll("*")].slice(0, REC_MAX_EL)) {
+      if (isOwn(e)) continue;
+      const cs = getComputedStyle(e), r = e.getBoundingClientRect();
+      const o = { rect: `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}×${Math.round(r.height)}` };
+      for (const p of STATE_PROPS) o[p] = cs.getPropertyValue(p);
+      m.set(e, o);
+    }
+    return m;
+  }
+  // Verschiebung eines Elements, die nur der Verschiebung seines Elternteils folgt, ist kein eigener Befund
+  const shift = (a, b) => { const [pa, sa] = a.split(" "), [pb, sb] = b.split(" "); const [ax, ay] = pa.split(",").map(Number), [bx, by] = pb.split(",").map(Number); return sa === sb ? `${bx - ax},${by - ay}` : null; };
+  function diffSnap(a, b, limit) {
+    const lines = [];
+    for (const [e, o] of b) {
+      const p = a.get(e);
+      if (!p) { lines.push(`${selOf(e)}: ${t("recNew")}`); if (lines.length >= limit) break; continue; }
+      const ch = [];
+      for (const k of Object.keys(o)) {
+        if (o[k] === p[k]) continue;
+        if (k === "rect" && e.parentElement && a.has(e.parentElement) && b.has(e.parentElement)) {
+          const mine = shift(p.rect, o.rect), theirs = shift(a.get(e.parentElement).rect, b.get(e.parentElement).rect);
+          if (mine && mine === theirs) continue;
+        }
+        ch.push(`${k} ${shortVal(p[k])} → ${shortVal(o[k])}`);
+      }
+      if (ch.length) lines.push(`${selOf(e)}: ${ch.join("; ")}`);
+      if (lines.length >= limit) break;
+    }
+    return lines;
+  }
+
+  // Kontaktbogen: Bilder in einem Raster, Zeitstempel unter jedem, Zeiger als Punkt
+  async function contactSheet(frames, region, k) {
+    const imgs = await Promise.all(frames.map((f) => loadImage(f.dataUrl)));
+    const fw = region.width * k, fh = region.height * k;
+    const cols = fw >= fh ? 2 : Math.min(5, frames.length);
+    const scale = Math.min(1, 1200 / fw, 900 / fh);
+    const cw = Math.round(fw * scale), ch = Math.round(fh * scale), strip = 18, gap = 6;
+    const rows = Math.ceil(frames.length / cols);
+    const cv = document.createElement("canvas");
+    cv.width = cols * cw + (cols + 1) * gap;
+    cv.height = rows * (ch + strip) + (rows + 1) * gap;
+    const ctx = cv.getContext("2d");
+    ctx.fillStyle = "#222";
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    frames.forEach((f, i) => {
+      const x = gap + (i % cols) * (cw + gap), y = gap + Math.floor(i / cols) * (ch + strip + gap);
+      ctx.drawImage(imgs[i], region.left * k, region.top * k, fw, fh, x, y, cw, ch);
+      if (f.pointer) {
+        const px = x + (f.pointer.x - region.left) * k * scale, py = y + (f.pointer.y - region.top) * k * scale;
+        if (px >= x && px <= x + cw && py >= y && py <= y + ch) {
+          ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(10,132,255,.55)"; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = "#fff"; ctx.stroke();
+        }
+      }
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px ui-monospace, Menlo, Consolas, monospace";
+      ctx.fillText(`${i + 1}  t = ${secs(f.t)}`, x + 4, y + ch + 13);
+    });
+    return cv;
+  }
+
+  async function recordInteraction(root) {
+    guardAlt(true);
+    reportState(true);
+    const target = await shotTarget();
+    const toClip = target !== "file", toFile = target !== "clipboard";
+    const perf0 = performance.now();
+    const rel = () => performance.now() - perf0;
+    const events = [], mutations = new Map(), anims = [], seenAnim = new WeakSet(), longFrames = [], loaf = [];
+    const frames = [], addedNodes = [], hovers = [], pointers = [];
+    let pointer = null, inside = true, baseline = null, baselineNote = t("recBaseStart"), residual = null, lastHover = null, running = true, frameCount = 0, lastScroll = -1e9;
+    const startSnap = snapshot(root);
+    const rootRect = root.getBoundingClientRect();
+    // Statuschip oben rechts (bei den Aufnahmen ausgeblendet wie alle eigenen Overlays)
+    const chip = document.createElement("div");
+    chip.setAttribute("data-llment-picker", "");
+    chip.style.cssText = `position:fixed;top:16px;right:16px;z-index:${Z};pointer-events:none;font:13px/1 system-ui,sans-serif;color:#fff;background:#d0342c;padding:8px 12px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.25);`;
+    document.documentElement.appendChild(chip);
+    const tick = setInterval(() => (chip.textContent = "\u25cf " + t("recStatus", secs(rel()))), 100);
+    const pushEvent = (text) => { if (events.length < 40) events.push(`${secs(rel())}  ${text}`); };
+    const onMoveRec = (e) => {
+      pointer = { x: e.clientX, y: e.clientY };
+      if (pointers.length < 400) pointers.push(pointer);
+      const now = root.contains(e.target) && !isOwn(e.target);
+      if (now && !inside) {
+        const at = rel();
+        if (hovers.length < 3) setTimeout(() => { if (running) hovers.push({ t: at, lines: diffSnap(baseline || startSnap, snapshot(root), 25) }); }, REC_SETTLE);
+      } else if (!now && inside) {
+        setTimeout(() => {
+          if (!running) return;
+          if (!baseline) { baseline = snapshot(root); baselineNote = t("recBaseLeft", secs(rel())); }
+          else residual = diffSnap(baseline, snapshot(root), 15);
+        }, REC_SETTLE);
+      }
+      inside = now;
+    };
+    const onOverRec = (e) => {
+      if (isOwn(e.target) || e.target === lastHover) return;
+      lastHover = e.target;
+      pushEvent(`${t("recPointer")} ${selOf(e.target)}`);
+    };
+    const onClickRec = (e) => { if (!isOwn(e.target)) pushEvent(`${t("recClick")} ${selOf(e.target)}`); };
+    const onKeyRec = (e) => {
+      if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); running = false; return; }
+      pushEvent(`${t("recKey")} ${e.key}`);
+    };
+    const onScrollRec = () => { if (rel() - lastScroll > 500) { lastScroll = rel(); pushEvent(t("recScroll")); } };
+    const cap = { capture: true, passive: true };
+    window.addEventListener("mousemove", onMoveRec, cap);
+    window.addEventListener("mouseover", onOverRec, cap);
+    window.addEventListener("click", onClickRec, cap);
+    window.addEventListener("keydown", onKeyRec, { capture: true });
+    window.addEventListener("scroll", onScrollRec, cap);
+    window.addEventListener("wheel", onScrollRec, cap);
+    const mo = new MutationObserver((recs) => {
+      for (const m of recs) {
+        if (isOwn(m.target)) continue;
+        if (m.type === "childList") {
+          for (const n of m.addedNodes) {
+            if (n.nodeType !== 1 || isOwn(n)) continue;
+            addedNodes.push(n);
+            const key = `add:${descOf(n)}>${selOf(m.target)}`;
+            const e = mutations.get(key) || { t: rel(), text: `${t("recAdded")} ${descOf(n)} → ${selOf(m.target)}`, n: 0 };
+            e.n++; if (mutations.size < 80 || mutations.has(key)) mutations.set(key, e);
+          }
+          for (const n of m.removedNodes) {
+            if (n.nodeType !== 1 || isOwn(n)) continue;
+            const key = `rm:${descOf(n)}<${selOf(m.target)}`;
+            const e = mutations.get(key) || { t: rel(), text: `${t("recRemoved")} ${descOf(n)} ← ${selOf(m.target)}`, n: 0 };
+            e.n++; if (mutations.size < 80 || mutations.has(key)) mutations.set(key, e);
+          }
+        } else {
+          const key = `attr:${selOf(m.target)}:${m.attributeName}`;
+          const e = mutations.get(key) || { t: rel(), text: "", n: 0, old: m.oldValue };
+          e.n++;
+          e.text = `${t("recAttr")} ${m.attributeName} ${selOf(m.target)}: ${JSON.stringify(shortVal(String(e.old ?? "")))} → ${JSON.stringify(shortVal(String(m.target.getAttribute(m.attributeName) ?? "")))}`;
+          if (mutations.size < 80 || mutations.has(key)) mutations.set(key, e);
+        }
+      }
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ["class", "style", "hidden", "open", "aria-expanded", "aria-hidden", "data-state"] });
+    const animPoll = setInterval(() => {
+      let list = [];
+      try { list = document.getAnimations(); } catch {}
+      for (const a of list) {
+        if (seenAnim.has(a)) continue;
+        seenAnim.add(a);
+        const el = a.effect && a.effect.target;
+        if (!el || isOwn(el) || anims.length >= 40) continue;
+        let kind = "web-animation";
+        if (typeof CSSTransition !== "undefined" && a instanceof CSSTransition) kind = "transition " + a.transitionProperty;
+        else if (typeof CSSAnimation !== "undefined" && a instanceof CSSAnimation) kind = "animation " + a.animationName;
+        let tm = {};
+        try { tm = a.effect.getTiming(); } catch {}
+        anims.push(`${secs(rel())}  ${selOf(el)}: ${kind} ${Math.round(tm.duration || 0)} ms ${tm.easing || ""}${tm.delay ? ` delay ${Math.round(tm.delay)} ms` : ""}`);
+      }
+    }, 100);
+    let po = null;
+    try {
+      if (PerformanceObserver.supportedEntryTypes.includes("long-animation-frame")) {
+        po = new PerformanceObserver((l) => l.getEntries().forEach((e) => {
+          if (loaf.length < 10) loaf.push(`${secs(e.startTime - perf0)} ${Math.round(e.duration)} ms${e.scripts && e.scripts[0] ? " " + (e.scripts[0].sourceURL || e.scripts[0].invoker || "").replace(location.origin, "") : ""}`);
+        }));
+        po.observe({ type: "long-animation-frame", buffered: false });
+      }
+    } catch {}
+    let prev = performance.now();
+    const raf = () => {
+      if (!running) return;
+      const now = performance.now(), dt = now - prev;
+      prev = now; frameCount++;
+      if (dt > 33 && longFrames.length < 200) longFrames.push({ t: now - perf0, dt });
+      requestAnimationFrame(raf);
+    };
+    requestAnimationFrame(raf);
+    const own = () => Array.from(document.querySelectorAll("[data-llment-picker]"));
+    // Bildfolge: alle REC_FRAME_MS ein Bild (Chrome erlaubt zwei je Sekunde)
+    const frameLoop = (async () => {
+      while (running && rel() < REC_MS) {
+        const at = rel();
+        const nodes = own();
+        nodes.forEach((n) => (n.style.visibility = "hidden"));
+        try {
+          await settle();
+          const dataUrl = await captureTab();
+          frames.push({ t: at, dataUrl, pointer });
+        } catch (e) {
+          console.warn("LLMent Picker: Bild nicht aufgenommen –", e && e.message);
+        } finally {
+          nodes.forEach((n) => (n.style.visibility = ""));
+        }
+        const wait = REC_FRAME_MS - (rel() - at);
+        if (wait > 0) await sleep(wait);
+      }
+    })();
+    toast(t("toastRecording"), false, 2500);
+    while (running && rel() < REC_MS) await sleep(50);
+    running = false;
+    await frameLoop;
+    const duration = rel();
+    clearInterval(tick); clearInterval(animPoll);
+    mo.disconnect();
+    if (po) po.disconnect();
+    window.removeEventListener("mousemove", onMoveRec, cap);
+    window.removeEventListener("mouseover", onOverRec, cap);
+    window.removeEventListener("click", onClickRec, cap);
+    window.removeEventListener("keydown", onKeyRec, { capture: true });
+    window.removeEventListener("scroll", onScrollRec, cap);
+    window.removeEventListener("wheel", onScrollRec, cap);
+    chip.remove();
+    await sleep(REC_SETTLE + 50); // ausstehende Diffs einsammeln
+
+    // Protokoll
+    const L = [location.href, selOf(root), t("recLine", secs(duration), frames.length)];
+    const section = (title, lines, empty) => { L.push("", `== ${title} ==`); L.push(...(lines.length ? lines : [empty || t("fileNone")])); };
+    section(t("recEvents"), events);
+    section(t("recRules"), pseudoRules(root, 40));
+    section(t("recDeclared"), declaredMotion(root));
+    const hoverLines = [];
+    for (const h of hovers) { hoverLines.push(t("recHoverAt", secs(h.t)) + (h.lines.length ? "" : " " + t("recNoChange"))); hoverLines.push(...h.lines.map((l) => "  " + l)); }
+    section(t("recHover") + " · " + baselineNote, hoverLines, t("recHoverNone"));
+    if (residual && residual.length) section(t("recAfterLeave"), residual);
+    const mut = Array.from(mutations.values()).sort((a, b) => a.t - b.t).slice(0, 60).map((e) => `${secs(e.t)}  ${e.text}${e.n > 1 ? ` (${e.n}×)` : ""}`);
+    section(t("recDom"), mut);
+    section(t("recAnims"), anims);
+    const longest = longFrames.reduce((m, f) => (f.dt > m.dt ? f : m), { dt: 0, t: 0 });
+    const fpsLines = [t("recFpsLine", frameCount, secs(duration), longFrames.length, Math.round(longest.dt), secs(longest.t))];
+    if (loaf.length) fpsLines.push(t("recLoaf", loaf.length, loaf.join("; ")));
+    section(t("recFps"), fpsLines);
+    const fl = frameLine();
+    if (fl) L.push("", fl);
+
+    // Kontaktbogen: Element + Rand, erweitert um neu erschienene Elemente und Zeigerwege
+    let region = inflate(rootRect, REC_PAD);
+    const union = (r) => { const x1 = Math.max(region.left + region.width, r.right), y1 = Math.max(region.top + region.height, r.bottom); region = { left: Math.min(region.left, r.left), top: Math.min(region.top, r.top), width: 0, height: 0 }; region.width = x1 - region.left; region.height = y1 - region.top; };
+    union(root.getBoundingClientRect()); // Endzustand (aufgeklappt?) mit ins Bild
+    for (const n of addedNodes.slice(0, 50)) { if (n.isConnected) { const r = n.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && r.width < innerWidth) union(r); } }
+    for (const p of pointers) union({ left: p.x - 10, top: p.y - 10, right: p.x + 10, bottom: p.y + 10 });
+    const cl = { left: Math.max(0, region.left), top: Math.max(0, region.top) };
+    region = { left: cl.left, top: cl.top, width: Math.min(innerWidth, region.left + region.width) - cl.left, height: Math.min(innerHeight, region.top + region.height) - cl.top };
+    let sheet = null, sheetPath = null, sheetErr = null, imageOk = false;
+    if (frames.length && region.width > 1 && region.height > 1) {
+      try {
+        const first = await loadImage(frames[0].dataUrl);
+        const cv = await contactSheet(frames, region, first.naturalWidth / innerWidth);
+        sheet = await new Promise((f) => cv.toBlob(f, "image/png"));
+        L.splice(3, 0, t("recSheet", cv.width, cv.height));
+      } catch (e) {
+        sheetErr = (e && e.message) || String(e);
+        console.warn("LLMent Picker: Kontaktbogen fehlgeschlagen –", sheetErr);
+      }
+    }
+    if (sheet && toFile) {
+      try { sheetPath = await saveShot(sheet, fileBase(root) + "-rec"); L.splice(4, 0, t("lineShotFile") + sheetPath); } catch (e) { sheetErr = (e && e.message) || String(e); }
+    }
+    const payload = L.join("\n");
+    let ok = false;
+    if (sheet && toClip && (await copyWithImage(payload, sheet))) ok = imageOk = true;
+    else ok = await copy(payload);
+    guardAlt(false);
+    const parts = [ok ? t("toastRecorded") : t("toastCopyFailed")];
+    if (sheet && toClip && !imageOk) parts.push(t("toastShotNotWritten", lastClipError.slice(0, 60)));
+    if (toFile) parts.push(sheetPath ? t("toastShotSaved") : t("toastShotSaveFailed") + (sheetErr ? ": " + sheetErr.slice(0, 60) : ""));
+    const good = ok && !(sheet && toClip && !imageOk) && !(toFile && !sheetPath);
+    toast(parts.join(" · "), good, good ? 1800 : 4000);
+    window.__elementPickerLast = payload;
+    window.__elementPickerLastShot = sheet ? { bytes: sheet.size, info: "sheet", written: imageOk, path: sheetPath } : null;
+    window.__elementPickerLastShotBlob = sheet;
+    return ok;
+  }
+
   // ───────────────────────── Weg b: Kontextmenü ───────────────────────────
   // Firefox: targetElementId → menus.getTargetElement. Chrome kennt das nicht;
   // dort bleibt der :hover-Zustand der Seite stehen, solange das native Menü
@@ -780,9 +1147,17 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
 
   let contextFallback = false;
   if (window[CTX] != null) {
-    const { id, onSelection, shot, html } = window[CTX];
+    const { id, onSelection, shot, html, record } = window[CTX];
     delete window[CTX];
     if (window[KEY]) window[KEY].cancel(true);
+    if (record) {
+      const rEl = contextTarget(id);
+      if (rEl) {
+        flashRect(rEl.getBoundingClientRect());
+        recordInteraction(rEl).then(() => reportState(false));
+        return "picked";
+      }
+    }
     // Rechtsklick lag auf markiertem Text → Element der Markierung + Text
     const marked = onSelection ? selectionTarget() : null;
     if (marked) {
@@ -806,12 +1181,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
 
   // Voreinstellung aus dem Icon-Menü („Element wählen – mit Screenshot" usw.)
-  const preset = Object.assign({ shot: false, html: false }, window.__elementPickerPreset || {});
+  const preset = Object.assign({ shot: false, html: false, record: false }, window.__elementPickerPreset || {});
   delete window.__elementPickerPreset;
 
   // Ist Text markiert, ist das Ziel schon klar: Element + Markierung kopieren,
   // kein Picker-Modus. (Für den Picker-Modus vorher die Markierung aufheben.)
-  if (!contextFallback) {
+  if (!contextFallback && !preset.record) {
     const marked = selectionTarget();
     if (marked) {
       copyElement(marked.el, marked.text, preset).then(() => reportState(false));
@@ -838,6 +1213,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   const ICON_CAM = () => { const i = svgIcon([["path", { d: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" }], ["circle", { cx: "12", cy: "13", r: "4" }]]); i.style.marginTop = "-1px"; return i; };
   const ICON_CODE = () => svgIcon([["polyline", { points: "16 18 22 12 16 6" }], ["polyline", { points: "8 6 2 12 8 18" }]]);
   const ICON_LASSO = () => svgIcon([["rect", { x: "3", y: "3", width: "18", height: "18", rx: "2", "stroke-dasharray": "4 3" }]]);
+  const ICON_REC = () => svgIcon([["circle", { cx: "12", cy: "12", r: "9" }], ["circle", { cx: "12", cy: "12", r: "3.5", fill: "currentColor" }]]);
   const hud = document.createElement("div");
   hud.setAttribute("data-llment-picker", "");
   hud.style.cssText = `position:fixed;z-index:${Z};display:none;pointer-events:none;gap:4px;
@@ -860,15 +1236,18 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       c.appendChild(t);
     }
   }
+  const LIT = "#0a84ff", DIM = "rgba(70,80,95,.85)";
   let showHints = true; // Tastenhinweise dauerhaft, abschaltbar in den Einstellungen
-  const codeChip = chip(), camChip = chip(), lassoChip = chip();
-  hud.append(codeChip, camChip, lassoChip);
+  const codeChip = chip(), camChip = chip(), lassoChip = chip(), recChip = chip();
+  hud.append(codeChip, camChip, lassoChip, recChip);
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
   const CTRL_LABEL = isMac ? t("hintHtmlMac") : t("hintHtml");
   function applyHints() {
     fillChip(codeChip, ICON_CODE(), showHints ? CTRL_LABEL : "");
     fillChip(camChip, ICON_CAM(), showHints ? t("hintShot") : "");
     fillChip(lassoChip, ICON_LASSO(), showHints ? t("hintLasso") : "");
+    fillChip(recChip, ICON_REC(), showHints ? t("hintRecord") : "");
+    recChip.style.background = preset.record ? LIT : DIM;
   }
   applyHints();
   try {
@@ -879,7 +1258,6 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     });
   } catch {}
   let mods = { alt: false, ctrl: false, lasso: false };
-  const LIT = "#0a84ff", DIM = "rgba(70,80,95,.85)";
   function setMods(alt, ctrl) {
     const lasso = !!(drag && drag.active);
     alt = alt || preset.shot || lasso; // Lasso kopiert immer mit Screenshot
@@ -1058,6 +1436,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
     cleanup();
     flash(el);
+    if (preset.record) { await recordInteraction(el); reportState(false); return; }
     await copyElement(el, undefined, { shot: withShot, html: withHtml });
   }
 
@@ -1070,6 +1449,14 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     }
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
     if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") setMods(e.altKey, e.ctrlKey || e.metaKey);
+    // R: Interaktion am Element unter dem Zeiger aufnehmen
+    if ((e.key === "r" || e.key === "R") && current && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      swallow(e);
+      const el = current;
+      cleanup();
+      flash(el);
+      recordInteraction(el).then(() => reportState(false));
+    }
   }
   function onKeyUp(e) {
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen

@@ -16,6 +16,7 @@ const menus = api.menus ?? api.contextMenus;
 const MENU_ID = "llment-picker-copy";
 const MENU_SHOT_ID = "llment-picker-copy-shot";
 const MENU_HTML_ID = "llment-picker-copy-html";
+const MENU_REC_ID = "llment-picker-record";
 const DEFAULTS = { subfolder: "LLMent Picker", saveAs: false };
 
 const T = (k, ...subs) => api.i18n.getMessage(k, subs.map(String)) || k;
@@ -54,17 +55,19 @@ api.action.onClicked.addListener((tab) => {
 // Chrome und Firefox unter dem Add-on-Namen, daher kein Präfix im Titel.
 const PAGE_CTX = ["page", "frame", "selection", "link", "image", "video", "audio", "editable"];
 // Icon-Menü: startet den Picker mit Voreinstellung (Symbol leuchtet, Klick löst aus).
-const PICK_ID = "llment-pick", PICK_SHOT_ID = "llment-pick-shot", PICK_HTML_ID = "llment-pick-html";
-const PRESETS = { [PICK_ID]: { shot: false, html: false }, [PICK_SHOT_ID]: { shot: true, html: false }, [PICK_HTML_ID]: { shot: false, html: true } };
+const PICK_ID = "llment-pick", PICK_SHOT_ID = "llment-pick-shot", PICK_HTML_ID = "llment-pick-html", PICK_REC_ID = "llment-pick-record";
+const PRESETS = { [PICK_ID]: { shot: false, html: false }, [PICK_SHOT_ID]: { shot: true, html: false }, [PICK_HTML_ID]: { shot: false, html: true }, [PICK_REC_ID]: { record: true } };
 
 menus.removeAll().then(() => {
   menus.create({ id: MENU_ID, title: T("menuCopy"), contexts: PAGE_CTX });
   menus.create({ id: MENU_SHOT_ID, title: T("menuCopyShot"), contexts: PAGE_CTX });
   menus.create({ id: MENU_HTML_ID, title: T("menuCopyHtml"), contexts: PAGE_CTX });
+  menus.create({ id: MENU_REC_ID, title: T("menuRecord"), contexts: PAGE_CTX });
   const actionCtx = (ctx) => {
     menus.create({ id: PICK_ID, title: T("menuPick"), contexts: [ctx] });
     menus.create({ id: PICK_SHOT_ID, title: T("menuPickShot"), contexts: [ctx] });
     menus.create({ id: PICK_HTML_ID, title: T("menuPickHtml"), contexts: [ctx] });
+    menus.create({ id: PICK_REC_ID, title: T("menuPickRecord"), contexts: [ctx] });
   };
   try { actionCtx("action"); } catch { try { actionCtx("browser_action"); } catch {} }
 });
@@ -80,13 +83,13 @@ menus.onClicked.addListener((info, tab) => {
     }, true);
     return;
   }
-  if (![MENU_ID, MENU_SHOT_ID, MENU_HTML_ID].includes(info.menuItemId)) return;
+  if (![MENU_ID, MENU_SHOT_ID, MENU_HTML_ID, MENU_REC_ID].includes(info.menuItemId)) return;
   inject(tab.id, info.frameId, {
     // onSelection: Rechtsklick lag auf markiertem Text -> dritte Zeile mit dem Text
     func: (ctx) => {
       window.__elementPickerContextTarget = ctx;
     },
-    args: [{ id: info.targetElementId ?? -1, onSelection: !!info.selectionText, shot: info.menuItemId === MENU_SHOT_ID, html: info.menuItemId === MENU_HTML_ID }],
+    args: [{ id: info.targetElementId ?? -1, onSelection: !!info.selectionText, shot: info.menuItemId === MENU_SHOT_ID, html: info.menuItemId === MENU_HTML_ID, record: info.menuItemId === MENU_REC_ID }],
   });
 });
 

@@ -233,16 +233,16 @@
     "message": "Screenshots (Alt+Klick, Lasso)"
   },
   "optShotBoth": {
-    "message": "Zwischenablage und PNG-Datei (Standard)"
+    "message": "Zwischenablage und PNG-Datei"
   },
   "optShotClipboard": {
-    "message": "Nur Zwischenablage – Bild und Text in einem Strg+V"
+    "message": "Nur Zwischenablage – Bild und Text in einem Strg+V (für Chats, die keine lokalen Dateien lesen)"
   },
   "optShotFile": {
-    "message": "Nur PNG-Datei – der Pfad kommt in den Zwischenablage-Text"
+    "message": "Nur PNG-Datei, Pfad im Zwischenablage-Text (Standard) – auch andere Chats können sie lesen, nichts bläht die Konversation auf, und der Agent kann in der vollen Auflösung ausschneiden"
   },
   "optShotHint": {
-    "message": "Als Datei ist der Screenshot unabhängig von Fokuswechseln während des Kopierens, und Claude Code liest ihn direkt von der Platte. In der Zwischenablage lässt er sich in jeden Chat einfügen."
+    "message": "Claude Code und andere Coding-Agenten lesen die Datei von der Platte, wenn sie sie brauchen. Web-Chats (claude.ai, ChatGPT) können keine lokalen Pfade öffnen – dort die Zwischenablage nehmen."
   },
   "lineShotFile": {
     "message": "Screenshot: "
@@ -356,6 +356,170 @@
       },
       "list": {
         "content": "$4"
+      }
+    }
+  },
+  "menuPickRecord": {
+    "message": "Element wählen – Interaktion aufnehmen (5 s)"
+  },
+  "menuRecord": {
+    "message": "Interaktion hier aufnehmen (5 s)"
+  },
+  "hintRecord": {
+    "message": "R Aufnahme"
+  },
+  "toastRecording": {
+    "message": "Aufnahme läuft: hovern, klicken … Esc beendet"
+  },
+  "toastRecorded": {
+    "message": "Interaktion kopiert"
+  },
+  "recStatus": {
+    "message": "Aufnahme $T$ · Esc",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      }
+    }
+  },
+  "recLine": {
+    "message": "Interaktion aufgezeichnet: $D$, $N$ Bilder alle 0,55 s (Zeiger = blauer Punkt)",
+    "placeholders": {
+      "d": {
+        "content": "$1"
+      },
+      "n": {
+        "content": "$2"
+      }
+    }
+  },
+  "recSheet": {
+    "message": "Kontaktbogen $W$×$H$ px im selben Zwischenablage-Eintrag",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      }
+    }
+  },
+  "recEvents": {
+    "message": "Ablauf (Zeiger, Klicks, Tasten)"
+  },
+  "recPointer": {
+    "message": "Zeiger auf"
+  },
+  "recClick": {
+    "message": "Klick"
+  },
+  "recKey": {
+    "message": "Taste"
+  },
+  "recScroll": {
+    "message": "Scroll"
+  },
+  "recRules": {
+    "message": ":hover- / :focus- / :active-Regeln aus den Stylesheets"
+  },
+  "recInside": {
+    "message": "auf Nachkommen"
+  },
+  "recAncestor": {
+    "message": "auf einem Vorfahr"
+  },
+  "recDeclared": {
+    "message": "Deklarierte Übergänge und Animationen"
+  },
+  "recNoteAll": {
+    "message": "„all\" schließt Layout-Eigenschaften ein"
+  },
+  "recNoteLayout": {
+    "message": "animiert eine Layout-Eigenschaft (Reflow je Frame)"
+  },
+  "recNotePaint": {
+    "message": "teuer zu zeichnen (box-shadow/filter)"
+  },
+  "recHover": {
+    "message": "Zustandsdiff bei Hover (450 ms nach Eintritt, gegen den Ruhezustand)"
+  },
+  "recHoverAt": {
+    "message": "Eintritt bei $T$",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      }
+    }
+  },
+  "recNoChange": {
+    "message": "– keine Änderung"
+  },
+  "recHoverNone": {
+    "message": "(der Zeiger hat das Element während der Aufnahme nicht betreten)"
+  },
+  "recBaseStart": {
+    "message": "Ruhezustand mit Zeiger auf dem Element aufgenommen (er hat es nie verlassen)"
+  },
+  "recBaseLeft": {
+    "message": "Ruhezustand nach Verlassen bei $T$ aufgenommen",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      }
+    }
+  },
+  "recAfterLeave": {
+    "message": "Bleibt nach dem Verlassen (450 ms)"
+  },
+  "recDom": {
+    "message": "DOM-Änderungen"
+  },
+  "recAdded": {
+    "message": "hinzugefügt"
+  },
+  "recRemoved": {
+    "message": "entfernt"
+  },
+  "recAttr": {
+    "message": "Attribut"
+  },
+  "recNew": {
+    "message": "neu"
+  },
+  "recAnims": {
+    "message": "Laufende Animationen (getAnimations)"
+  },
+  "recFps": {
+    "message": "Bildrate"
+  },
+  "recFpsLine": {
+    "message": "$N$ Frames in $D$; $L$ Frames über 33 ms, längster $M$ ms bei $T$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      },
+      "d": {
+        "content": "$2"
+      },
+      "l": {
+        "content": "$3"
+      },
+      "m": {
+        "content": "$4"
+      },
+      "t": {
+        "content": "$5"
+      }
+    }
+  },
+  "recLoaf": {
+    "message": "long-animation-frames: $N$ ($LIST$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      },
+      "list": {
+        "content": "$2"
       }
     }
   }
