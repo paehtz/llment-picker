@@ -282,9 +282,48 @@
     return lines.join("\n");
   }
 
-  function htmlFor(el, selector, withCss) {
+  // Schlank-Modus: entfernt, was fürs Lesen und Nachbauen nicht zählt und
+  // Token kostet. Kurze data-Attribute (data-aos="fade-up") bleiben, Bildquellen
+  // in data-Attributen (Lazy-Loading) auch. Liefert die Zählung für die Kopfzeile.
+  function slimHtml(root) {
+    const n = { blocks: 0, hidden: 0, handlers: 0, data: 0, srcset: 0, svg: 0, comments: 0, uris: 0, selects: 0 };
+    // Vorhandene Kommentare zuerst – die eigenen Platzhalter unten bleiben
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_COMMENT);
+    const comments = [];
+    for (let c = walker.nextNode(); c; c = walker.nextNode()) comments.push(c);
+    comments.forEach((c) => { c.remove(); n.comments++; });
+    root.querySelectorAll("style, template").forEach((x) => { x.remove(); n.blocks++; });
+    root.querySelectorAll('input[type="hidden"]').forEach((x) => { x.remove(); n.hidden++; });
+    root.querySelectorAll("svg").forEach((x) => { if (x.childElementCount) { n.svg++; x.replaceChildren(document.createComment(" " + x.childElementCount + " ")); } });
+    // Gleiche Auswahllisten (z. B. je Tabellenzeile ein Select mit denselben Optionen):
+    // ab der zweiten nur die gewählte Option, der Rest steht in der ersten
+    const seen = new Map();
+    root.querySelectorAll("select").forEach((sel) => {
+      const key = Array.from(sel.options, (o) => o.value + "=" + o.text).join("|");
+      if (!seen.has(key)) { seen.set(key, true); return; }
+      const keep = Array.from(sel.selectedOptions);
+      if (!keep.length || keep.length === sel.options.length) return;
+      sel.replaceChildren(...keep, document.createComment(" +" + (sel.options.length - keep.length) + " "));
+      n.selects++;
+    });
+    const all = [root, ...root.querySelectorAll("*")];
+    for (const x of all) {
+      for (const a of Array.from(x.attributes)) {
+        const name = a.name, v = a.value;
+        if (name.startsWith("on")) { x.removeAttribute(name); n.handlers++; }
+        else if (name === "srcset" || name === "sizes" || name === "data-srcset") { x.removeAttribute(name); n.srcset++; }
+        else if (name.startsWith("data-") && !/src|href|url|img|image|bg|background/.test(name) && (v.length > 60 || /^[\[{]/.test(v))) { x.removeAttribute(name); n.data++; }
+        else if (name === "style" && !v.trim()) x.removeAttribute(name);
+        else if (v.length > 200 && v.includes("data:")) { x.setAttribute(name, v.replace(/data:[^"'\s)]{120,}/g, (m) => m.slice(0, 40) + "…")); n.uris++; }
+      }
+    }
+    return n;
+  }
+
+  function htmlFor(el, selector, withCss, slim) {
     const clone = el.cloneNode(true);
     clone.querySelectorAll("script, noscript").forEach((n) => n.remove());
+    const slimmed = slim ? slimHtml(clone) : null;
     let head = `<!-- LLMent Picker · ${new Date().toISOString()}
 ${t("fileUrl")}: ${location.href}
 ${t("fileSelector")}: ${selector}
@@ -292,12 +331,18 @@ ${t("fileTitle")}: ${document.title.replace(/-->/g, "--&gt;")}
 ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100) / 100}
 `;
     if (IN_FRAME) head += `${t("fileFrame")}: ${location.href}\n`;
+    if (slimmed) {
+      const parts = [["blocks", "fileSlimBlocks"], ["hidden", "fileSlimHidden"], ["handlers", "fileSlimHandlers"], ["data", "fileSlimData"], ["srcset", "fileSlimSrcset"], ["svg", "fileSlimSvg"], ["comments", "fileSlimComments"], ["uris", "fileSlimUris"], ["selects", "fileSlimSelects"]]
+        .filter(([k]) => slimmed[k]).map(([k, key]) => t(key, slimmed[k]));
+      head += `${t("fileSlim")}: ${parts.length ? parts.join(", ") : t("fileNone")}\n`;
+    }
     if (withCss) {
       let ctx = t("fileCssUnavailable");
       try { ctx = cssContext(el); } catch (e) { ctx += ": " + (e && e.message); }
       head += "\n" + ctx + "\n";
     }
-    return head + "-->\n" + clone.outerHTML + "\n";
+    const html = slim ? clone.outerHTML.replace(/\n[ \t]*\n+/g, "\n") : clone.outerHTML;
+    return head + "-->\n" + html + "\n";
   }
 
   function slugFor(el) {
@@ -322,9 +367,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     return res.path;
   }
   async function saveHtml(el, selector, base) {
-    let withCss = true;
-    try { withCss = (await api.storage.sync.get({ cssInHtml: true })).cssInHtml !== false; } catch {}
-    return saveFile({ filename: base + ".html", content: htmlFor(el, selector, withCss), mime: "text/html;charset=utf-8" });
+    let withCss = true, slim = true;
+    try {
+      const v = await api.storage.sync.get({ cssInHtml: true, htmlSlim: true });
+      withCss = v.cssInHtml !== false;
+      slim = v.htmlSlim !== false;
+    } catch {}
+    return saveFile({ filename: base + ".html", content: htmlFor(el, selector, withCss, slim), mime: "text/html;charset=utf-8" });
   }
   async function saveShot(blob, base) {
     const dataUrl = await new Promise((ok, err) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = err; fr.readAsDataURL(blob); });

@@ -260,5 +260,86 @@
         "content": "$1"
       }
     }
+  },
+  "optSlim": {
+    "message": "HTML-Dateien verschlanken (Token sparen)"
+  },
+  "optSlimHint": {
+    "message": "Entfernt, was fürs Lesen und Nachbauen nicht zählt: versteckte Formularfelder, Event-Handler, lange data-Attribute (kurze wie data-aos und Bildquellen bleiben), srcset-Listen, SVG-Pfade, <style>-Blöcke, Kommentare, lange data:-URIs. Die Kopfzeile nennt, was entfernt wurde. Aus = das Element exakt wie gerendert."
+  },
+  "fileSlim": {
+    "message": "Verschlankt"
+  },
+  "fileSlimBlocks": {
+    "message": "$N$ style/template-Blöcke",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimHidden": {
+    "message": "$N$ versteckte Felder",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimHandlers": {
+    "message": "$N$ Event-Handler",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimData": {
+    "message": "$N$ lange data-Attribute",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimSrcset": {
+    "message": "$N$ srcset/sizes",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimSvg": {
+    "message": "$N$ SVG-Inhalte",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimComments": {
+    "message": "$N$ Kommentare",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimUris": {
+    "message": "$N$ data:-URIs gekürzt",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimSelects": {
+    "message": "$N$ wiederholte Auswahllisten",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
   }
 }

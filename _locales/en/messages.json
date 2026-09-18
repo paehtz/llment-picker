@@ -260,5 +260,86 @@
         "content": "$1"
       }
     }
+  },
+  "optSlim": {
+    "message": "Slim HTML files (save tokens)"
+  },
+  "optSlimHint": {
+    "message": "Removes what does not matter for reading or rebuilding: hidden form fields, event handlers, long data attributes (short ones like data-aos and image sources stay), srcset lists, SVG paths, <style> blocks, comments, long data: URIs. The file header lists what was removed. Off = the element exactly as rendered."
+  },
+  "fileSlim": {
+    "message": "Slimmed"
+  },
+  "fileSlimBlocks": {
+    "message": "$N$ style/template blocks",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimHidden": {
+    "message": "$N$ hidden fields",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimHandlers": {
+    "message": "$N$ event handlers",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimData": {
+    "message": "$N$ long data attributes",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimSrcset": {
+    "message": "$N$ srcset/sizes",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimSvg": {
+    "message": "$N$ SVG contents",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimComments": {
+    "message": "$N$ comments",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimUris": {
+    "message": "$N$ data: URIs shortened",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSlimSelects": {
+    "message": "$N$ repeated option lists",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
   }
 }
