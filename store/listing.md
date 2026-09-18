@@ -19,9 +19,9 @@ LLMent Picker sees nothing until you click, sends nothing anywhere and runs only
 Working on a web page with an AI assistant, you hit this constantly: "I mean the second box under the heading" is clear to a person and useless to a tool. LLMent Picker turns one click into an unambiguous reference in your clipboard:
 
 1. the full page URL
-2. a CSS selector that matches exactly this element, e.g. `#bereiche .values > .value:nth-of-type(2) > p`
+2. a CSS selector that matches exactly this element, e.g. #bereiche .values > .value:nth-of-type(2) > p
 3. if you selected text first: that text in quotes – "this passage is meant"
-4. with Alt+click: a screenshot of the element and its surroundings, as an image in the same clipboard entry, plus viewport and pixel ratio – for "this overlaps", "this is misaligned". By default the PNG goes to your downloads folder and its path into the clipboard text – token-friendly, readable by any chat, croppable at full size (setting: file, clipboard with image and text in one Ctrl+V, or both). Elements larger than the window (long tables, wide tables in scroll containers) are captured whole, stitched from several tiles. Or hold the left button and drag a region: the lasso captures exactly that area, the selector names the container that covers it best.
+4. with Alt+click: a screenshot of the element and its surroundings, plus viewport and pixel ratio – for "this overlaps", "this is misaligned". By default the PNG goes to your downloads folder and its path into the clipboard text – token-friendly, readable by any chat, croppable at full size (setting: file, clipboard with image and text in one Ctrl+V, or both). Elements larger than the window (long tables, wide tables in scroll containers) are captured whole, stitched from several tiles. Or hold the left button and drag a region: the lasso captures exactly that area, the selector names the container that covers it best.
 5. with Ctrl+click: the element's HTML as currently rendered, saved as a file in your downloads folder, with the CSS context you would see in the inspector (matching rules with file and media query, effective layout values). The path goes into the clipboard – Claude Code reads it straight from disk. For content that only exists logged in or after rendering: timetables, tables, portals.
 
 Selectors are readable for humans and unambiguous for tools: IDs and meaningful class names serve as anchors, positional indices are used only where needed, state and animation classes are ignored, and every selector is verified against the page before copying (exactly one match).
@@ -30,7 +30,7 @@ Usage
 • Select text, then icon or shortcut → element containing the selection + text copied immediately
 • Nothing selected: icon or shortcut → picker starts; the element under the cursor gets an outline; click copies
 • Alt+click → with screenshot · Ctrl+click → as HTML file · both → both · drag → lasso region as screenshot · R → record the interaction for 5 s (hover rules, transitions, state diff, DOM changes, frame timing, contact sheet)
-• Right-click on the page → "Copy this element" / "Copy with screenshot" / "Save as HTML file", without picker mode
+• Right-click on the page → "Copy this element" / "Copy with screenshot" / "Save as HTML file" / "Record interaction here", without picker mode
 • Right-click the icon → start the picker with a preset
 • Works inside iframes; the clipboard says which frame
 
@@ -43,9 +43,9 @@ LLMent Picker sieht nichts, bis Sie klicken, sendet nichts und läuft nur auf de
 Wer mit einem KI-Assistenten an einer Webseite arbeitet, kennt das Problem: „Ich meine das zweite Kästchen unter der Überschrift" ist für Menschen klar, für ein Werkzeug nicht. LLMent Picker macht aus einem Klick eine eindeutige Referenz in der Zwischenablage:
 
 1. die vollständige Seiten-URL
-2. ein CSS-Selektor, der genau dieses Element trifft, z. B. `#bereiche .values > .value:nth-of-type(2) > p`
+2. ein CSS-Selektor, der genau dieses Element trifft, z. B. #bereiche .values > .value:nth-of-type(2) > p
 3. wenn Sie vorher Text markiert haben: dieser Text in Anführungszeichen – „um diese Stelle geht es"
-4. mit Alt+Klick: ein Screenshot des Elements samt Umgebung als Bild im selben Zwischenablage-Eintrag, dazu Viewport und Pixelverhältnis – für „das überlappt", „das ist verschoben". Standardmäßig landet das PNG im Download-Ordner und sein Pfad im Zwischenablage-Text – tokensparend, für jeden Chat lesbar, in voller Auflösung ausschneidbar (Einstellung: Datei, Zwischenablage mit Bild und Text in einem Strg+V, oder beides). Elemente, die größer sind als das Fenster (lange Tabellen, breite Tabellen in Scroll-Containern), werden vollständig erfasst, aus mehreren Kacheln zusammengesetzt. Oder linke Taste halten und einen Bereich aufziehen: das Lasso erfasst genau diesen Ausschnitt, der Selektor nennt den Container, der ihn am besten abdeckt.
+4. mit Alt+Klick: ein Screenshot des Elements samt Umgebung, dazu Viewport und Pixelverhältnis – für „das überlappt", „das ist verschoben". Standardmäßig landet das PNG im Download-Ordner und sein Pfad im Zwischenablage-Text – tokensparend, für jeden Chat lesbar, in voller Auflösung ausschneidbar (Einstellung: Datei, Zwischenablage mit Bild und Text in einem Strg+V, oder beides). Elemente, die größer sind als das Fenster (lange Tabellen, breite Tabellen in Scroll-Containern), werden vollständig erfasst, aus mehreren Kacheln zusammengesetzt. Oder linke Taste halten und einen Bereich aufziehen: das Lasso erfasst genau diesen Ausschnitt, der Selektor nennt den Container, der ihn am besten abdeckt.
 5. mit Strg+Klick: das HTML des Elements, so wie es gerade im Browser steht, als Datei im Download-Ordner, mit dem CSS-Kontext wie im Inspektor (greifende Regeln samt Datei und Media-Query, effektive Layout-Werte). Der Pfad kommt in die Zwischenablage – Claude Code liest die Datei direkt. Für Inhalte, die es nur eingeloggt oder nur nach dem Rendern gibt: Stundenpläne, Tabellen, Portale.
 
 Der Selektor ist für Menschen lesbar und für Werkzeuge eindeutig: IDs und sprechende Klassen als Anker, Positionsangaben nur wo nötig, Zustands- und Animationsklassen ignoriert, und jeder Selektor wird vor dem Kopieren gegen die Seite geprüft (genau ein Treffer).
@@ -54,7 +54,7 @@ Bedienung
 • Text markieren, dann Icon oder Tastenkürzel → Element der Markierung + Text sofort kopiert
 • Nichts markiert: Icon oder Tastenkürzel → Picker startet, Element unter der Maus wird umrahmt, Klick kopiert
 • Alt+Klick → mit Screenshot · Strg+Klick → als HTML-Datei · beides → beides · Ziehen → Lasso-Bereich als Screenshot · R → Interaktion 5 s aufnehmen (Hover-Regeln, Übergänge, Zustandsdiff, DOM-Änderungen, Bildrate, Kontaktbogen)
-• Rechtsklick auf der Seite → „Dieses Element kopieren" / „Mit Screenshot kopieren" / „Als HTML-Datei speichern", ohne Picker-Modus
+• Rechtsklick auf der Seite → „Dieses Element kopieren" / „Mit Screenshot kopieren" / „Als HTML-Datei speichern" / „Interaktion hier aufnehmen", ohne Picker-Modus
 • Rechtsklick auf das Icon → Picker mit Voreinstellung starten
 • Funktioniert auch in iframes; die Zwischenablage nennt den Frame
 
