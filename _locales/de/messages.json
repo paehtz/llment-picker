@@ -368,14 +368,11 @@
   "hintRecord": {
     "message": "R Aufnahme"
   },
-  "toastRecording": {
-    "message": "Aufnahme läuft: hovern, klicken … Esc beendet"
-  },
   "toastRecorded": {
     "message": "Interaktion kopiert"
   },
   "recStatus": {
-    "message": "Aufnahme $T$ · Esc",
+    "message": "Aufnahme $T$ · hovern, klicken … Esc beendet",
     "placeholders": {
       "t": {
         "content": "$1"
@@ -522,5 +519,27 @@
         "content": "$2"
       }
     }
+  },
+  "recStatusLeave": {
+    "message": "Aufnahme $T$ · Zeiger kurz vom Element nehmen, dann hovern · Esc beendet",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      }
+    }
+  },
+  "recHoverOn": {
+    "message": "Zeiger auf $SEL$ bei $T$",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      },
+      "sel": {
+        "content": "$2"
+      }
+    }
+  },
+  "recEnd": {
+    "message": "Endzustand gegenüber Start"
   }
 }

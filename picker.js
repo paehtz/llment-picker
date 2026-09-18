@@ -383,7 +383,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const d = new Date();
     const p = (n) => String(n).padStart(2, "0");
     const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
-    const host = location.hostname.replace(/^www\./, "");
+    const host = location.hostname.replace(/^www\./, "") || (location.protocol === "file:" ? "file" : "local");
     return `${stamp}_${host}_${slugFor(el)}`;
   }
   // Speichern über das Hintergrundskript (downloads); Text als content, Binärdaten als dataUrl
@@ -779,7 +779,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   const LAYOUT_RE = /\b(width|height|top|left|right|bottom|margin|padding|max-height|max-width|min-height|min-width|font-size|line-height|border-width|inset|flex|gap)\b/;
   const secs = (ms) => (ms / 1000).toFixed(2) + " s";
   const selOf = (el) => { try { return buildSelector(el); } catch { return el && el.tagName ? el.tagName.toLowerCase() : String(el); } };
-  const isOwn = (n) => !!(n && n.nodeType === 1 && n.closest("[data-llment-picker]"));
+  const isOwn = (n) => !!(n && n.nodeType === 1 && n.closest("[data-llment-picker], [data-llment-rec]"));
   const shortVal = (v) => (v.length > 60 ? v.slice(0, 57) + "…" : v);
   const descOf = (n) => n.tagName.toLowerCase() + (n.id ? "#" + n.id : "") + Array.from(n.classList).slice(0, 2).map((c) => "." + c).join("");
 
@@ -868,7 +868,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     return m;
   }
   // Verschiebung eines Elements, die nur der Verschiebung seines Elternteils folgt, ist kein eigener Befund
-  const shift = (a, b) => { const [pa, sa] = a.split(" "), [pb, sb] = b.split(" "); const [ax, ay] = pa.split(",").map(Number), [bx, by] = pb.split(",").map(Number); return sa === sb ? `${bx - ax},${by - ay}` : null; };
+  const shift = (a, b) => { const [pa, sa] = a.split(" "), [pb, sb] = b.split(" "); const [ax, ay] = pa.split(",").map(Number), [bx, by] = pb.split(",").map(Number); return { d: `${bx - ax},${by - ay}`, same: sa === sb }; };
   function diffSnap(a, b, limit) {
     const lines = [];
     for (const [e, o] of b) {
@@ -879,7 +879,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
         if (o[k] === p[k]) continue;
         if (k === "rect" && e.parentElement && a.has(e.parentElement) && b.has(e.parentElement)) {
           const mine = shift(p.rect, o.rect), theirs = shift(a.get(e.parentElement).rect, b.get(e.parentElement).rect);
-          if (mine && mine === theirs) continue;
+          if (mine.same && mine.d === theirs.d) continue;
         }
         ch.push(`${k} ${shortVal(p[k])} → ${shortVal(o[k])}`);
       }
@@ -921,7 +921,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     return cv;
   }
 
-  async function recordInteraction(root) {
+  // fixedRegion: Bildausschnitt aus dem Lasso statt aus dem Element
+  async function recordInteraction(root, fixedRegion) {
     guardAlt(true);
     reportState(true);
     const target = await shotTarget();
@@ -935,10 +936,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const rootRect = root.getBoundingClientRect();
     // Statuschip oben rechts (bei den Aufnahmen ausgeblendet wie alle eigenen Overlays)
     const chip = document.createElement("div");
-    chip.setAttribute("data-llment-picker", "");
-    chip.style.cssText = `position:fixed;top:16px;right:16px;z-index:${Z};pointer-events:none;font:13px/1 system-ui,sans-serif;color:#fff;background:#d0342c;padding:8px 12px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.25);`;
+    // Kein data-llment-picker: der Chip bleibt während der Aufnahmen stehen (sonst
+    // flackert er im Takt der Bilder); er liegt oben rechts, außerhalb des Bereichs.
+    chip.setAttribute("data-llment-rec", "");
+    chip.style.cssText = `position:fixed;top:16px;right:16px;z-index:${Z};pointer-events:none;max-width:46vw;font:13px/1.3 system-ui,sans-serif;color:#fff;background:#d0342c;padding:8px 12px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.25);`;
     document.documentElement.appendChild(chip);
-    const tick = setInterval(() => (chip.textContent = "\u25cf " + t("recStatus", secs(rel()))), 100);
+    const tick = setInterval(() => (chip.textContent = "\u25cf " + (baseline ? t("recStatus", secs(rel())) : t("recStatusLeave", secs(rel())))), 100);
     const pushEvent = (text) => { if (events.length < 40) events.push(`${secs(rel())}  ${text}`); };
     const onMoveRec = (e) => {
       pointer = { x: e.clientX, y: e.clientY };
@@ -958,8 +961,14 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     };
     const onOverRec = (e) => {
       if (isOwn(e.target) || e.target === lastHover) return;
+      const prev = lastHover;
       lastHover = e.target;
       pushEvent(`${t("recPointer")} ${selOf(e.target)}`);
+      // Wechsel innerhalb des Ziels (z. B. auf einen Button): eigener Diff
+      if (prev && root.contains(prev) && root.contains(e.target) && e.target !== root && hovers.length < 4) {
+        const at = rel(), sel = selOf(e.target);
+        setTimeout(() => { if (running) hovers.push({ t: at, sel, lines: diffSnap(baseline || startSnap, snapshot(root), 25) }); }, REC_SETTLE);
+      }
     };
     const onClickRec = (e) => { if (!isOwn(e.target)) pushEvent(`${t("recClick")} ${selOf(e.target)}`); };
     const onKeyRec = (e) => {
@@ -1039,23 +1048,23 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     // Bildfolge: alle REC_FRAME_MS ein Bild (Chrome erlaubt zwei je Sekunde)
     const frameLoop = (async () => {
       while (running && rel() < REC_MS) {
-        const at = rel();
+        const at0 = rel();
         const nodes = own();
         nodes.forEach((n) => (n.style.visibility = "hidden"));
         try {
           await settle();
+          const at = rel(), p = pointer; // Zeitpunkt und Zeiger unmittelbar vor der Aufnahme
           const dataUrl = await captureTab();
-          frames.push({ t: at, dataUrl, pointer });
+          frames.push({ t: at, dataUrl, pointer: p });
         } catch (e) {
           console.warn("LLMent Picker: Bild nicht aufgenommen –", e && e.message);
         } finally {
           nodes.forEach((n) => (n.style.visibility = ""));
         }
-        const wait = REC_FRAME_MS - (rel() - at);
+        const wait = REC_FRAME_MS - (rel() - at0);
         if (wait > 0) await sleep(wait);
       }
     })();
-    toast(t("toastRecording"), false, 2500);
     while (running && rel() < REC_MS) await sleep(50);
     running = false;
     await frameLoop;
@@ -1079,9 +1088,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     section(t("recRules"), pseudoRules(root, 40));
     section(t("recDeclared"), declaredMotion(root));
     const hoverLines = [];
-    for (const h of hovers) { hoverLines.push(t("recHoverAt", secs(h.t)) + (h.lines.length ? "" : " " + t("recNoChange"))); hoverLines.push(...h.lines.map((l) => "  " + l)); }
+    hovers.sort((a, b) => a.t - b.t);
+    for (const h of hovers) { hoverLines.push((h.sel ? t("recHoverOn", secs(h.t), h.sel) : t("recHoverAt", secs(h.t))) + (h.lines.length ? "" : " " + t("recNoChange"))); hoverLines.push(...h.lines.map((l) => "  " + l)); }
     section(t("recHover") + " · " + baselineNote, hoverLines, t("recHoverNone"));
     if (residual && residual.length) section(t("recAfterLeave"), residual);
+    const endDiff = diffSnap(startSnap, snapshot(root), 15);
+    if (endDiff.length) section(t("recEnd"), endDiff);
     const mut = Array.from(mutations.values()).sort((a, b) => a.t - b.t).slice(0, 60).map((e) => `${secs(e.t)}  ${e.text}${e.n > 1 ? ` (${e.n}×)` : ""}`);
     section(t("recDom"), mut);
     section(t("recAnims"), anims);
@@ -1093,9 +1105,9 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (fl) L.push("", fl);
 
     // Kontaktbogen: Element + Rand, erweitert um neu erschienene Elemente und Zeigerwege
-    let region = inflate(rootRect, REC_PAD);
-    const union = (r) => { const x1 = Math.max(region.left + region.width, r.right), y1 = Math.max(region.top + region.height, r.bottom); region = { left: Math.min(region.left, r.left), top: Math.min(region.top, r.top), width: 0, height: 0 }; region.width = x1 - region.left; region.height = y1 - region.top; };
-    union(root.getBoundingClientRect()); // Endzustand (aufgeklappt?) mit ins Bild
+    let region = fixedRegion ? Object.assign({}, fixedRegion) : inflate(rootRect, REC_PAD);
+    const union = (r) => { const rr = r.right != null ? r.right : r.left + r.width, rb = r.bottom != null ? r.bottom : r.top + r.height; const x1 = Math.max(region.left + region.width, rr), y1 = Math.max(region.top + region.height, rb); region = { left: Math.min(region.left, r.left), top: Math.min(region.top, r.top), width: 0, height: 0 }; region.width = x1 - region.left; region.height = y1 - region.top; };
+    if (!fixedRegion) union(inflate(root.getBoundingClientRect(), REC_PAD)); // Endzustand (aufgeklappt?) mit ins Bild
     for (const n of addedNodes.slice(0, 50)) { if (n.isConnected) { const r = n.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && r.width < innerWidth) union(r); } }
     for (const p of pointers) union({ left: p.x - 10, top: p.y - 10, right: p.x + 10, bottom: p.y + 10 });
     const cl = { left: Math.max(0, region.left), top: Math.max(0, region.top) };
@@ -1242,12 +1254,24 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   hud.append(codeChip, camChip, lassoChip, recChip);
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
   const CTRL_LABEL = isMac ? t("hintHtmlMac") : t("hintHtml");
+  // Texte nur, wenn das Element breit genug für die ganze Reihe ist; sonst
+  // nur die Symbole (die vier sind eindeutig genug). Umschalten kostet ein
+  // Neubefüllen, deshalb nur bei Wechsel.
+  let armRecord = !!preset.record; // Aufnahme scharf (Taste R oder Voreinstellung)
+  let hintMode = null, fullWidth = null;
+  function setHintMode(withText) {
+    if (hintMode === withText) return;
+    hintMode = withText;
+    fillChip(codeChip, ICON_CODE(), withText ? CTRL_LABEL : "");
+    fillChip(camChip, ICON_CAM(), withText ? t("hintShot") : "");
+    fillChip(lassoChip, ICON_LASSO(), withText ? t("hintLasso") : "");
+    fillChip(recChip, ICON_REC(), withText ? t("hintRecord") : "");
+    recChip.style.background = armRecord ? LIT : DIM;
+  }
   function applyHints() {
-    fillChip(codeChip, ICON_CODE(), showHints ? CTRL_LABEL : "");
-    fillChip(camChip, ICON_CAM(), showHints ? t("hintShot") : "");
-    fillChip(lassoChip, ICON_LASSO(), showHints ? t("hintLasso") : "");
-    fillChip(recChip, ICON_REC(), showHints ? t("hintRecord") : "");
-    recChip.style.background = preset.record ? LIT : DIM;
+    hintMode = null;
+    fullWidth = null;
+    setHintMode(showHints);
   }
   applyHints();
   try {
@@ -1257,22 +1281,27 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       if (current) placeHud(current.getBoundingClientRect());
     });
   } catch {}
-  let mods = { alt: false, ctrl: false, lasso: false };
-  function setMods(alt, ctrl) {
-    const lasso = !!(drag && drag.active);
+  let mods = { alt: false, ctrl: false, lasso: false, rec: false };
+  function setMods(alt, ctrl, force) {
+    const lasso = !!(drag && drag.active), rec = armRecord;
     alt = alt || preset.shot || lasso; // Lasso kopiert immer mit Screenshot
     ctrl = ctrl || preset.html;
-    if (mods.alt === alt && mods.ctrl === ctrl && mods.lasso === lasso) return;
-    mods = { alt, ctrl, lasso };
+    if (!force && mods.alt === alt && mods.ctrl === ctrl && mods.lasso === lasso && mods.rec === rec) return;
+    mods = { alt, ctrl, lasso, rec };
     camChip.style.background = alt ? LIT : DIM;
     codeChip.style.background = ctrl ? LIT : DIM;
     lassoChip.style.background = lasso ? LIT : DIM;
+    recChip.style.background = rec ? LIT : DIM;
   }
   function placeHud(r) {
     hud.style.display = "inline-flex";
-    const w = hud.getBoundingClientRect().width || 60;
+    if (showHints) {
+      if (fullWidth == null) { setHintMode(true); fullWidth = hud.getBoundingClientRect().width; }
+      setHintMode(r.width >= fullWidth + 8);
+    } else setHintMode(false);
+    const w = Math.max(hud.getBoundingClientRect().width, hud.scrollWidth) || 60;
     const above = r.top > 24;
-    hud.style.left = Math.max(0, Math.min(innerWidth - w - 2, r.right - w)) + "px";
+    hud.style.left = Math.max(0, Math.min(innerWidth - w - 4, r.right - w)) + "px";
     hud.style.top = (above ? r.top - 22 : r.bottom + 2) + "px";
   }
   const box = document.createElement("div");
@@ -1373,6 +1402,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     window.addEventListener("click", once, opts);
     setTimeout(() => window.removeEventListener("click", once, opts), 400);
     flashRect(r);
+    if (armRecord) { recordInteraction(bestContainer(r).el, r).then(() => reportState(false)); return; }
     copyLasso(r, d.anchor, { html: withHtml });
   }
   function onMove(e) {
@@ -1436,7 +1466,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
     cleanup();
     flash(el);
-    if (preset.record) { await recordInteraction(el); reportState(false); return; }
+    if (armRecord) { await recordInteraction(el); reportState(false); return; }
     await copyElement(el, undefined, { shot: withShot, html: withHtml });
   }
 
@@ -1450,12 +1480,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
     if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") setMods(e.altKey, e.ctrlKey || e.metaKey);
     // R: Interaktion am Element unter dem Zeiger aufnehmen
-    if ((e.key === "r" || e.key === "R") && current && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    // R schaltet die Aufnahme scharf (Chip leuchtet); der Klick bzw. das Loslassen des Lassos startet sie
+    if ((e.key === "r" || e.key === "R") && !e.ctrlKey && !e.altKey && !e.metaKey && !e.repeat) {
       swallow(e);
-      const el = current;
-      cleanup();
-      flash(el);
-      recordInteraction(el).then(() => reportState(false));
+      armRecord = !armRecord;
+      setMods(e.altKey, e.ctrlKey || e.metaKey, true);
     }
   }
   function onKeyUp(e) {

@@ -368,14 +368,11 @@
   "hintRecord": {
     "message": "R Record"
   },
-  "toastRecording": {
-    "message": "Recording: hover, click … Esc ends it"
-  },
   "toastRecorded": {
     "message": "Interaction copied"
   },
   "recStatus": {
-    "message": "Recording $T$ · Esc",
+    "message": "Recording $T$ · hover, click … Esc ends",
     "placeholders": {
       "t": {
         "content": "$1"
@@ -522,5 +519,27 @@
         "content": "$2"
       }
     }
+  },
+  "recStatusLeave": {
+    "message": "Recording $T$ · move the pointer off the element, then hover · Esc ends",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      }
+    }
+  },
+  "recHoverOn": {
+    "message": "pointer on $SEL$ at $T$",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      },
+      "sel": {
+        "content": "$2"
+      }
+    }
+  },
+  "recEnd": {
+    "message": "End state compared with the start"
   }
 }
