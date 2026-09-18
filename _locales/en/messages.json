@@ -183,7 +183,7 @@
     "message": "Hide key hints next to the outline"
   },
   "optHideHintsHint": {
-    "message": "Default: \"Ctrl HTML\" and \"Alt Screenshot\" stay visible next to the icons."
+    "message": "Default: the four hints (\"Ctrl HTML\", \"Alt Screenshot\", \"R Record\", \"Drag region\") stay next to the symbols whenever the element is wide enough for them; narrow elements show symbols only."
   },
   "optSaved": {
     "message": "Saved."
@@ -552,5 +552,11 @@
         "content": "$2"
       }
     }
+  },
+  "optEnglish": {
+    "message": "Clipboard and files always in English"
+  },
+  "optEnglishHint": {
+    "message": "The lines in the clipboard and the file headers use English regardless of the browser language – for prompts and files that others will read. The extension UI keeps the browser language."
   }
 }

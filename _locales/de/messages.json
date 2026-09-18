@@ -183,7 +183,7 @@
     "message": "Tastenhinweise am Rahmen ausblenden"
   },
   "optHideHintsHint": {
-    "message": "Standard: „Strg HTML“ und „Alt Screenshot“ bleiben neben den Symbolen sichtbar."
+    "message": "Standard: die vier Hinweise („Strg HTML\", „Alt Screenshot\", „R Aufnahme\", „Ziehen Bereich\") bleiben neben den Symbolen, sobald das Element breit genug dafür ist; bei schmalen Elementen nur die Symbole."
   },
   "optSaved": {
     "message": "Gespeichert."
@@ -552,5 +552,11 @@
         "content": "$2"
       }
     }
+  },
+  "optEnglish": {
+    "message": "Zwischenablage und Dateien immer auf Englisch"
+  },
+  "optEnglishHint": {
+    "message": "Die Zeilen in der Zwischenablage und die Kopfzeilen der Dateien sind unabhängig von der Browsersprache englisch – für Prompts und Dateien, die andere weiterverwenden. Die Oberfläche der Erweiterung bleibt in der Browsersprache."
   }
 }
