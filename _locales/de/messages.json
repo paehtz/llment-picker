@@ -341,5 +341,22 @@
         "content": "$1"
       }
     }
+  },
+  "lineLassoParts": {
+    "message": "Bereich von Hand aufgezogen ($W$×$H$ px); Selektor = kleinster gemeinsamer Container der Elemente darin (Überdeckung $P$ %); darin: $LIST$",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      },
+      "p": {
+        "content": "$3"
+      },
+      "list": {
+        "content": "$4"
+      }
+    }
   }
 }

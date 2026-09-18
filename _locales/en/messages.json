@@ -341,5 +341,22 @@
         "content": "$1"
       }
     }
+  },
+  "lineLassoParts": {
+    "message": "Region drawn by hand ($W$×$H$ px); selector = smallest common container of the elements inside (overlap $P$ %); inside: $LIST$",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      },
+      "p": {
+        "content": "$3"
+      },
+      "list": {
+        "content": "$4"
+      }
+    }
   }
 }

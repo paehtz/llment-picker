@@ -691,24 +691,37 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
 
   // ───────────────────────── Lasso: Bereich → Container ───────────────────
-  // Container mit der größten räumlichen Überdeckung (Schnitt/Vereinigung) unter
-  // den Elementen am Mittelpunkt des Bereichs und ihren Vorfahren.
+  // Kandidaten: Elemente an fünf Punkten des Bereichs (Mitte, Viertelpunkte)
+  // samt Vorfahren. Liegen mehrere Elemente großteils im Bereich, ist das Ziel
+  // ihr kleinster gemeinsamer Container und sie werden genannt; sonst das
+  // Element mit der größten Überdeckung (Schnitt/Vereinigung).
   function bestContainer(r) {
-    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     const cands = new Set();
-    for (const e of document.elementsFromPoint(cx, cy)) for (let p = e; p; p = p.parentElement) cands.add(p);
+    for (const [fx, fy] of [[0.5, 0.5], [0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]]) {
+      for (const e of document.elementsFromPoint(r.left + r.width * fx, r.top + r.height * fy)) for (let p = e; p; p = p.parentElement) cands.add(p);
+    }
     const area = r.width * r.height;
-    let best = null, bestScore = -1;
+    const stats = [];
     for (const el of cands) {
       if (el.closest("[data-llment-picker]")) continue;
       const b = el.getBoundingClientRect();
       const ix = Math.max(0, Math.min(r.left + r.width, b.right) - Math.max(r.left, b.left));
       const iy = Math.max(0, Math.min(r.top + r.height, b.bottom) - Math.max(r.top, b.top));
-      const inter = ix * iy, union = area + b.width * b.height - inter;
-      const score = union > 0 ? inter / union : 0;
-      if (score > bestScore) { bestScore = score; best = el; }
+      const inter = ix * iy, own = b.width * b.height, union = area + own - inter;
+      stats.push({ el, iou: union > 0 ? inter / union : 0, inside: own > 0 ? inter / own : 0, own });
     }
-    return { el: best || document.body, pct: Math.max(0, Math.round(bestScore * 100)) };
+    // Elemente, die großteils im Bereich liegen (ohne Vorfahren solcher Elemente)
+    let inside = stats.filter((s) => s.inside >= 0.6 && s.own >= area * 0.05);
+    inside = inside.filter((s) => !inside.some((o) => o !== s && s.el.contains(o.el)));
+    if (inside.length >= 2) {
+      let anc = inside[0].el.parentElement;
+      while (anc && !inside.every((s) => anc.contains(s.el))) anc = anc.parentElement;
+      const st = stats.find((s) => s.el === anc);
+      return { el: anc || document.body, pct: Math.round((st ? st.iou : 0) * 100), parts: inside.map((s) => s.el) };
+    }
+    let best = null;
+    for (const s of stats) if (!best || s.iou > best.iou) best = s;
+    return { el: best ? best.el : document.body, pct: Math.max(0, Math.round((best ? best.iou : 0) * 100)), parts: [] };
   }
   // r: Bereich in Fensterkoordinaten; anchor: Element, an dem der Bereich hängt
   // (folgt beim Scrollen mit, auch in Scroll-Containern)
@@ -716,8 +729,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const a = anchor.getBoundingClientRect();
     const dx = r.left - a.left, dy = r.top - a.top;
     const measure = () => { const b = anchor.getBoundingClientRect(); return { left: b.left + dx, top: b.top + dy, width: r.width, height: r.height }; };
-    const { el, pct } = bestContainer(r);
-    const line = t("lineLasso", Math.round(r.width), Math.round(r.height), pct);
+    const { el, pct, parts } = bestContainer(r);
+    const W = Math.round(r.width), H = Math.round(r.height);
+    const line = parts.length
+      ? t("lineLassoParts", W, H, pct, parts.slice(0, 6).map((p) => buildSelector(p)).join(", ") + (parts.length > 6 ? ", …" : ""))
+      : t("lineLasso", W, H, pct);
     return copyElement(el, undefined, { shot: true, html: !!opts.html, region: { measure, line } });
   }
 
