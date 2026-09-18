@@ -922,7 +922,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
 
   // fixedRegion: Bildausschnitt aus dem Lasso statt aus dem Element
-  async function recordInteraction(root, fixedRegion) {
+  async function recordInteraction(root, fixedRegion, opts) {
     guardAlt(true);
     reportState(true);
     const target = await shotTarget();
@@ -1132,6 +1132,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (sheet && toFile) {
       try { sheetPath = await saveShot(sheet, fileBase(root) + "-rec"); L.splice(4, 0, t("lineShotFile") + sheetPath); } catch (e) { sheetErr = (e && e.message) || String(e); }
     }
+    // Strg: HTML-Datei des Ziel-Containers dazu
+    let htmlPath = null, htmlErr = null;
+    if (opts && opts.html) {
+      try { htmlPath = await saveHtml(root, selOf(root), fileBase(root)); L.splice(sheetPath ? 5 : sheet ? 4 : 3, 0, t("lineHtml") + htmlPath); }
+      catch (e) { htmlErr = ((e && e.message) || String(e)).slice(0, 120); }
+    }
     const payload = L.join("\n");
     let ok = false;
     if (sheet && toClip && (await copyWithImage(payload, sheet))) ok = imageOk = true;
@@ -1140,7 +1146,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const parts = [ok ? t("toastRecorded") : t("toastCopyFailed")];
     if (sheet && toClip && !imageOk) parts.push(t("toastShotNotWritten", lastClipError.slice(0, 60)));
     if (toFile) parts.push(sheetPath ? t("toastShotSaved") : t("toastShotSaveFailed") + (sheetErr ? ": " + sheetErr.slice(0, 60) : ""));
-    const good = ok && !(sheet && toClip && !imageOk) && !(toFile && !sheetPath);
+    if (opts && opts.html) parts.push(htmlPath ? t("toastHtmlSaved") : t("toastHtmlFailed") + (htmlErr ? ": " + htmlErr : ""));
+    const good = ok && !(sheet && toClip && !imageOk) && !(toFile && !sheetPath) && !(opts && opts.html && !htmlPath);
     toast(parts.join(" · "), good, good ? 1800 : 4000);
     window.__elementPickerLast = payload;
     window.__elementPickerLastShot = sheet ? { bytes: sheet.size, info: "sheet", written: imageOk, path: sheetPath } : null;
@@ -1256,7 +1263,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   const LIT = "#0a84ff", DIM = "rgba(70,80,95,.85)";
   let showHints = true; // Tastenhinweise dauerhaft, abschaltbar in den Einstellungen
   const codeChip = chip(), camChip = chip(), lassoChip = chip(), recChip = chip();
-  hud.append(codeChip, camChip, lassoChip, recChip);
+  hud.append(codeChip, camChip, recChip, lassoChip); // Screenshot und Aufnahme nebeneinander (sie toggeln gegeneinander), Lasso außen
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
   const CTRL_LABEL = isMac ? t("hintHtmlMac") : t("hintHtml");
   // Texte nur, wenn das Element breit genug für die ganze Reihe ist; sonst
@@ -1291,7 +1298,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   let mods = { alt: false, ctrl: false, lasso: false, rec: false };
   function setMods(alt, ctrl, force) {
     const lasso = !!(drag && drag.active), rec = armRecord;
-    alt = alt || preset.shot || armShot || lasso; // Lasso kopiert immer mit Screenshot
+    alt = (alt || preset.shot || armShot || lasso) && !rec; // Lasso kopiert immer mit Screenshot; die Aufnahme ersetzt ihn
     ctrl = ctrl || preset.html || armHtml;
     if (!force && mods.alt === alt && mods.ctrl === ctrl && mods.lasso === lasso && mods.rec === rec) return;
     mods = { alt, ctrl, lasso, rec };
@@ -1410,7 +1417,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     window.addEventListener("click", once, opts);
     setTimeout(() => window.removeEventListener("click", once, opts), 400);
     flashRect(r);
-    if (armRecord) { recordInteraction(bestContainer(r).el, r).then(() => reportState(false)); return; }
+    if (armRecord) { recordInteraction(bestContainer(r).el, r, { html: withHtml }).then(() => reportState(false)); return; }
     copyLasso(r, d.anchor, { html: withHtml });
   }
   function onMove(e) {
@@ -1474,7 +1481,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
     cleanup();
     flash(el);
-    if (armRecord) { await recordInteraction(el); reportState(false); return; }
+    if (armRecord) { await recordInteraction(el, null, { html: withHtml }); reportState(false); return; }
     await copyElement(el, undefined, { shot: withShot, html: withHtml });
   }
 
@@ -1498,6 +1505,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if ((e.key === "r" || e.key === "R") && !e.ctrlKey && !e.altKey && !e.metaKey && !e.repeat) {
       swallow(e);
       armRecord = !armRecord;
+      if (armRecord) armShot = false; // Aufnahme und Einzelscreenshot schließen sich aus
       setMods(e.altKey, e.ctrlKey || e.metaKey, true);
     }
   }
@@ -1506,7 +1514,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     // Antippen schaltet um; Loslassen nach längerem Halten ist immer „aus"
     if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") {
       const short = tap === e.key && performance.now() - tapAt < TAP_MS;
-      if (e.key === "Alt") armShot = short ? !armShot : false;
+      if (e.key === "Alt") { armShot = short ? !armShot : false; if (armShot) armRecord = false; }
       else armHtml = short ? !armHtml : false;
     }
     tap = null;
