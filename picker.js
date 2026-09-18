@@ -950,10 +950,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       if (now && !inside) {
         const at = rel();
         lastDiffAt = at;
-        if (hovers.length < 3) setTimeout(() => { if (running) hovers.push({ t: at, lines: diffSnap(baseline || startSnap, snapshot(root), 25) }); }, REC_SETTLE);
+        // Schnappschuss nur, wenn der Zeiger nach dem Setzintervall noch drinnen ist
+        if (hovers.length < 3) setTimeout(() => { if (running && inside) hovers.push({ t: at, lines: diffSnap(baseline || startSnap, snapshot(root), 25) }); }, REC_SETTLE);
       } else if (!now && inside) {
         setTimeout(() => {
-          if (!running) return;
+          if (!running || inside) return; // Zeiger schon wieder drinnen → kein Ruhezustand
           if (!baseline) { baseline = snapshot(root); baselineNote = t("recBaseLeft", secs(rel())); }
           else residual = diffSnap(baseline, snapshot(root), 15);
         }, REC_SETTLE);
@@ -970,7 +971,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       if (prev && baseline && root.contains(prev) && root.contains(e.target) && e.target !== root && hovers.length < 4 && rel() - lastDiffAt > REC_SETTLE) {
         const at = rel(), sel = selOf(e.target);
         lastDiffAt = at;
-        setTimeout(() => { if (running) hovers.push({ t: at, sel, lines: diffSnap(baseline, snapshot(root), 25) }); }, REC_SETTLE);
+        setTimeout(() => { if (running && inside && lastHover === e.target) hovers.push({ t: at, sel, lines: diffSnap(baseline, snapshot(root), 25) }); }, REC_SETTLE);
       }
     };
     const onClickRec = (e) => { if (!isOwn(e.target)) pushEvent(`${t("recClick")} ${selOf(e.target)}`); };
