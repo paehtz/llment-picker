@@ -929,7 +929,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const toClip = target !== "file", toFile = target !== "clipboard";
     const perf0 = performance.now();
     const rel = () => performance.now() - perf0;
-    const events = [], mutations = new Map(), anims = [], seenAnim = new WeakSet(), longFrames = [], loaf = [];
+    const events = [], mutations = new Map(), anims = [], animGroups = new Map(), seenAnim = new WeakSet(), longFrames = [], loaf = [];
     const frames = [], addedNodes = [], hovers = [], pointers = [];
     let pointer = null, inside = true, baseline = null, lastDiffAt = -1e9, baselineNote = t("recBaseStart"), residual = null, lastHover = null, running = true, frameCount = 0, lastScroll = -1e9;
     const startSnap = snapshot(root);
@@ -1026,7 +1026,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
         else if (typeof CSSAnimation !== "undefined" && a instanceof CSSAnimation) kind = "animation " + a.animationName;
         let tm = {};
         try { tm = a.effect.getTiming(); } catch {}
-        anims.push(`${secs(rel())}  ${selOf(el)}: ${kind} ${Math.round(tm.duration || 0)} ms ${tm.easing || ""}${tm.delay ? ` delay ${Math.round(tm.delay)} ms` : ""}`);
+        const key = `${selOf(el)}: ${kind} ${Math.round(tm.duration || 0)} ms ${tm.easing || ""}${tm.delay ? ` delay ${Math.round(tm.delay)} ms` : ""}`;
+        const g = animGroups.get(key) || { times: [] };
+        if (g.times.length < 12) g.times.push(rel());
+        g.n = (g.n || 0) + 1;
+        animGroups.set(key, g);
+        anims.length = animGroups.size;
       }
     }, 100);
     let po = null;
@@ -1099,7 +1104,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (endDiff.length) section(t("recEnd"), endDiff);
     const mut = Array.from(mutations.values()).sort((a, b) => a.t - b.t).slice(0, 60).map((e) => `${secs(e.t)}  ${e.text}${e.n > 1 ? ` (${e.n}×)` : ""}`);
     section(t("recDom"), mut);
-    section(t("recAnims"), anims);
+    const animLines = Array.from(animGroups, ([key, g]) => `${key}  (${g.n}×: ${g.times.map((x) => (x / 1000).toFixed(2)).join(", ")}${g.n > g.times.length ? ", …" : ""} s)`);
+    section(t("recAnims"), animLines);
     const longest = longFrames.reduce((m, f) => (f.dt > m.dt ? f : m), { dt: 0, t: 0 });
     const fpsLines = [t("recFpsLine", frameCount, secs(duration), longFrames.length, Math.round(longest.dt), secs(longest.t))];
     if (loaf.length) fpsLines.push(t("recLoaf", loaf.length, loaf.join("; ")));
@@ -1123,7 +1129,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
         const first = await loadImage(frames[0].dataUrl);
         const cv = await contactSheet(frames, region, first.naturalWidth / innerWidth);
         sheet = await new Promise((f) => cv.toBlob(f, "image/png"));
-        L.splice(3, 0, t("recSheet", cv.width, cv.height));
+        L.splice(3, 0, t(toClip ? "recSheet" : "recSheetFile", cv.width, cv.height));
       } catch (e) {
         sheetErr = (e && e.message) || String(e);
         console.warn("LLMent Picker: Kontaktbogen fehlgeschlagen –", sheetErr);

@@ -541,5 +541,16 @@
   },
   "recEnd": {
     "message": "Endzustand gegenüber Start"
+  },
+  "recSheetFile": {
+    "message": "Kontaktbogen $W$×$H$ px als Datei (nächste Zeile)",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      }
+    }
   }
 }

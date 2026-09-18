@@ -541,5 +541,16 @@
   },
   "recEnd": {
     "message": "End state compared with the start"
+  },
+  "recSheetFile": {
+    "message": "Contact sheet $W$×$H$ px as file (next line)",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      }
+    }
   }
 }
