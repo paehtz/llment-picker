@@ -34,7 +34,7 @@ Usage
 • Right-click the icon → start the picker with a preset
 • Works inside iframes; the clipboard says which frame
 
-Privacy: only the activeTab permission – the extension does nothing until you invoke it and has no access to other pages. Screenshots are taken only on your click and stay in your clipboard; HTML files are written only on your click into your own downloads folder. No network access, no data collection. Source on GitHub, MIT licence.
+Privacy: only the activeTab permission – the extension does nothing until you invoke it and has no access to other pages. Screenshots and HTML files are created only on your click and stay on your device (downloads folder or clipboard). No network access, no data collection. Source on GitHub, MIT licence.
 
 ## Beschreibung (Deutsch)
 
@@ -58,7 +58,7 @@ Bedienung
 • Rechtsklick auf das Icon → Picker mit Voreinstellung starten
 • Funktioniert auch in iframes; die Zwischenablage nennt den Frame
 
-Datenschutz: nur die Berechtigung activeTab – die Erweiterung tut nichts, bis Sie sie aufrufen, und hat keinen Zugriff auf andere Seiten. Screenshots entstehen nur auf Ihren Klick und bleiben in Ihrer Zwischenablage; HTML-Dateien werden nur auf Ihren Klick in Ihren eigenen Download-Ordner geschrieben. Keine Netzwerkzugriffe, keine Datenerhebung. Quellcode auf GitHub, MIT-Lizenz.
+Datenschutz: nur die Berechtigung activeTab – die Erweiterung tut nichts, bis Sie sie aufrufen, und hat keinen Zugriff auf andere Seiten. Screenshots und HTML-Dateien entstehen nur auf Ihren Klick und bleiben auf Ihrem Gerät (Download-Ordner oder Zwischenablage). Keine Netzwerkzugriffe, keine Datenerhebung. Quellcode auf GitHub, MIT-Lizenz.
 
 ## Category / tags
 
