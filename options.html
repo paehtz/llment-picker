@@ -13,6 +13,10 @@
   .row input{margin-top:3px}
   .row label{margin:0;font-weight:600}
   #status{margin-top:16px;font-size:12.5px;color:#1a7f37;min-height:1.2em}
+  fieldset{border:0;padding:0;margin:14px 0 0}
+  legend{font-weight:600;padding:0;margin-bottom:4px}
+  label.radio{display:flex;align-items:flex-start;gap:8px;font-weight:400;margin:4px 0}
+  label.radio input{margin-top:3px}
 </style>
 </head>
 <body>
@@ -29,6 +33,14 @@
     <div class="hint" data-i18n="optSaveAsHint"></div>
   </div>
 </div>
+
+<fieldset id="shotTarget">
+  <legend data-i18n="optShot"></legend>
+  <label class="radio"><input type="radio" name="shotTarget" value="both"><span data-i18n="optShotBoth"></span></label>
+  <label class="radio"><input type="radio" name="shotTarget" value="clipboard"><span data-i18n="optShotClipboard"></span></label>
+  <label class="radio"><input type="radio" name="shotTarget" value="file"><span data-i18n="optShotFile"></span></label>
+  <div class="hint" data-i18n="optShotHint"></div>
+</fieldset>
 
 <div class="row">
   <input type="checkbox" id="cssInHtml">

@@ -66,7 +66,7 @@
     "message": "Element anklicken"
   },
   "lineShot": {
-    "message": "Viewport $W$×$H$, DPR $DPR$, Screenshot $SW$×$SH$ px (+$PAD$ px Rand)",
+    "message": "Viewport $W$×$H$, DPR $DPR$, Screenshot $SW$×$SH$ px",
     "placeholders": {
       "w": {
         "content": "$1"
@@ -82,9 +82,6 @@
       },
       "sh": {
         "content": "$5"
-      },
-      "pad": {
-        "content": "$6"
       }
     }
   },
@@ -165,7 +162,7 @@
     "message": "LLMent Picker – Einstellungen"
   },
   "optSubfolder": {
-    "message": "Unterordner für HTML-Dateien"
+    "message": "Unterordner für HTML- und Screenshot-Dateien"
   },
   "optSubfolderHint": {
     "message": "Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben. Der Unterordner wird dort angelegt; leer lassen = direkt in den Download-Ordner."
@@ -229,6 +226,38 @@
       },
       "p": {
         "content": "$3"
+      }
+    }
+  },
+  "optShot": {
+    "message": "Screenshots (Alt+Klick, Lasso)"
+  },
+  "optShotBoth": {
+    "message": "Zwischenablage und PNG-Datei (Standard)"
+  },
+  "optShotClipboard": {
+    "message": "Nur Zwischenablage – Bild und Text in einem Strg+V"
+  },
+  "optShotFile": {
+    "message": "Nur PNG-Datei – der Pfad kommt in den Zwischenablage-Text"
+  },
+  "optShotHint": {
+    "message": "Als Datei ist der Screenshot unabhängig von Fokuswechseln während des Kopierens, und Claude Code liest ihn direkt von der Platte. In der Zwischenablage lässt er sich in jeden Chat einfügen."
+  },
+  "lineShotFile": {
+    "message": "Screenshot: "
+  },
+  "toastShotSaved": {
+    "message": "Screenshot gespeichert"
+  },
+  "toastShotSaveFailed": {
+    "message": "Screenshot nicht gespeichert"
+  },
+  "lineShotPad": {
+    "message": " (+$PAD$ px Rand)",
+    "placeholders": {
+      "pad": {
+        "content": "$1"
       }
     }
   }

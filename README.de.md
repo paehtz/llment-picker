@@ -12,13 +12,14 @@ https://www.paehtz.de/#leistungen
 #leistungen .service-list > .service:nth-of-type(2) > .service__body
 "Unternehmenswebseiten: von der Sitemap über die Nutzerführung und Content-Architektur bis"
 Viewport 1440×900, DPR 1.25, Screenshot 454×239 px (+24 px Rand)
+Screenshot: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.png
 HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 ```
 
 1. vollständige Seiten-URL (inkl. Hash)
 2. kürzester CSS-Selektor, der das Element eindeutig trifft
 3. **nur wenn vorher Text markiert war:** der markierte Text in Anführungszeichen (max. 240 Zeichen)
-4. **nur im Screenshot-Modus:** Viewport, Pixelverhältnis und Bildgröße – ein PNG-Ausschnitt des Elements liegt mit in der Zwischenablage; ein Strg+V in Claude fügt Bild und Text zusammen ein
+4. **nur im Screenshot-Modus:** Viewport, Pixelverhältnis und Bildgröße – ein PNG-Ausschnitt des Elements liegt mit in der Zwischenablage; ein Strg+V in Claude fügt Bild und Text zusammen ein. Standardmäßig wird das PNG zusätzlich im Download-Ordner gespeichert und sein Pfad ist die nächste Zeile – eine Datei geht zwischen Zwischenablage und Chat nicht verloren, und Claude Code liest sie von der Platte (Einstellung: Zwischenablage, Datei oder beides)
 5. **nur im HTML-Modus:** der Pfad der gespeicherten Datei – das gerenderte HTML des Elements mit CSS-Kontext, Claude Code liest sie direkt von der Platte
 
 ## Was es abhebt
@@ -61,7 +62,7 @@ Solange der Picker läuft, trägt das Toolbar-Icon einen blauen Punkt (Tooltip �
 | … → „Mit Screenshot kopieren" / „Als HTML-Datei speichern" | dasselbe mit Bild bzw. HTML-Datei |
 | **Rechtsklick auf das Toolbar-Icon → „Element wählen – mit Screenshot" / „– als HTML-Datei"** | startet den Picker mit Voreinstellung: das Symbol über dem Rahmen leuchtet schon, der Klick auf der Seite löst es ohne Taste aus |
 
-**Einstellungen** (Add-on-/Erweiterungsverwaltung → LLMent Picker → Einstellungen): Unterordner im Download-Ordner (Standard `LLMent Picker`), „Speichern unter"-Dialog, CSS-Kontext an/aus, Tastenhinweise an/aus. Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben; ein freier Zielpfad ist nicht möglich.
+**Einstellungen** (Add-on-/Erweiterungsverwaltung → LLMent Picker → Einstellungen): Unterordner im Download-Ordner (Standard `LLMent Picker`), „Speichern unter"-Dialog, Ziel des Screenshots (Zwischenablage und PNG-Datei – Standard –, nur Zwischenablage, nur Datei), CSS-Kontext an/aus, Tastenhinweise an/aus. Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben; ein freier Zielpfad ist nicht möglich.
 
 Die dritte Zeile gibt es also nur, wenn Du sie durch eine Markierung ausdrücklich verlangst. Ein angeklickter Block ohne Markierung liefert nur URL und Selektor – sonst läse ein Chat „dieser Satz ist gemeint", obwohl der Block gemeint war.
 

@@ -129,8 +129,8 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     );
     return true; // asynchrone Antwort
   }
-  if (msg.type === "llment-save-html") {
-    saveHtml(msg.filename, msg.content).then(
+  if (msg.type === "llment-save") {
+    saveFile(msg).then(
       (path) => sendResponse({ path }),
       (err) => sendResponse({ error: String((err && err.message) || err) })
     );
@@ -141,16 +141,21 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // HTML-Datei in den Download-Ordner des Browsers legen (Unterordner und
 // „Speichern unter" aus den Einstellungen). Erweiterungen dürfen nur dorthin
 // schreiben; der absolute Pfad kommt aus downloads.search zurück.
-async function saveHtml(filename, content) {
+// { filename, content, mime } für Text (HTML) oder { filename, dataUrl } für Binärdaten (PNG)
+async function saveFile({ filename, content, mime, dataUrl }) {
   const cfg = Object.assign({}, DEFAULTS, await api.storage.sync.get(DEFAULTS));
   const safe = filename.replace(/[\\/:*?"<>|]/g, "-");
   const sub = (cfg.subfolder || "").trim().replace(/[\\/:*?"<>|]/g, "-").replace(/^\.+/, "");
   // Firefox lehnt data:-URLs für downloads.download ab → Blob-URL (Event-Page hat
   // URL.createObjectURL); Chromes Service-Worker hat das nicht → data:-URL.
   const canBlob = typeof URL.createObjectURL === "function";
-  const url = canBlob
-    ? URL.createObjectURL(new Blob([content], { type: "text/html;charset=utf-8" }))
-    : "data:text/html;charset=utf-8," + encodeURIComponent(content);
+  let url;
+  if (canBlob) {
+    const blob = dataUrl ? await (await fetch(dataUrl)).blob() : new Blob([content], { type: mime || "text/plain;charset=utf-8" });
+    url = URL.createObjectURL(blob);
+  } else {
+    url = dataUrl || "data:" + (mime || "text/plain;charset=utf-8") + "," + encodeURIComponent(content);
+  }
   let id;
   try {
     id = await api.downloads.download({

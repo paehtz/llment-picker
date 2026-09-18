@@ -12,13 +12,14 @@ https://www.paehtz.de/#leistungen
 #leistungen .service-list > .service:nth-of-type(2) > .service__body
 "Unternehmenswebseiten: von der Sitemap über die Nutzerführung und Content-Architektur bis"
 Viewport 1440×900, DPR 1.25, screenshot 454×239 px (+24 px margin)
+Screenshot: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.png
 HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 ```
 
 1. the full page URL (including hash)
 2. the shortest CSS selector that matches exactly this element
 3. **only if text was selected first:** the selected text in quotes (max. 240 characters)
-4. **only in screenshot mode:** viewport, device pixel ratio and image size – a PNG crop of the element is in the clipboard alongside the text; one Ctrl+V in Claude pastes both
+4. **only in screenshot mode:** viewport, device pixel ratio and image size – a PNG crop of the element is in the clipboard alongside the text; one Ctrl+V in Claude pastes both. By default the PNG is also saved to the downloads folder and its path is the next line – a file cannot get lost between clipboard and chat, and Claude Code reads it from disk (setting: clipboard, file or both)
 5. **only in HTML mode:** the path of the saved file – the element's rendered HTML with its CSS context, ready for Claude Code to read from disk
 
 ## What sets it apart
@@ -60,7 +61,7 @@ The text line appears only when you ask for it by selecting text. A block clicke
 
 **Elements inside iframes** can be picked too; the clipboard then carries an extra line `Inside frame: <url> ← <iframe id="…">` and the selector refers to the frame document. The screenshot works for same-origin frames.
 
-**Settings** (extension management → LLMent Picker → Options): subfolder inside the downloads folder (default `LLMent Picker`), "Save as" dialog, CSS context on/off, key hints on/off. Extensions may only write to the browser's download folder; a free target path is not possible.
+**Settings** (extension management → LLMent Picker → Options): subfolder inside the downloads folder (default `LLMent Picker`), "Save as" dialog, screenshot target (clipboard and PNG file – the default –, clipboard only, file only), CSS context on/off, key hints on/off. Extensions may only write to the browser's download folder; a free target path is not possible.
 
 Change the shortcut: Firefox `about:addons` → gear → "Manage Extension Shortcuts"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P opens the profile manager in Firefox; Chrome does not allow Ctrl+Alt combinations – hence two defaults.)
 

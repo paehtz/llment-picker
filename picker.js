@@ -196,11 +196,12 @@
     return { el, text: text.length > MAX_TEXT ? text.slice(0, MAX_TEXT).trimEnd() + "…" : text };
   }
 
-  function payloadFor(el, text, shotInfo, htmlPath, note) {
+  function payloadFor(el, text, shotInfo, htmlPath, note, shotPath) {
     const lines = [location.href, buildSelector(el)];
     if (note) lines.push(note);
     if (text) lines.push(JSON.stringify(text));
     if (shotInfo) lines.push(shotInfo);
+    if (shotPath) lines.push(t("lineShotFile") + shotPath);
     if (htmlPath) lines.push(t("lineHtml") + htmlPath);
     const fl = frameLine();
     if (fl) lines.push(fl);
@@ -305,17 +306,33 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     return raw.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "element";
   }
 
-  async function saveHtml(el, selector) {
+  // Dateiname ohne Endung: Datum_Zeit_Host_Kennung – HTML und Screenshot
+  // desselben Klicks tragen denselben Stamm
+  function fileBase(el) {
     const d = new Date();
     const p = (n) => String(n).padStart(2, "0");
     const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
     const host = location.hostname.replace(/^www\./, "");
-    const filename = `${stamp}_${host}_${slugFor(el)}.html`;
-    let withCss = true;
-    try { withCss = (await api.storage.sync.get({ cssInHtml: true })).cssInHtml !== false; } catch {}
-    const res = await api.runtime.sendMessage({ type: "llment-save-html", filename, content: htmlFor(el, selector, withCss) });
+    return `${stamp}_${host}_${slugFor(el)}`;
+  }
+  // Speichern über das Hintergrundskript (downloads); Text als content, Binärdaten als dataUrl
+  async function saveFile(msg) {
+    const res = await api.runtime.sendMessage(Object.assign({ type: "llment-save" }, msg));
     if (!res || !res.path) throw new Error((res && res.error) || "nicht gespeichert");
     return res.path;
+  }
+  async function saveHtml(el, selector, base) {
+    let withCss = true;
+    try { withCss = (await api.storage.sync.get({ cssInHtml: true })).cssInHtml !== false; } catch {}
+    return saveFile({ filename: base + ".html", content: htmlFor(el, selector, withCss), mime: "text/html;charset=utf-8" });
+  }
+  async function saveShot(blob, base) {
+    const dataUrl = await new Promise((ok, err) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = err; fr.readAsDataURL(blob); });
+    return saveFile({ filename: base + ".png", dataUrl });
+  }
+  // Wohin der Screenshot geht: Zwischenablage, Datei oder beides (Einstellung)
+  async function shotTarget() {
+    try { return (await api.storage.sync.get({ shotTarget: "both" })).shotTarget || "both"; } catch { return "both"; }
   }
 
   // ───────────────────────── Screenshot ───────────────────────────────────
@@ -486,7 +503,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (!cv) throw new Error("keine Aufnahme");
     const blob = await new Promise((f) => cv.toBlob(f, "image/png"));
     const dpr = String(Math.round(devicePixelRatio * 100) / 100);
-    let info = t("lineShot", innerWidth, innerHeight, dpr, cv.width, cv.height, SHOT_PAD);
+    let info = t("lineShot", innerWidth, innerHeight, dpr, cv.width, cv.height);
+    if (pad) info += t("lineShotPad", pad);
     if (tiles > 1) info += t("lineShotTiles", tiles);
     if (scale < 1) info += t("lineShotScaled", Math.round(scale * 100));
     if (clipped) info += t("lineShotClipped");
@@ -572,7 +590,9 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
   async function copyElementInner(el, text, opts) {
     const withShot = !!opts.shot, withHtml = !!opts.html;
-    let shot = null, htmlPath = null, htmlErr = null, shotErr = null;
+    let shot = null, htmlPath = null, htmlErr = null, shotErr = null, shotPath = null, shotFileErr = null;
+    const target = withShot ? await shotTarget() : "both";
+    const toClip = target !== "file", toFile = target !== "clipboard";
     if (withShot) {
       try {
         shot = await (opts.region ? captureRegion(opts.region.measure, el, 0) : captureElement(el));
@@ -582,29 +602,39 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       }
     }
     const selector = buildSelector(el);
+    const base = withShot || withHtml ? fileBase(el) : null;
+    if (shot && toFile) {
+      try {
+        shotPath = await saveShot(shot.blob, base);
+      } catch (e) {
+        shotFileErr = ((e && e.message) || String(e)).replace(/data:[^\s]+/g, "data:…").slice(0, 120);
+        console.warn("LLMent Picker: Screenshot nicht gespeichert –", shotFileErr);
+      }
+    }
     if (withHtml) {
       try {
-        htmlPath = await saveHtml(el, selector);
+        htmlPath = await saveHtml(el, selector, base);
       } catch (e) {
         htmlErr = ((e && e.message) || String(e)).replace(/data:[^\s]+/g, "data:…").slice(0, 120);
         console.warn("LLMent Picker: HTML nicht gespeichert –", htmlErr);
       }
     }
-    const payload = payloadFor(el, text, shot && shot.info, htmlPath, opts.region && opts.region.line);
+    const payload = payloadFor(el, text, shot && shot.info, htmlPath, opts.region && opts.region.line, shotPath);
     let ok = false, imageOk = false;
-    if (shot && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
+    if (shot && toClip && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
     else ok = await copy(payload);
     const parts = [];
     if (!ok) parts.push(t("toastCopyFailed"));
     else if (imageOk) parts.push(t("toastCopiedShot"));
-    else if (shot) parts.push(t("toastShotNotWritten", lastClipError.slice(0, 60)));
-    else if (withShot) parts.push(t("toastTextOnly") + (shotErr ? ": " + shotErr.slice(0, 60) : ""));
+    else if (shot && toClip) parts.push(t("toastShotNotWritten", lastClipError.slice(0, 60)));
+    else if (withShot && !shot) parts.push(t("toastTextOnly") + (shotErr ? ": " + shotErr.slice(0, 60) : ""));
     else parts.push(t("toastCopied"));
+    if (shot && toFile) parts.push(shotPath ? t("toastShotSaved") : t("toastShotSaveFailed") + (shotFileErr ? ": " + shotFileErr : ""));
     if (withHtml) parts.push(htmlPath ? t("toastHtmlSaved") : t("toastHtmlFailed") + (htmlErr ? ": " + htmlErr : ""));
-    const good = ok && !(withShot && !imageOk) && !(withHtml && !htmlPath);
+    const good = ok && !(withShot && !shot) && !(shot && toClip && !imageOk) && !(shot && toFile && !shotPath) && !(withHtml && !htmlPath);
     toast(parts.join(" · "), good, good ? 1400 : 4000);
     window.__elementPickerLast = payload; // für Tests / Debugging
-    window.__elementPickerLastShot = shot ? { bytes: shot.blob && shot.blob.size, info: shot.info, written: imageOk } : null;
+    window.__elementPickerLastShot = shot ? { bytes: shot.blob && shot.blob.size, info: shot.info, written: imageOk, path: shotPath } : null;
     window.__elementPickerLastShotBlob = shot ? shot.blob : null;
     window.__elementPickerLastHtml = htmlPath || htmlErr;
     window.__elementPickerLastError = shotErr || (shot && !imageOk ? lastClipError : null);
