@@ -74,7 +74,7 @@ Datenschutz: nur die Berechtigung activeTab – die Erweiterung tut nichts, bis 
 | `contextMenus` / `menus` | Context menu entries to copy the right-clicked element directly, and entries on the toolbar icon to start the picker with a preset. |
 | `clipboardWrite` | The lines (and, in screenshot mode, the image) are written to the clipboard. On the context-menu path there is no click gesture on the page; without this permission writing would fail there. |
 | `downloads` | On an explicit click (Ctrl+click, Alt+click, lasso or menu entry) the rendered HTML or the screenshot of the chosen element is saved as a file into the browser's downloads folder. No other download, no opening of files. |
-| `storage` | Stores six settings (subfolder, "Save as" dialog, screenshot target, CSS context, slim HTML, key hints). No user data. |
+| `storage` | Stores seven settings (subfolder, "Save as" dialog, screenshot target, CSS context, slim HTML, English output, key hints). No user data. |
 
 **Single purpose (Chrome):** Copies, for a page element chosen by the user, the page URL, a unique CSS selector and optionally the selected text, a screenshot or the rendered HTML, so the element can be referenced precisely in an AI chat or coding agent.
 

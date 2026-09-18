@@ -24,8 +24,34 @@
   const KEY = "__elementPickerInstance";
   const api = globalThis.browser ?? globalThis.chrome;
   // Übersetzung (_locales); Schlüssel als Rückfall, damit nie Leeres erscheint
+  // Zwischenablage- und Dateitexte (Schlüssel line*, file*, media*) optional immer
+  // Englisch: das Hintergrundskript liefert die englische Tabelle, sobald die
+  // Einstellung gesetzt ist; bis dahin (und für die Oberfläche) entscheidet die
+  // Browsersprache.
+  let EN = null;
+  const enReady = (async () => {
+    try {
+      const v = await api.storage.sync.get({ clipEnglish: false });
+      if (!v.clipEnglish) return;
+      const res = await api.runtime.sendMessage({ type: "llment-i18n-en" });
+      if (res && res.messages) EN = res.messages;
+    } catch {}
+  })();
+  const fromEN = (key, subs) => {
+    const m = EN[key];
+    if (!m) return null;
+    let out = m.message;
+    for (const [name, ph] of Object.entries(m.placeholders || {})) {
+      const idx = parseInt(String(ph.content).replace("$", ""), 10) - 1;
+      out = out.replace(new RegExp("[$]" + name + "[$]", "gi"), subs[idx] != null ? String(subs[idx]) : "");
+    }
+    return out;
+  };
   const t = (key, ...subs) => {
-    try { return api.i18n.getMessage(key, subs.map(String)) || key; } catch { return key; }
+    try {
+      if (EN && /^(line|file|media)/.test(key)) { const v = fromEN(key, subs); if (v != null) return v; }
+      return api.i18n.getMessage(key, subs.map(String)) || key;
+    } catch { return key; }
   };
   const IN_FRAME = window !== window.top;
   // Beschreibung des umgebenden Frames für Zeile „Im Frame: …"
@@ -638,6 +664,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     }
   }
   async function copyElementInner(el, text, opts) {
+    await enReady;
     const withShot = !!opts.shot, withHtml = !!opts.html;
     let shot = null, htmlPath = null, htmlErr = null, shotErr = null, shotPath = null, shotFileErr = null;
     const target = withShot ? await shotTarget() : "both";

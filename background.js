@@ -129,6 +129,14 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     );
     return true; // asynchrone Antwort
   }
+  if (msg.type === "llment-i18n-en") {
+    // Englische Sprachtabelle für die Einstellung „Zwischenablage immer Englisch"
+    fetch(api.runtime.getURL("_locales/en/messages.json")).then((r) => r.json()).then(
+      (messages) => sendResponse({ messages }),
+      (err) => sendResponse({ error: String((err && err.message) || err) })
+    );
+    return true;
+  }
   if (msg.type === "llment-save") {
     saveFile(msg).then(
       (path) => sendResponse({ path }),
