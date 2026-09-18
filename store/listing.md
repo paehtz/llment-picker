@@ -8,9 +8,9 @@ LLMent Picker
 
 ## Summary (AMO max. 250 characters · Chrome takes the manifest description, max. 132)
 
-**EN:** Click a page element to copy its URL and a unique CSS selector – plus selected text, a screenshot or the rendered HTML – for AI chats and coding agents.
+**EN (manifest, max. 132):** One click copies a page element’s URL and a unique CSS selector, plus text, screenshot or HTML, for AI chats and coding agents.
 
-**DE:** Klick auf ein Seitenelement kopiert URL und eindeutigen CSS-Selektor – dazu markierter Text, Screenshot oder gerendertes HTML – für KI-Chats und Coding-Agenten.
+**DE (Manifest, max. 132):** Ein Klick kopiert URL und eindeutigen CSS-Selektor eines Elements, dazu Text, Screenshot oder HTML, für KI-Chats und Coding-Agenten.
 
 ## Description (English)
 

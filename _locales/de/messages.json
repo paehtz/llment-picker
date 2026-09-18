@@ -3,7 +3,7 @@
     "message": "LLMent Picker"
   },
   "extDescription": {
-    "message": "Klick auf ein Seitenelement kopiert URL und eindeutigen CSS-Selektor – dazu markierter Text, Screenshot oder gerendertes HTML – für KI-Chats und Coding-Agenten."
+    "message": "Ein Klick kopiert URL und eindeutigen CSS-Selektor eines Elements, dazu Text, Screenshot oder HTML, für KI-Chats und Coding-Agenten."
   },
   "actionTitle": {
     "message": "LLMent Picker"

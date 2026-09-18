@@ -3,7 +3,7 @@
     "message": "LLMent Picker"
   },
   "extDescription": {
-    "message": "Click a page element to copy its URL and a unique CSS selector – plus selected text, a screenshot or the rendered HTML – for AI chats and coding agents."
+    "message": "One click copies a page element’s URL and a unique CSS selector, plus text, screenshot or HTML, for AI chats and coding agents."
   },
   "actionTitle": {
     "message": "LLMent Picker"
