@@ -931,7 +931,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const rel = () => performance.now() - perf0;
     const events = [], mutations = new Map(), anims = [], seenAnim = new WeakSet(), longFrames = [], loaf = [];
     const frames = [], addedNodes = [], hovers = [], pointers = [];
-    let pointer = null, inside = true, baseline = null, baselineNote = t("recBaseStart"), residual = null, lastHover = null, running = true, frameCount = 0, lastScroll = -1e9;
+    let pointer = null, inside = true, baseline = null, lastDiffAt = -1e9, baselineNote = t("recBaseStart"), residual = null, lastHover = null, running = true, frameCount = 0, lastScroll = -1e9;
     const startSnap = snapshot(root);
     const rootRect = root.getBoundingClientRect();
     // Statuschip oben rechts (bei den Aufnahmen ausgeblendet wie alle eigenen Overlays)
@@ -949,6 +949,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       const now = root.contains(e.target) && !isOwn(e.target);
       if (now && !inside) {
         const at = rel();
+        lastDiffAt = at;
         if (hovers.length < 3) setTimeout(() => { if (running) hovers.push({ t: at, lines: diffSnap(baseline || startSnap, snapshot(root), 25) }); }, REC_SETTLE);
       } else if (!now && inside) {
         setTimeout(() => {
@@ -965,9 +966,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       lastHover = e.target;
       pushEvent(`${t("recPointer")} ${selOf(e.target)}`);
       // Wechsel innerhalb des Ziels (z. B. auf einen Button): eigener Diff
-      if (prev && root.contains(prev) && root.contains(e.target) && e.target !== root && hovers.length < 4) {
+      // – erst wenn der Ruhezustand steht, und nicht dichter als ein Setzintervall nach dem letzten Diff
+      if (prev && baseline && root.contains(prev) && root.contains(e.target) && e.target !== root && hovers.length < 4 && rel() - lastDiffAt > REC_SETTLE) {
         const at = rel(), sel = selOf(e.target);
-        setTimeout(() => { if (running) hovers.push({ t: at, sel, lines: diffSnap(baseline || startSnap, snapshot(root), 25) }); }, REC_SETTLE);
+        lastDiffAt = at;
+        setTimeout(() => { if (running) hovers.push({ t: at, sel, lines: diffSnap(baseline, snapshot(root), 25) }); }, REC_SETTLE);
       }
     };
     const onClickRec = (e) => { if (!isOwn(e.target)) pushEvent(`${t("recClick")} ${selOf(e.target)}`); };
