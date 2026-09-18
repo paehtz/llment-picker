@@ -52,7 +52,7 @@ The first version was built on 15 September 2026 in a session with Claude Code a
 | **Hold the left button and drag** | **lasso**: the drawn region is captured as a screenshot instead of an element – for when the outline does not catch what you mean. The selector points to the container with the largest overlap, line 3 says so with the overlap percentage; Ctrl adds the HTML of that container |
 | **Ctrl+click** (Mac: ⌘) | plus the element's rendered HTML as a file in your downloads folder, path as line 5; the file head carries the **CSS context as in the inspector** |
 | **Ctrl+Alt+click** | screenshot and HTML together |
-| **Tap Alt, Ctrl or R** (press and release, no click) | arms that mode: the chip stays lit, the next click or lasso triggers it – no need to hold the key while aiming. Tap again to disarm |
+| **Tap Alt, Ctrl or R** (press and release, no click) | arms that mode: the chip stays lit, the next click or lasso triggers it – no need to hold the key while aiming. Tap again to disarm; holding the key (longer than 400 ms) is always "on" and never toggles |
 | **Escape** or icon/shortcut again | cancel without copying |
 | Right-click on the page → LLMent Picker → "Copy this element" / "Copy with screenshot" / "Save as HTML file" | acts on the right-clicked element directly, no picker mode; on selected text the text comes along |
 | Right-click the toolbar icon → "Pick an element – with screenshot" / "– as HTML file" | starts the picker with a preset: the symbol above the outline is already lit, a plain click triggers it |

@@ -1478,9 +1478,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     await copyElement(el, undefined, { shot: withShot, html: withHtml });
   }
 
-  let tap = null; // Modifier, der gerade gehalten wird, solange nichts anderes dazwischenkam
+  // Antippen (< 400 ms, ohne Klick oder andere Taste dazwischen) schaltet um;
+  // längeres Halten ist immer „an" und ändert den scharfen Zustand nicht.
+  const TAP_MS = 400;
+  let tap = null, tapAt = 0;
   function onKey(e) {
-    if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") { if (!e.repeat) tap = e.key; }
+    if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") { if (!e.repeat) { tap = e.key; tapAt = performance.now(); } }
     else tap = null;
     if (e.key === "Escape") {
       swallow(e);
@@ -1500,14 +1503,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
   function onKeyUp(e) {
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
-    if (tap === e.key) {
+    if (tap === e.key && performance.now() - tapAt < TAP_MS) {
       if (e.key === "Alt") armShot = !armShot;
       else armHtml = !armHtml;
-      tap = null;
-      setMods(e.altKey, e.ctrlKey || e.metaKey, true);
-      return;
     }
-    setMods(e.altKey, e.ctrlKey || e.metaKey);
+    tap = null;
+    setMods(e.altKey, e.ctrlKey || e.metaKey, true);
   }
 
   const opts = { capture: true };
