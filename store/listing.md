@@ -1,6 +1,6 @@
 # Store listing – texts to paste
 
-Applies to addons.mozilla.org (AMO) and the Chrome Web Store. Both stores take several languages: English is the default locale, German the second. Screenshots: `screenshot-1-hover.png`, `screenshot-2-zwischenablage.png` (1280 × 800, taken on https://www.paehtz.de – the author's own site, shows him in the header; `demo.html` is the neutral test page). Promo tiles: `promo-small-440x280.png`, `promo-large-1400x560.png`. Listing icon: `../icons/128.png`.
+Applies to addons.mozilla.org (AMO) and the Chrome Web Store. Both stores take several languages: English is the default locale, German the second. Screenshots (1280 × 800, taken on https://www.paehtz.de – the author's own site; `demo.html` is the neutral test page): German `screenshot-1-hover.png`, `screenshot-2-zwischenablage.png`; English `screenshot-1-hover-en.png`, `screenshot-2-clipboard-en.png`. Chrome takes screenshots per language plus a global set (use the English ones globally, English is the default locale); promo tiles are global only → use the English `promo-small-440x280-en.png`, `promo-large-1400x560-en.png` (German variants without suffix, for AMO or later). Regenerate with `make-promo-tiles.py en|de`. Listing icon: `../icons/128.png`.
 
 ## Name
 

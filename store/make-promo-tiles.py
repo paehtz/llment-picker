@@ -1,9 +1,19 @@
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-import os
+import os, sys
 base = r"C:\Users\henni\Code\llment-picker\store"
 ICON = Image.open(r"C:\Users\henni\Code\llment-picker\icons\128.png").convert("RGBA")
 F = "C:/Windows/Fonts/"
 def font(name, px): return ImageFont.truetype(F + name, px)
+LANG = sys.argv[1] if len(sys.argv) > 1 else "de"
+SUF = "" if LANG == "de" else "-" + LANG
+T = {
+    "de": {"clip": "IN DER ZWISCHENABLAGE", "toast": "Kopiert", "quote": '"Unternehmenswebseiten: von der Sitemap …"',
+           "l1": "Sag dem KI-Agenten,", "l2": "welches Element Du meinst.", "l3": "Ein Klick kopiert URL, CSS-Selektor", "l4": "und markierten Text, für jeden KI-Chat.",
+           "s1": "Sag dem KI-Agenten, welches Element Du meinst."},
+    "en": {"clip": "IN THE CLIPBOARD", "toast": "Copied", "quote": '"Business websites: from the sitemap …"',
+           "l1": "Tell your AI agent", "l2": "which element you mean.", "l3": "One click copies URL, CSS selector", "l4": "and selected text, for any AI chat.",
+           "s1": "Tell your AI agent which element you mean."},
+}[LANG]
 
 def gradient(w, h, c1, c2):
     im = Image.new("RGB", (w, h)); px = im.load()
@@ -55,14 +65,14 @@ def mockup(s):
     im.alpha_composite(sh2.filter(ImageFilter.GaussianBlur(int(10*s)))); d = ImageDraw.Draw(im)
     d.rounded_rectangle([bx0, by0, bx1, by1], int(10*s), fill=(20, 24, 31))
     mono = font("consola.ttf", int(12*s)); small = font("segoeuib.ttf", int(9*s))
-    d.text((bx0 + int(16*s), by0 + int(10*s)), "IN DER ZWISCHENABLAGE", font=small, fill=(120, 190, 255))
-    lines = ["https://www.paehtz.de/#leistungen", "#leistungen .service-list > .service:nth-of-type(2) > …", '"Unternehmenswebseiten: von der Sitemap …"']
+    d.text((bx0 + int(16*s), by0 + int(10*s)), T["clip"], font=small, fill=(120, 190, 255))
+    lines = ["https://www.paehtz.de/#leistungen", "#leistungen .service-list > .service:nth-of-type(2) > …", T["quote"]]
     cols = [(160, 200, 255), (255, 255, 255), (180, 230, 190)]
     for i, (t, c) in enumerate(zip(lines, cols)):
         d.text((bx0 + int(16*s), by0 + int((28 + i * 18) * s)), t, font=mono, fill=c)
     # Toast
     tw = int(64*s); d.rounded_rectangle([W - int(24*s) - tw, int(56*s), W - int(24*s), int(78*s)], int(6*s), fill=(26, 127, 55))
-    d.text((W - int(24*s) - tw + int(12*s), int(59*s)), "Kopiert", font=font("segoeui.ttf", int(12*s)), fill=(255, 255, 255))
+    d.text((W - int(24*s) - tw + int(12*s), int(59*s)), T["toast"], font=font("segoeui.ttf", int(12*s)), fill=(255, 255, 255))
     return im
 
 def large():
@@ -70,19 +80,19 @@ def large():
     im = gradient(W*S, H*S, (7, 34, 82), (10, 132, 255)); d = ImageDraw.Draw(im)
     ic = ICON.resize((72*S, 72*S), Image.LANCZOS); im.paste(ic, (90*S, 150*S), ic)
     d.text((176*S, 152*S), "LLMent Picker", font=font("segoeuib.ttf", 58*S), fill=(255, 255, 255))
-    d.text((92*S, 250*S), "Sag dem KI-Agenten,", font=font("segoeui.ttf", 40*S), fill=(255, 255, 255))
-    d.text((92*S, 300*S), "welches Element Du meinst.", font=font("segoeui.ttf", 40*S), fill=(255, 255, 255))
-    d.text((94*S, 372*S), "Ein Klick kopiert URL, CSS-Selektor", font=font("segoeui.ttf", 20*S), fill=(200, 222, 255))
-    d.text((94*S, 402*S), "und markierten Text – für jeden KI-Chat.", font=font("segoeui.ttf", 20*S), fill=(200, 222, 255))
+    d.text((92*S, 250*S), T["l1"], font=font("segoeui.ttf", 40*S), fill=(255, 255, 255))
+    d.text((92*S, 300*S), T["l2"], font=font("segoeui.ttf", 40*S), fill=(255, 255, 255))
+    d.text((94*S, 372*S), T["l3"], font=font("segoeui.ttf", 20*S), fill=(200, 222, 255))
+    d.text((94*S, 402*S), T["l4"], font=font("segoeui.ttf", 20*S), fill=(200, 222, 255))
     m = mockup(1.25 * S); im.paste(m, (W*S - m.width - 50*S, (H*S - m.height) // 2 + 4*S), m)
-    im = im.resize((W, H), Image.LANCZOS); im.save(os.path.join(base, "promo-large-1400x560.png"), optimize=True); print("large ok")
+    im = im.resize((W, H), Image.LANCZOS); im.save(os.path.join(base, "promo-large-1400x560" + SUF + ".png"), optimize=True); print("large ok")
 
 def small():
     W, H = 440, 280; S = 3
     im = gradient(W*S, H*S, (7, 34, 82), (10, 132, 255)); d = ImageDraw.Draw(im)
     ic = ICON.resize((40*S, 40*S), Image.LANCZOS); im.paste(ic, (24*S, 24*S), ic)
     d.text((74*S, 26*S), "LLMent Picker", font=font("segoeuib.ttf", 30*S), fill=(255, 255, 255))
-    d.text((26*S, 74*S), "Sag dem KI-Agenten, welches Element Du meinst.", font=font("segoeui.ttf", 15*S), fill=(200, 222, 255))
+    d.text((26*S, 74*S), T["s1"], font=font("segoeui.ttf", 15*S), fill=(200, 222, 255))
     m = mockup(0.78 * S); im.paste(m, ((W*S - m.width) // 2 + 6*S, 100*S), m)
-    im = im.resize((W, H), Image.LANCZOS); im.save(os.path.join(base, "promo-small-440x280.png"), optimize=True); print("small ok")
+    im = im.resize((W, H), Image.LANCZOS); im.save(os.path.join(base, "promo-small-440x280" + SUF + ".png"), optimize=True); print("small ok")
 large(); small()
