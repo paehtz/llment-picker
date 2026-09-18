@@ -89,7 +89,7 @@
     }
   },
   "lineShotClipped": {
-    "message": ", Element größer als das Fenster: nur sichtbarer Teil"
+    "message": ", unvollständig: Bereich ließ sich nicht weiter scrollen"
   },
   "lineHtml": {
     "message": "HTML: "
@@ -190,5 +190,46 @@
   },
   "optSaved": {
     "message": "Gespeichert."
+  },
+  "hintLasso": {
+    "message": "Ziehen Bereich"
+  },
+  "toastShotNotWritten": {
+    "message": "Nur Text – Bild von der Zwischenablage abgelehnt: $ERR$",
+    "placeholders": {
+      "err": {
+        "content": "$1"
+      }
+    }
+  },
+  "lineShotTiles": {
+    "message": ", aus $N$ Teilaufnahmen zusammengesetzt (über den sichtbaren Bereich hinaus)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "lineShotScaled": {
+    "message": ", auf $P$ % verkleinert",
+    "placeholders": {
+      "p": {
+        "content": "$1"
+      }
+    }
+  },
+  "lineLasso": {
+    "message": "Bereich von Hand aufgezogen ($W$×$H$ px); Selektor = Container mit der größten Überdeckung ($P$ %)",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      },
+      "p": {
+        "content": "$3"
+      }
+    }
   }
 }

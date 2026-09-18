@@ -89,7 +89,7 @@
     }
   },
   "lineShotClipped": {
-    "message": ", element taller than the window: visible part only"
+    "message": ", incomplete: region could not be scrolled further"
   },
   "lineHtml": {
     "message": "HTML: "
@@ -190,5 +190,46 @@
   },
   "optSaved": {
     "message": "Saved."
+  },
+  "hintLasso": {
+    "message": "Drag region"
+  },
+  "toastShotNotWritten": {
+    "message": "Text only – image rejected by the clipboard: $ERR$",
+    "placeholders": {
+      "err": {
+        "content": "$1"
+      }
+    }
+  },
+  "lineShotTiles": {
+    "message": ", stitched from $N$ captures (beyond the visible area)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "lineShotScaled": {
+    "message": ", scaled down to $P$ %",
+    "placeholders": {
+      "p": {
+        "content": "$1"
+      }
+    }
+  },
+  "lineLasso": {
+    "message": "Region drawn by hand ($W$×$H$ px); selector = container with the largest overlap ($P$ %)",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      },
+      "p": {
+        "content": "$3"
+      }
+    }
   }
 }

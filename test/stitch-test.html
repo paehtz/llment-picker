@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>LLMent Picker – Kacheltest</title>
+<style>
+  body { margin: 0; font: 14px/1.4 system-ui, sans-serif; padding-top: 64px; }
+  header.fixed { position: fixed; top: 0; left: 0; right: 0; height: 56px; background: #1d3557; color: #fff; display: flex; align-items: center; padding: 0 20px; z-index: 10; }
+  main { max-width: 900px; margin: 0 auto; padding: 20px; }
+  .filler { height: 500px; background: repeating-linear-gradient(180deg, #f1f5f9 0 40px, #e2e8f0 40px 80px); display: flex; align-items: center; justify-content: center; color: #475569; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left; }
+  thead th { position: sticky; top: 56px; background: #ffd166; z-index: 5; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  .scroller { height: 260px; overflow: auto; border: 2px solid #94a3b8; margin-top: 30px; }
+  .scroller table { width: 1800px; }
+  .scroller thead th { top: 0; }
+  footer { height: 300px; background: #cbd5e1; margin-top: 40px; display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+<header class="fixed" id="kopf">Fixierte Kopfzeile (soll auf den Kacheln nicht wiederholt werden)</header>
+<main>
+  <div class="filler">Füllung oberhalb (500 px)</div>
+  <h2 id="lang">Lange Tabelle (60 Zeilen, sticky Kopf)</h2>
+  <div id="lang-wrap" style="padding:12px;background:#fff7ed">
+  <table id="tabelle-lang">
+    <thead><tr><th>#</th><th>Name</th><th>Wert</th><th>Bemerkung</th></tr></thead>
+    <tbody id="lang-body"></tbody>
+  </table>
+  </div>
+  <h2 id="breit">Breite Tabelle im Scroll-Container (1800 px, 30 Zeilen)</h2>
+  <div class="scroller" id="scroller">
+    <div id="breit-wrap" style="padding:12px;width:max-content">
+    <table id="tabelle-breit">
+      <thead><tr><th>#</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th></tr></thead>
+      <tbody id="breit-body"></tbody>
+    </table>
+    </div>
+  </div>
+  <div class="filler" id="karten" style="height:300px">Bereich für den Lasso-Test</div>
+</main>
+<footer>Fußbereich</footer>
+<script>
+  const lb = document.getElementById("lang-body");
+  for (let i = 1; i <= 60; i++) lb.insertAdjacentHTML("beforeend", `<tr><td>${i}</td><td>Zeile ${i}</td><td>${(i * 37) % 101}</td><td>${i % 10 === 0 ? "Zehnerzeile" : "–"}</td></tr>`);
+  const bb = document.getElementById("breit-body");
+  for (let i = 1; i <= 30; i++) bb.insertAdjacentHTML("beforeend", `<tr><td>${i}</td>${"ABCDEFGH".split("").map((c) => `<td>${c}${i} – Zelle mit etwas längerem Inhalt</td>`).join("")}</tr>`);
+</script>
+</body>
+</html>
