@@ -1112,7 +1112,9 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const union = (r) => { const rr = r.right != null ? r.right : r.left + r.width, rb = r.bottom != null ? r.bottom : r.top + r.height; const x1 = Math.max(region.left + region.width, rr), y1 = Math.max(region.top + region.height, rb); region = { left: Math.min(region.left, r.left), top: Math.min(region.top, r.top), width: 0, height: 0 }; region.width = x1 - region.left; region.height = y1 - region.top; };
     if (!fixedRegion) union(inflate(root.getBoundingClientRect(), REC_PAD)); // Endzustand (aufgeklappt?) mit ins Bild
     for (const n of addedNodes.slice(0, 50)) { if (n.isConnected) { const r = n.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && r.width < innerWidth) union(r); } }
-    for (const p of pointers) union({ left: p.x - 10, top: p.y - 10, right: p.x + 10, bottom: p.y + 10 });
+    // Zeigerwege nur in der Nähe des Elements – Ausflüge quer über die Seite blähen den Bogen sonst auf
+    const near = inflate(rootRect, REC_PAD * 2);
+    for (const p of pointers) if (p.x >= near.left && p.x <= near.left + near.width && p.y >= near.top && p.y <= near.top + near.height) union({ left: p.x - 10, top: p.y - 10, right: p.x + 10, bottom: p.y + 10 });
     const cl = { left: Math.max(0, region.left), top: Math.max(0, region.top) };
     region = { left: cl.left, top: cl.top, width: Math.min(innerWidth, region.left + region.width) - cl.left, height: Math.min(innerHeight, region.top + region.height) - cl.top };
     let sheet = null, sheetPath = null, sheetErr = null, imageOk = false;
@@ -1260,7 +1262,9 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   // Texte nur, wenn das Element breit genug für die ganze Reihe ist; sonst
   // nur die Symbole (die vier sind eindeutig genug). Umschalten kostet ein
   // Neubefüllen, deshalb nur bei Wechsel.
-  let armRecord = !!preset.record; // Aufnahme scharf (Taste R oder Voreinstellung)
+  // Scharf geschaltet (Chip leuchtet dauerhaft): R bzw. Alt/Strg kurz antippen –
+  // gehalten beim Klick wirken die Tasten weiterhin. Nochmal antippen schaltet ab.
+  let armRecord = !!preset.record, armShot = false, armHtml = false;
   let hintMode = null, fullWidth = null;
   function setHintMode(withText) {
     if (hintMode === withText) return;
@@ -1287,8 +1291,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   let mods = { alt: false, ctrl: false, lasso: false, rec: false };
   function setMods(alt, ctrl, force) {
     const lasso = !!(drag && drag.active), rec = armRecord;
-    alt = alt || preset.shot || lasso; // Lasso kopiert immer mit Screenshot
-    ctrl = ctrl || preset.html;
+    alt = alt || preset.shot || armShot || lasso; // Lasso kopiert immer mit Screenshot
+    ctrl = ctrl || preset.html || armHtml;
     if (!force && mods.alt === alt && mods.ctrl === ctrl && mods.lasso === lasso && mods.rec === rec) return;
     mods = { alt, ctrl, lasso, rec };
     camChip.style.background = alt ? LIT : DIM;
@@ -1385,6 +1389,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
   function onDown(e) {
     swallow(e);
+    tap = null;
     if (e.button !== 0) return;
     const anchor = targetAt(e.clientX, e.clientY) || document.documentElement;
     const a = anchor.getBoundingClientRect();
@@ -1398,7 +1403,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     lassoBox.style.display = "none";
     const r = lassoRect(d, e);
     if (r.width < LASSO_MIN || r.height < LASSO_MIN) { onScroll(); return; }
-    const withHtml = e.ctrlKey || e.metaKey || preset.html;
+    const withHtml = e.ctrlKey || e.metaKey || preset.html || armHtml;
     cleanup();
     // Das auf das Loslassen folgende click-Ereignis gehört nicht der Seite
     const once = (ev) => { swallow(ev); window.removeEventListener("click", once, opts); };
@@ -1464,7 +1469,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
 
   async function onClick(e) {
     swallow(e);
-    const withShot = e.altKey || preset.shot, withHtml = e.ctrlKey || e.metaKey || preset.html;
+    const withShot = e.altKey || preset.shot || armShot, withHtml = e.ctrlKey || e.metaKey || preset.html || armHtml;
     const el = targetAt(e.clientX, e.clientY) || current;
     if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
     cleanup();
@@ -1473,7 +1478,10 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     await copyElement(el, undefined, { shot: withShot, html: withHtml });
   }
 
+  let tap = null; // Modifier, der gerade gehalten wird, solange nichts anderes dazwischenkam
   function onKey(e) {
+    if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") { if (!e.repeat) tap = e.key; }
+    else tap = null;
     if (e.key === "Escape") {
       swallow(e);
       cleanup();
@@ -1492,6 +1500,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
   function onKeyUp(e) {
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
+    if (tap === e.key) {
+      if (e.key === "Alt") armShot = !armShot;
+      else armHtml = !armHtml;
+      tap = null;
+      setMods(e.altKey, e.ctrlKey || e.metaKey, true);
+      return;
+    }
     setMods(e.altKey, e.ctrlKey || e.metaKey);
   }
 
