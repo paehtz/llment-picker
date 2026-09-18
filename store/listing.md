@@ -82,7 +82,7 @@ Datenschutz: nur die Berechtigung activeTab – die Erweiterung tut nichts, bis 
 
 **Data usage (Chrome "Privacy practices"):** No user data is collected, processed or transmitted. Leave all boxes empty; confirm the three certifications (no unrelated use, no sale, no creditworthiness). Screenshots and HTML files are created only on the user's click and stay on the user's device.
 
-**AMO:** `data_collection_permissions: none` is declared in the manifest; Firefox shows "No data collection" automatically. The privacy-policy field can stay empty or point to the privacy paragraph in the GitHub README.
+**Privacy policy URL (both stores):** https://github.com/paehtz/llment-picker/blob/master/PRIVACY.md (English and German in one file). AMO additionally has `data_collection_permissions: none` in the manifest; Firefox shows "No data collection" automatically.
 
 ## Privacy statement (if a field requires one)
 
