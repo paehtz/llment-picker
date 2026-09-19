@@ -558,5 +558,22 @@
   },
   "optEnglishHint": {
     "message": "Die Zeilen in der Zwischenablage und die Kopfzeilen der Dateien sind unabhängig von der Browsersprache englisch – für Prompts und Dateien, die andere weiterverwenden. Die Oberfläche der Erweiterung bleibt in der Browsersprache."
+  },
+  "lineRange": {
+    "message": "Bereich: $N$ benachbarte Elemente (Geschwister), von $A$ bis $B$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      },
+      "a": {
+        "content": "$2"
+      },
+      "b": {
+        "content": "$3"
+      }
+    }
+  },
+  "hintRange": {
+    "message": "Shift+↑↓ / Shift+Klick"
   }
 }

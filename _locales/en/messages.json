@@ -558,5 +558,22 @@
   },
   "optEnglishHint": {
     "message": "The lines in the clipboard and the file headers use English regardless of the browser language – for prompts and files that others will read. The extension UI keeps the browser language."
+  },
+  "lineRange": {
+    "message": "Range: $N$ adjacent siblings, from $A$ to $B$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      },
+      "a": {
+        "content": "$2"
+      },
+      "b": {
+        "content": "$3"
+      }
+    }
+  },
+  "hintRange": {
+    "message": "Shift+↑↓ / Shift+click"
   }
 }

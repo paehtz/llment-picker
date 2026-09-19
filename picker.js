@@ -229,14 +229,14 @@
   // Zeile darunter, frei für den eigenen Hinweis
   const END = "\n---\n";
   const shotPart = (file, clip) => "shot:" + [file && "file", clip && "clip"].filter(Boolean).join("+");
-  function payloadFor(el, text, shotInfo, htmlPath, note, shotPath, shotClip) {
+  function payloadFor(el, text, shotInfo, htmlPath, note, shotPath, shotClip, selectorText, kind) {
     const fl = frameLine();
-    const parts = [note ? "region" : "element"];
+    const parts = [kind || (note ? "region" : "element")];
     if (text) parts.push("text");
     if (shotInfo) parts.push(shotPart(shotPath, shotClip));
     if (htmlPath) parts.push("html:file");
     if (fl) parts.push("frame");
-    const lines = [tagLine(parts), location.href, buildSelector(el)];
+    const lines = [tagLine(parts), location.href, selectorText || buildSelector(el)];
     if (note) lines.push(note);
     if (text) lines.push(JSON.stringify(text));
     if (shotInfo) lines.push(shotInfo);
@@ -359,9 +359,12 @@
   }
 
   function htmlFor(el, selector, withCss, slim) {
-    const clone = el.cloneNode(true);
-    clone.querySelectorAll("script, noscript").forEach((n) => n.remove());
-    const slimmed = slim ? slimHtml(clone) : null;
+    const list = Array.isArray(el) ? el : [el];
+    el = list[0];
+    const clones = list.map((e) => e.cloneNode(true));
+    clones.forEach((c) => c.querySelectorAll("script, noscript").forEach((n) => n.remove()));
+    let slimmed = null;
+    if (slim) { slimmed = {}; for (const c of clones) for (const [k, v] of Object.entries(slimHtml(c))) slimmed[k] = (slimmed[k] || 0) + v; }
     let head = `<!-- LLMent Picker · ${new Date().toISOString()}
 ${t("fileUrl")}: ${location.href}
 ${t("fileSelector")}: ${selector}
@@ -379,7 +382,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       try { ctx = cssContext(el); } catch (e) { ctx += ": " + (e && e.message); }
       head += "\n" + ctx + "\n";
     }
-    const html = slim ? clone.outerHTML.replace(/\n[ \t]*\n+/g, "\n") : clone.outerHTML;
+    const raw = clones.map((c) => c.outerHTML).join("\n");
+    const html = slim ? raw.replace(/\n[ \t]*\n+/g, "\n") : raw;
     return head + "-->\n" + html + "\n";
   }
 
@@ -392,6 +396,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   // Dateiname ohne Endung: Datum_Zeit_Host_Kennung – HTML und Screenshot
   // desselben Klicks tragen denselben Stamm
   function fileBase(el) {
+    if (Array.isArray(el)) el = el[0];
     const d = new Date();
     const p = (n) => String(n).padStart(2, "0");
     const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
@@ -683,13 +688,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const toClip = target !== "file", toFile = target !== "clipboard";
     if (withShot) {
       try {
-        shot = await (opts.region ? captureRegion(opts.region.measure, el, 0) : captureElement(el));
+        shot = await (opts.region ? captureRegion(opts.region.measure, el, 0) : opts.list ? captureRegion(() => inflate(unionRect(opts.list), SHOT_PAD), el, SHOT_PAD) : captureElement(el));
       } catch (e) {
         shotErr = (e && e.message) || String(e);
         console.warn("LLMent Picker: Screenshot fehlgeschlagen –", shotErr);
       }
     }
-    const selector = buildSelector(el);
+    const selector = opts.list ? opts.list.map((x) => buildSelector(x)).join(", ") : buildSelector(el);
     const base = withShot || withHtml ? fileBase(el) : null;
     if (shot && toFile) {
       try {
@@ -701,18 +706,19 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     }
     if (withHtml) {
       try {
-        htmlPath = await saveHtml(el, selector, base);
+        htmlPath = await saveHtml(opts.list || el, selector, base);
       } catch (e) {
         htmlErr = ((e && e.message) || String(e)).replace(/data:[^\s]+/g, "data:…").slice(0, 120);
         console.warn("LLMent Picker: HTML nicht gespeichert –", htmlErr);
       }
     }
-    let payload = payloadFor(el, text, shot && shot.info, htmlPath, opts.region && opts.region.line, shotPath, !!(shot && toClip));
+    const note = opts.region ? opts.region.line : opts.list ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : null;
+    let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "range" : null);
     let ok = false, imageOk = false;
     if (shot && toClip && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
     else {
       // Bild nicht in der Zwischenablage → das Label darf es nicht behaupten
-      payload = payloadFor(el, text, shot && shot.info, htmlPath, opts.region && opts.region.line, shotPath, false);
+      payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, false, selector, opts.list ? "range" : null);
       ok = await copy(payload);
     }
     const parts = [];
@@ -1448,7 +1454,53 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (armRecord) { recordInteraction(bestContainer(r).el, r, { html: withHtml }).then(() => reportState(false)); return; }
     copyLasso(r, d.anchor, { html: withHtml });
   }
+  // Bereich benachbarter Geschwister: Shift halten friert das umrahmte Element als
+  // Anker ein; Shift+Klick auf ein anderes Geschwister oder Shift+↑/↓ setzt den
+  // Fokus, gewählt ist alles dazwischen (Anker/Fokus wie in Editoren). Klick ohne
+  // Shift löst aus, Esc bricht ab. Screenshot ist wie beim Lasso immer dabei.
+  let range = null; // { anchor, focus }
+  const unionRect = (els) => {
+    let l = Infinity, tp = Infinity, r = -Infinity, b = -Infinity;
+    for (const e of els) { const x = e.getBoundingClientRect(); l = Math.min(l, x.left); tp = Math.min(tp, x.top); r = Math.max(r, x.right); b = Math.max(b, x.bottom); }
+    return { left: l, top: tp, width: r - l, height: b - tp, right: r, bottom: b };
+  };
+  const visibleSibling = (el, dir) => {
+    for (let n = dir > 0 ? el.nextElementSibling : el.previousElementSibling; n; n = dir > 0 ? n.nextElementSibling : n.previousElementSibling) {
+      if (isOwn(n) || /^(SCRIPT|STYLE|TEMPLATE|LINK|META)$/.test(n.tagName)) continue;
+      const r = n.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) return n;
+    }
+    return null;
+  };
+  function rangeList() {
+    if (!range) return [];
+    const kids = Array.from(range.anchor.parentElement.children);
+    const a = kids.indexOf(range.anchor), f = kids.indexOf(range.focus);
+    return kids.slice(Math.min(a, f), Math.max(a, f) + 1).filter((n) => !isOwn(n) && !/^(SCRIPT|STYLE|TEMPLATE|LINK|META)$/.test(n.tagName));
+  }
+  function highlightRange() {
+    const list = rangeList();
+    if (!list.length) return;
+    const r = unionRect(list);
+    box.style.display = "block";
+    box.style.left = r.left + "px"; box.style.top = r.top + "px";
+    box.style.width = r.width + "px"; box.style.height = r.height + "px";
+    label.textContent = list.length + "\u00d7 " + range.anchor.tagName.toLowerCase() + "  " + t("hintRange");
+    label.style.display = "block";
+    const above = r.top > 24;
+    label.style.left = Math.max(0, r.left) + "px";
+    label.style.top = (above ? r.top - 22 : r.bottom + 2) + "px";
+    setMods(false, false, true);
+    placeHud(r);
+  }
+  // Geschwister des Ankers, das den Punkt enthält (Shift+Klick irgendwo in einer Section)
+  const siblingAt = (x, y) => {
+    let el = targetAt(x, y);
+    while (el && el.parentElement !== range.anchor.parentElement) el = el.parentElement;
+    return el;
+  };
   function onMove(e) {
+    if (range) return; // Bereich eingefroren, bis Klick oder Esc
     if (drag) {
       if (!drag.active) {
         const a = drag.anchor.getBoundingClientRect();
@@ -1470,6 +1522,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (el) highlight(el);
   }
   function onScroll() {
+    if (range) { highlightRange(); return; }
     if (drag && drag.active) return;
     if (!lastXY) return;
     current = null;
@@ -1505,6 +1558,23 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   async function onClick(e) {
     swallow(e);
     const withShot = e.altKey || preset.shot || armShot, withHtml = e.ctrlKey || e.metaKey || preset.html || armHtml;
+    if (e.shiftKey && (range || current)) {
+      // Shift+Klick: Fokus auf das Geschwister unter dem Zeiger setzen
+      if (!range) range = { anchor: current, focus: current };
+      const sib = siblingAt(e.clientX, e.clientY);
+      if (sib) { range.focus = sib; range.pending = false; highlightRange(); }
+      return;
+    }
+    if (range) {
+      const list = rangeList();
+      const r = unionRect(list);
+      range = null;
+      cleanup();
+      flashRect(r);
+      if (armRecord) { await recordInteraction(list[0].parentElement, inflate(r, REC_PAD), { html: withHtml }); reportState(false); return; }
+      await copyElement(list[0], undefined, { shot: true, html: withHtml, list });
+      return;
+    }
     const el = targetAt(e.clientX, e.clientY) || current;
     if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
     cleanup();
@@ -1528,6 +1598,15 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     }
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
     if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") setMods(e.altKey, e.ctrlKey || e.metaKey);
+    // Shift: Anker einfrieren; Shift+↑/↓: Fokus auf das vorherige/nächste Geschwister
+    if (e.key === "Shift" && !e.repeat && !range && current) { range = { anchor: current, focus: current, pending: true }; highlightRange(); }
+    if (e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown") && (range || current)) {
+      swallow(e);
+      if (!range) range = { anchor: current, focus: current };
+      const next = visibleSibling(range.focus, e.key === "ArrowDown" ? 1 : -1);
+      if (next) { range.focus = next; range.pending = false; highlightRange(); }
+      return;
+    }
     // R: Interaktion am Element unter dem Zeiger aufnehmen
     // R schaltet die Aufnahme scharf (Chip leuchtet); der Klick bzw. das Loslassen des Lassos startet sie
     if ((e.key === "r" || e.key === "R") && !e.ctrlKey && !e.altKey && !e.metaKey && !e.repeat) {
@@ -1539,6 +1618,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
   function onKeyUp(e) {
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
+    // Shift losgelassen, ohne dass ein Bereich entstand → Hover wieder frei
+    if (e.key === "Shift" && range && range.pending && range.focus === range.anchor) { range = null; onScroll(); }
     // Antippen schaltet um; Loslassen nach längerem Halten ist immer „aus"
     if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") {
       const short = tap === e.key && performance.now() - tapAt < TAP_MS;
@@ -1560,6 +1641,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     window.removeEventListener("dragstart", swallow, opts);
     window.removeEventListener("selectstart", swallow, opts);
     drag = null;
+    range = null;
     lassoBox.remove();
     window.removeEventListener("keydown", onKey, opts);
     window.removeEventListener("keyup", onKeyUp, opts);
