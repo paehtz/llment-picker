@@ -225,9 +225,9 @@
   // Erste Zeile: Maschinenlabel mit den Bestandteilen, immer Englisch – ein
   // Agent erkennt daran das Schema, ohne aus den Zeilen zu raten.
   const tagLine = (parts) => `[LLMent: ${parts.join(", ")}]`;
-  // Schlussmarke: schließt den Block, danach eine Leerzeile – der Cursor steht
-  // nach dem Einfügen frei für den eigenen Hinweis
-  const END = "\n---\n\n";
+  // Schlussmarke: schließt den Block; der Cursor steht nach dem Einfügen in der
+  // Zeile darunter, frei für den eigenen Hinweis
+  const END = "\n---\n";
   const shotPart = (file, clip) => "shot:" + [file && "file", clip && "clip"].filter(Boolean).join("+");
   function payloadFor(el, text, shotInfo, htmlPath, note, shotPath, shotClip) {
     const fl = frameLine();
