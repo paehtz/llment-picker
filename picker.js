@@ -225,6 +225,9 @@
   // Erste Zeile: Maschinenlabel mit den Bestandteilen, immer Englisch – ein
   // Agent erkennt daran das Schema, ohne aus den Zeilen zu raten.
   const tagLine = (parts) => `[LLMent: ${parts.join(", ")}]`;
+  // Schlussmarke: schließt den Block, danach eine Leerzeile – der Cursor steht
+  // nach dem Einfügen frei für den eigenen Hinweis
+  const END = "\n---\n\n";
   const shotPart = (file, clip) => "shot:" + [file && "file", clip && "clip"].filter(Boolean).join("+");
   function payloadFor(el, text, shotInfo, htmlPath, note, shotPath, shotClip) {
     const fl = frameLine();
@@ -240,7 +243,7 @@
     if (shotPath) lines.push(t("lineShotFile") + shotPath);
     if (htmlPath) lines.push(t("lineHtml") + htmlPath);
     if (fl) lines.push(fl);
-    return lines.join("\n");
+    return lines.join("\n") + END;
   }
 
   // ───────────────────────── Gerendertes HTML als Datei ───────────────────
@@ -1159,10 +1162,10 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       catch (e) { htmlErr = ((e && e.message) || String(e)).slice(0, 120); }
     }
     const recTag = (clip) => tagLine(["recording", ...(sheet ? ["sheet:" + [sheetPath && "file", clip && "clip"].filter(Boolean).join("+")] : []), ...(htmlPath ? ["html:file"] : []), ...(fl ? ["frame"] : [])]);
-    let payload = [recTag(!!(sheet && toClip)), ...L].join("\n");
+    let payload = [recTag(!!(sheet && toClip)), ...L].join("\n") + END;
     let ok = false;
     if (sheet && toClip && (await copyWithImage(payload, sheet))) ok = imageOk = true;
-    else { payload = [recTag(false), ...L].join("\n"); ok = await copy(payload); }
+    else { payload = [recTag(false), ...L].join("\n") + END; ok = await copy(payload); }
     guardAlt(false);
     const parts = [ok ? t("toastRecorded") : t("toastCopyFailed")];
     if (sheet && toClip && !imageOk) parts.push(t("toastShotNotWritten", lastClipError.slice(0, 60)));
