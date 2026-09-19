@@ -4,7 +4,7 @@ Applies to addons.mozilla.org (AMO) and the Chrome Web Store. Both stores take s
 
 ## Name
 
-LLMent Picker
+LLMent Picker (store name unchanged; the pronunciation hint "(say: el-el-ment)" opens both descriptions)
 
 ## Summary (AMO max. 250 characters · Chrome takes the manifest description, max. 132)
 
@@ -14,7 +14,7 @@ LLMent Picker
 
 ## Description (English)
 
-LLMent Picker sees nothing until you click, sends nothing anywhere and runs only on the page you point it at. One click copies exactly what an AI agent needs to know which element you mean – and, unlike an annotation workspace, it stays out of your way: no panel, no comments, no all-sites permission.
+LLMent Picker (say: el-el-ment) sees nothing until you click, sends nothing anywhere and runs only on the page you point it at. One click copies exactly what an AI agent needs to know which element you mean – and, unlike an annotation workspace, it stays out of your way: no panel, no comments, no all-sites permission.
 
 Working on a web page with an AI assistant, you hit this constantly: "I mean the second box under the heading" is clear to a person and useless to a tool. LLMent Picker turns one click into an unambiguous reference in your clipboard:
 
@@ -38,7 +38,7 @@ Privacy: only the activeTab permission – the extension does nothing until you 
 
 ## Beschreibung (Deutsch)
 
-LLMent Picker sieht nichts, bis Sie klicken, sendet nichts und läuft nur auf der Seite, auf der Sie es aufrufen. Ein Klick kopiert genau das, was ein KI-Agent braucht, um zu wissen, welches Element Sie meinen – und bleibt dabei aus dem Weg: kein Panel, keine Kommentare, keine Berechtigung für alle Websites.
+LLMent Picker (say: el-el-ment) sieht nichts, bis Sie klicken, sendet nichts und läuft nur auf der Seite, auf der Sie es aufrufen. Ein Klick kopiert genau das, was ein KI-Agent braucht, um zu wissen, welches Element Sie meinen – und bleibt dabei aus dem Weg: kein Panel, keine Kommentare, keine Berechtigung für alle Websites.
 
 Wer mit einem KI-Assistenten an einer Webseite arbeitet, kennt das Problem: „Ich meine das zweite Kästchen unter der Überschrift" ist für Menschen klar, für ein Werkzeug nicht. LLMent Picker macht aus einem Klick eine eindeutige Referenz in der Zwischenablage:
 
