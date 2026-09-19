@@ -8,6 +8,7 @@
 Deutsche Fassung: [README.de.md](README.de.md)
 
 ```
+[LLMent: element, text, shot:file, html:file]
 https://www.paehtz.de/#leistungen
 #leistungen .service-list > .service:nth-of-type(2) > .service__body
 "Unternehmenswebseiten: von der Sitemap über die Nutzerführung und Content-Architektur bis"
@@ -16,6 +17,7 @@ Screenshot: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.pn
 HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 ```
 
+0. a one-line label naming the parts that follow – always English, so an agent recognises the schema instead of guessing (see "Payload format")
 1. the full page URL (including hash)
 2. the shortest CSS selector that matches exactly this element
 3. **only if text was selected first:** the selected text in quotes (max. 240 characters)
@@ -66,6 +68,12 @@ The text line appears only when you ask for it by selecting text. A block clicke
 **Settings** (extension management → LLMent Picker → Options): subfolder inside the downloads folder (default `LLMent Picker`), "Save as" dialog, screenshot target (PNG file – the default –, clipboard, both), CSS context on/off, **slim HTML files** on/off (default on: hidden form fields, event handlers, long data attributes, srcset lists, SVG paths, `<style>` blocks, comments, long `data:` URIs and repeated `<select>` option lists are removed; the file header lists what was dropped – a DNS table of 113 KB became 52 KB with the same content), **clipboard and files always in English** (default off: the browser language decides; the extension UI keeps the browser language either way), key hints on/off. Extensions may only write to the browser's download folder; a free target path is not possible.
 
 Change the shortcut: Firefox `about:addons` → gear → "Manage Extension Shortcuts"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P opens the profile manager in Firefox; Chrome does not allow Ctrl+Alt combinations – hence two defaults.)
+
+## Payload format
+
+The first line is a label: `[LLMent: <parts>]`. Parts, in this order, only those present: `element` or `region` (lasso) or `recording`; `text` (selected text follows in quotes); `shot:file`, `shot:clip` or `shot:file+clip` (screenshot info line, then the file path if any); `sheet:file`/`sheet:clip` (contact sheet of a recording); `html:file` (rendered HTML file); `frame` (element inside an iframe, a frame line closes the payload). The lines after the label come in a fixed order: URL, selector, region note, quoted text, screenshot info, `Screenshot: <path>`, `HTML: <path>`, frame line; a recording continues with its sections (`== … ==`). Everything is plain text; paths are absolute and local to the machine the browser runs on.
+
+A useful line for a project's `CLAUDE.md` or agent instructions: *"Messages starting with `[LLMent:` come from the LLMent Picker extension; read any `Screenshot:`/`HTML:` path from disk before answering, treat the selector as the exact element meant."*
 
 ## Selector logic
 

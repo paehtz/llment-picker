@@ -222,14 +222,23 @@
     return { el, text: text.length > MAX_TEXT ? text.slice(0, MAX_TEXT).trimEnd() + "…" : text };
   }
 
-  function payloadFor(el, text, shotInfo, htmlPath, note, shotPath) {
-    const lines = [location.href, buildSelector(el)];
+  // Erste Zeile: Maschinenlabel mit den Bestandteilen, immer Englisch – ein
+  // Agent erkennt daran das Schema, ohne aus den Zeilen zu raten.
+  const tagLine = (parts) => `[LLMent: ${parts.join(", ")}]`;
+  const shotPart = (file, clip) => "shot:" + [file && "file", clip && "clip"].filter(Boolean).join("+");
+  function payloadFor(el, text, shotInfo, htmlPath, note, shotPath, shotClip) {
+    const fl = frameLine();
+    const parts = [note ? "region" : "element"];
+    if (text) parts.push("text");
+    if (shotInfo) parts.push(shotPart(shotPath, shotClip));
+    if (htmlPath) parts.push("html:file");
+    if (fl) parts.push("frame");
+    const lines = [tagLine(parts), location.href, buildSelector(el)];
     if (note) lines.push(note);
     if (text) lines.push(JSON.stringify(text));
     if (shotInfo) lines.push(shotInfo);
     if (shotPath) lines.push(t("lineShotFile") + shotPath);
     if (htmlPath) lines.push(t("lineHtml") + htmlPath);
-    const fl = frameLine();
     if (fl) lines.push(fl);
     return lines.join("\n");
   }
@@ -695,10 +704,14 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
         console.warn("LLMent Picker: HTML nicht gespeichert –", htmlErr);
       }
     }
-    const payload = payloadFor(el, text, shot && shot.info, htmlPath, opts.region && opts.region.line, shotPath);
+    let payload = payloadFor(el, text, shot && shot.info, htmlPath, opts.region && opts.region.line, shotPath, !!(shot && toClip));
     let ok = false, imageOk = false;
     if (shot && toClip && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
-    else ok = await copy(payload);
+    else {
+      // Bild nicht in der Zwischenablage → das Label darf es nicht behaupten
+      payload = payloadFor(el, text, shot && shot.info, htmlPath, opts.region && opts.region.line, shotPath, false);
+      ok = await copy(payload);
+    }
     const parts = [];
     if (!ok) parts.push(t("toastCopyFailed"));
     else if (imageOk) parts.push(t("toastCopiedShot"));
@@ -1145,10 +1158,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       try { htmlPath = await saveHtml(root, selOf(root), fileBase(root)); L.splice(sheetPath ? 5 : sheet ? 4 : 3, 0, t("lineHtml") + htmlPath); }
       catch (e) { htmlErr = ((e && e.message) || String(e)).slice(0, 120); }
     }
-    const payload = L.join("\n");
+    const recTag = (clip) => tagLine(["recording", ...(sheet ? ["sheet:" + [sheetPath && "file", clip && "clip"].filter(Boolean).join("+")] : []), ...(htmlPath ? ["html:file"] : []), ...(fl ? ["frame"] : [])]);
+    let payload = [recTag(!!(sheet && toClip)), ...L].join("\n");
     let ok = false;
     if (sheet && toClip && (await copyWithImage(payload, sheet))) ok = imageOk = true;
-    else ok = await copy(payload);
+    else { payload = [recTag(false), ...L].join("\n"); ok = await copy(payload); }
     guardAlt(false);
     const parts = [ok ? t("toastRecorded") : t("toastCopyFailed")];
     if (sheet && toClip && !imageOk) parts.push(t("toastShotNotWritten", lastClipError.slice(0, 60)));

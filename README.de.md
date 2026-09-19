@@ -8,6 +8,7 @@
 English version: [README.md](README.md)
 
 ```
+[LLMent: element, text, shot:file, html:file]
 https://www.paehtz.de/#leistungen
 #leistungen .service-list > .service:nth-of-type(2) > .service__body
 "Unternehmenswebseiten: von der Sitemap über die Nutzerführung und Content-Architektur bis"
@@ -16,6 +17,7 @@ Screenshot: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.pn
 HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 ```
 
+0. eine Kopfzeile, die die folgenden Bestandteile nennt – immer Englisch, damit ein Agent das Schema erkennt statt zu raten (siehe „Format der Zwischenablage")
 1. vollständige Seiten-URL (inkl. Hash)
 2. kürzester CSS-Selektor, der das Element eindeutig trifft
 3. **nur wenn vorher Text markiert war:** der markierte Text in Anführungszeichen (max. 240 Zeichen)
@@ -71,6 +73,12 @@ Die dritte Zeile gibt es also nur, wenn Du sie durch eine Markierung ausdrückli
 Umgekehrt gilt: Markierung + Icon/Kürzel kopiert **nur** Text und Selektor, ohne Screenshot oder HTML – wer eine Textstelle markiert, will fast immer den Inhalt ändern, und der Text steht schon in Zeile 3. Für den seltenen Fall „dieser Satz bricht hässlich um" geht **Rechtsklick auf die Markierung → „mit Screenshot kopieren"**: Selektor, Text und Bild zusammen.
 
 Kürzel ändern: Firefox `about:addons` → Zahnrad → „Tastenkombinationen für Erweiterungen verwalten"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P öffnet in Firefox die Profilverwaltung; Chrome erlaubt keine Strg+Alt-Kombinationen – daher zwei Standards.)
+
+## Format der Zwischenablage
+
+Die erste Zeile ist ein Label: `[LLMent: <Bestandteile>]`. Bestandteile in dieser Reihenfolge, nur die vorhandenen: `element` oder `region` (Lasso) oder `recording`; `text` (markierter Text folgt in Anführungszeichen); `shot:file`, `shot:clip` oder `shot:file+clip` (Screenshot-Zeile, dann ggf. der Dateipfad); `sheet:file`/`sheet:clip` (Kontaktbogen einer Aufnahme); `html:file` (gerenderte HTML-Datei); `frame` (Element in einem iframe, eine Frame-Zeile schließt ab). Danach in fester Reihenfolge: URL, Selektor, Bereichs-Hinweis, Text in Anführungszeichen, Screenshot-Angaben, `Screenshot: <Pfad>`, `HTML: <Pfad>`, Frame-Zeile; eine Aufnahme setzt mit ihren Abschnitten (`== … ==`) fort. Alles Klartext; Pfade sind absolut und gelten auf dem Rechner, auf dem der Browser läuft.
+
+Ein brauchbarer Satz für die `CLAUDE.md` eines Projekts: *„Nachrichten, die mit `[LLMent:` beginnen, kommen aus der Erweiterung LLMent Picker; Pfade hinter `Screenshot:`/`HTML:` vor der Antwort von der Platte lesen, den Selektor als das exakt gemeinte Element behandeln."*
 
 ## Selektor-Logik
 
