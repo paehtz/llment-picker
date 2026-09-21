@@ -712,13 +712,14 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
         console.warn("LLMent Picker: HTML nicht gespeichert –", htmlErr);
       }
     }
-    const note = opts.region ? opts.region.line : opts.list ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : null;
-    let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "range" : null);
+    const adjacent = opts.list && opts.list.every((x, i) => i === 0 || x.parentElement === opts.list[0].parentElement);
+    const note = opts.region ? opts.region.line : opts.list ? (adjacent ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : t("lineSelection", opts.list.length)) : null;
+    let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "selection" : null);
     let ok = false, imageOk = false;
     if (shot && toClip && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
     else {
       // Bild nicht in der Zwischenablage → das Label darf es nicht behaupten
-      payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, false, selector, opts.list ? "range" : null);
+      payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, false, selector, opts.list ? "selection" : null);
       ok = await copy(payload);
     }
     const parts = [];
@@ -1454,11 +1455,15 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (armRecord) { recordInteraction(bestContainer(r).el, r, { html: withHtml }).then(() => reportState(false)); return; }
     copyLasso(r, d.anchor, { html: withHtml });
   }
-  // Bereich benachbarter Geschwister: Shift halten friert das umrahmte Element als
-  // Anker ein; Shift+Klick auf ein anderes Geschwister oder Shift+↑/↓ setzt den
-  // Fokus, gewählt ist alles dazwischen (Anker/Fokus wie in Editoren). Klick ohne
-  // Shift löst aus, Esc bricht ab. Screenshot ist wie beim Lasso immer dabei.
-  let range = null; // { anchor, focus }
+  // Auswahl mehrerer Elemente: Shift halten friert das umrahmte Element als Anker
+  // ein und zeigt unter der Maus eine gestrichelte Vorschau. Shift+Klick auf ein
+  // Geschwister des Ankers wählt den Bereich bis dorthin (Anker/Fokus wie in
+  // Editoren), auf ein beliebiges anderes Element nimmt es einzeln dazu (nochmal
+  // = wieder weg). Shift+↑/↓ wandert zum nächsten Geschwister; gibt es keins mehr,
+  // springt die Auswahl auf das Elternelement und wandert von dort weiter nach
+  // außen. Klick ohne Shift löst aus, Esc bricht ab. Screenshot ist immer dabei.
+  let range = null; // { anchor, focus, extras: [], pending }
+  const SKIP_TAG = /^(SCRIPT|STYLE|TEMPLATE|LINK|META|NOSCRIPT)$/;
   const unionRect = (els) => {
     let l = Infinity, tp = Infinity, r = -Infinity, b = -Infinity;
     for (const e of els) { const x = e.getBoundingClientRect(); l = Math.min(l, x.left); tp = Math.min(tp, x.top); r = Math.max(r, x.right); b = Math.max(b, x.bottom); }
@@ -1466,26 +1471,40 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   };
   const visibleSibling = (el, dir) => {
     for (let n = dir > 0 ? el.nextElementSibling : el.previousElementSibling; n; n = dir > 0 ? n.nextElementSibling : n.previousElementSibling) {
-      if (isOwn(n) || /^(SCRIPT|STYLE|TEMPLATE|LINK|META)$/.test(n.tagName)) continue;
+      if (isOwn(n) || SKIP_TAG.test(n.tagName)) continue;
       const r = n.getBoundingClientRect();
       if (r.width > 0 && r.height > 0) return n;
     }
     return null;
   };
+  // Gewählte Elemente in Dokumentreihenfolge: Bereich Anker..Fokus plus Einzelne
   function rangeList() {
     if (!range) return [];
     const kids = Array.from(range.anchor.parentElement.children);
     const a = kids.indexOf(range.anchor), f = kids.indexOf(range.focus);
-    return kids.slice(Math.min(a, f), Math.max(a, f) + 1).filter((n) => !isOwn(n) && !/^(SCRIPT|STYLE|TEMPLATE|LINK|META)$/.test(n.tagName));
+    const items = kids.slice(Math.min(a, f), Math.max(a, f) + 1).filter((n) => !isOwn(n) && !SKIP_TAG.test(n.tagName));
+    for (const x of range.extras) if (!items.some((i) => i === x || i.contains(x))) items.push(x);
+    return items.sort((x, y) => (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
   }
+  // Rahmen je gewähltem Element (nicht benachbarte liegen sonst in einem Kasten mit Lücken)
+  const selBoxes = document.createElement("div");
+  selBoxes.setAttribute("data-llment-picker", "");
+  selBoxes.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:" + Z;
+  const previewBox = document.createElement("div");
+  previewBox.setAttribute("data-llment-picker", "");
+  previewBox.style.cssText = `position:fixed;pointer-events:none;z-index:${Z};box-sizing:border-box;border:2px dashed #0a84ff;border-radius:2px;display:none;`;
+  document.documentElement.append(selBoxes, previewBox);
   function highlightRange() {
     const list = rangeList();
     if (!list.length) return;
     const r = unionRect(list);
-    box.style.display = "block";
-    box.style.left = r.left + "px"; box.style.top = r.top + "px";
-    box.style.width = r.width + "px"; box.style.height = r.height + "px";
-    label.textContent = list.length + "\u00d7 " + range.anchor.tagName.toLowerCase() + "  " + t("hintRange");
+    box.style.display = "none";
+    selBoxes.replaceChildren(...list.map((el) => {
+      const x = el.getBoundingClientRect(), d = document.createElement("div");
+      d.style.cssText = `position:fixed;box-sizing:border-box;border:2px solid #0a84ff;background:rgba(10,132,255,.14);border-radius:2px;left:${x.left}px;top:${x.top}px;width:${x.width}px;height:${x.height}px;`;
+      return d;
+    }));
+    label.textContent = list.length + "\u00d7 " + (list.every((x) => x.tagName === list[0].tagName) ? list[0].tagName.toLowerCase() : t("hintMixed")) + "  " + t("hintRange");
     label.style.display = "block";
     const above = r.top > 24;
     label.style.left = Math.max(0, r.left) + "px";
@@ -1493,14 +1512,41 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     setMods(false, false, true);
     placeHud(r);
   }
+  function showPreview(el) {
+    if (!el || rangeList().includes(el)) { previewBox.style.display = "none"; return; }
+    const x = el.getBoundingClientRect();
+    previewBox.style.display = "block";
+    previewBox.style.left = x.left + "px"; previewBox.style.top = x.top + "px";
+    previewBox.style.width = x.width + "px"; previewBox.style.height = x.height + "px";
+  }
+  function endRange() {
+    range = null;
+    selBoxes.replaceChildren();
+    previewBox.style.display = "none";
+  }
   // Geschwister des Ankers, das den Punkt enthält (Shift+Klick irgendwo in einer Section)
   const siblingAt = (x, y) => {
     let el = targetAt(x, y);
     while (el && el.parentElement !== range.anchor.parentElement) el = el.parentElement;
     return el;
   };
+  // Shift+↑/↓: nächstes Geschwister, sonst eine Ebene nach außen
+  function stepRange(dir) {
+    const next = visibleSibling(range.focus, dir);
+    if (next) { range.focus = next; range.pending = false; highlightRange(); return; }
+    const parent = range.anchor.parentElement;
+    if (!parent || parent === document.documentElement || parent === document.body) return;
+    range.anchor = range.focus = parent;
+    range.extras = range.extras.filter((x) => !parent.contains(x));
+    range.pending = false;
+    highlightRange();
+  }
   function onMove(e) {
-    if (range) return; // Bereich eingefroren, bis Klick oder Esc
+    if (range) { // Auswahl steht; unter der Maus nur eine Vorschau
+      const el = targetAt(e.clientX, e.clientY);
+      showPreview(el && el.tagName !== "IFRAME" && el.tagName !== "FRAME" ? el : null);
+      return;
+    }
     if (drag) {
       if (!drag.active) {
         const a = drag.anchor.getBoundingClientRect();
@@ -1559,17 +1605,31 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     swallow(e);
     const withShot = e.altKey || preset.shot || armShot, withHtml = e.ctrlKey || e.metaKey || preset.html || armHtml;
     if (e.shiftKey && (range || current)) {
-      // Shift+Klick: Fokus auf das Geschwister unter dem Zeiger setzen
-      if (!range) range = { anchor: current, focus: current };
-      const sib = siblingAt(e.clientX, e.clientY);
-      if (sib) { range.focus = sib; range.pending = false; highlightRange(); }
+      // Shift+Klick: Geschwister des Ankers → Bereich bis dorthin; sonst einzeln dazu/weg
+      if (!range) range = { anchor: current, focus: current, extras: [] };
+      const el = targetAt(e.clientX, e.clientY);
+      if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
+      if (el.parentElement === range.anchor.parentElement) range.focus = el;
+      else {
+        const i = range.extras.indexOf(el);
+        if (i >= 0) range.extras.splice(i, 1); else range.extras.push(el);
+      }
+      range.pending = false;
+      highlightRange();
+      showPreview(null);
       return;
     }
     if (range) {
       const list = rangeList();
       const r = unionRect(list);
-      range = null;
+      endRange();
       cleanup();
+      if (list.length === 1) { // nach außen gewandert, aber nur ein Element: wie ein Klick darauf
+        flash(list[0]);
+        if (armRecord) { await recordInteraction(list[0], null, { html: withHtml }); reportState(false); return; }
+        await copyElement(list[0], undefined, { shot: true, html: withHtml });
+        return;
+      }
       flashRect(r);
       if (armRecord) { await recordInteraction(list[0].parentElement, inflate(r, REC_PAD), { html: withHtml }); reportState(false); return; }
       await copyElement(list[0], undefined, { shot: true, html: withHtml, list });
@@ -1599,12 +1659,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
     if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") setMods(e.altKey, e.ctrlKey || e.metaKey);
     // Shift: Anker einfrieren; Shift+↑/↓: Fokus auf das vorherige/nächste Geschwister
-    if (e.key === "Shift" && !e.repeat && !range && current) { range = { anchor: current, focus: current, pending: true }; highlightRange(); }
+    if (e.key === "Shift" && !e.repeat && !range && current) { range = { anchor: current, focus: current, extras: [], pending: true }; highlightRange(); }
     if (e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown") && (range || current)) {
       swallow(e);
-      if (!range) range = { anchor: current, focus: current };
-      const next = visibleSibling(range.focus, e.key === "ArrowDown" ? 1 : -1);
-      if (next) { range.focus = next; range.pending = false; highlightRange(); }
+      if (!range) range = { anchor: current, focus: current, extras: [] };
+      stepRange(e.key === "ArrowDown" ? 1 : -1);
       return;
     }
     // R: Interaktion am Element unter dem Zeiger aufnehmen
@@ -1619,7 +1678,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   function onKeyUp(e) {
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
     // Shift losgelassen, ohne dass ein Bereich entstand → Hover wieder frei
-    if (e.key === "Shift" && range && range.pending && range.focus === range.anchor) { range = null; onScroll(); }
+    if (e.key === "Shift" && range && range.pending) { endRange(); onScroll(); }
     // Antippen schaltet um; Loslassen nach längerem Halten ist immer „aus"
     if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") {
       const short = tap === e.key && performance.now() - tapAt < TAP_MS;
@@ -1642,6 +1701,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     window.removeEventListener("selectstart", swallow, opts);
     drag = null;
     range = null;
+    selBoxes.remove();
+    previewBox.remove();
     lassoBox.remove();
     window.removeEventListener("keydown", onKey, opts);
     window.removeEventListener("keyup", onKeyUp, opts);

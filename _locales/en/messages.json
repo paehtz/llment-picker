@@ -575,5 +575,16 @@
   },
   "hintRange": {
     "message": "Shift+↑↓ / Shift+click"
+  },
+  "lineSelection": {
+    "message": "Selection: $N$ elements (not all adjacent)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "hintMixed": {
+    "message": "elements"
   }
 }

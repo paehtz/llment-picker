@@ -575,5 +575,16 @@
   },
   "hintRange": {
     "message": "Shift+↑↓ / Shift+Klick"
+  },
+  "lineSelection": {
+    "message": "Auswahl: $N$ Elemente (nicht alle benachbart)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "hintMixed": {
+    "message": "Elemente"
   }
 }
