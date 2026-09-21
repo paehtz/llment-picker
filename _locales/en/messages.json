@@ -574,7 +574,7 @@
     }
   },
   "hintRange": {
-    "message": "Shift+↑↓ / Shift+click"
+    "message": "Shift+↑↓ / Shift+click · Enter copies"
   },
   "lineSelection": {
     "message": "Selection: $N$ elements (not all adjacent)",

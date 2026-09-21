@@ -574,7 +574,7 @@
     }
   },
   "hintRange": {
-    "message": "Shift+↑↓ / Shift+Klick"
+    "message": "Shift+↑↓ / Shift+Klick · Enter kopiert"
   },
   "lineSelection": {
     "message": "Auswahl: $N$ Elemente (nicht alle benachbart)",

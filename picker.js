@@ -1619,6 +1619,10 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       showPreview(null);
       return;
     }
+    await commit(targetAt(e.clientX, e.clientY) || current, withShot, withHtml);
+  }
+  // Auslösen: Klick oder Enter – Auswahl, falls eine steht, sonst das umrahmte Element
+  async function commit(el, withShot, withHtml) {
     if (range) {
       const list = rangeList();
       const r = unionRect(list);
@@ -1635,7 +1639,6 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       await copyElement(list[0], undefined, { shot: true, html: withHtml, list });
       return;
     }
-    const el = targetAt(e.clientX, e.clientY) || current;
     if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
     cleanup();
     flash(el);
@@ -1654,6 +1657,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       swallow(e);
       cleanup();
       toast(t("toastCancelled"), false);
+      return;
+    }
+    // Enter löst aus wie ein Klick (auch mit gehaltenem Shift, um die Auswahl abzuschließen)
+    if (e.key === "Enter" && (range || current)) {
+      swallow(e);
+      commit(current, e.altKey || preset.shot || armShot, e.ctrlKey || e.metaKey || preset.html || armHtml);
       return;
     }
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
