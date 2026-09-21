@@ -1483,8 +1483,10 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const kids = Array.from(range.anchor.parentElement.children);
     const a = kids.indexOf(range.anchor), f = kids.indexOf(range.focus);
     const items = kids.slice(Math.min(a, f), Math.max(a, f) + 1).filter((n) => !isOwn(n) && !SKIP_TAG.test(n.tagName));
-    for (const x of range.extras) if (!items.some((i) => i === x || i.contains(x))) items.push(x);
-    return items.sort((x, y) => (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    for (const x of range.extras) if (!items.includes(x)) items.push(x);
+    // Ein Container schließt seine gewählten Nachkommen ein – die fallen weg
+    const top = items.filter((x) => !items.some((o) => o !== x && o.contains(x)));
+    return top.sort((x, y) => (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
   }
   // Rahmen je gewähltem Element (nicht benachbarte liegen sonst in einem Kasten mit Lücken)
   const selBoxes = document.createElement("div");
