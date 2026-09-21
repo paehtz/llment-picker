@@ -1611,8 +1611,14 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       if (!range) range = { anchor: current, focus: current, extras: [] };
       const el = targetAt(e.clientX, e.clientY);
       if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
-      if (el.parentElement === range.anchor.parentElement) range.focus = el;
-      else {
+      if (el.parentElement === range.anchor.parentElement) {
+        // Geschwister: Bereich bis dorthin erweitern, egal auf welcher Seite; innerhalb bleibt er
+        const kids = Array.from(range.anchor.parentElement.children);
+        const a = kids.indexOf(range.anchor), f = kids.indexOf(range.focus), c = kids.indexOf(el);
+        const lo = Math.min(a, f), hi = Math.max(a, f);
+        if (c < lo) { range.anchor = kids[hi]; range.focus = el; }
+        else if (c > hi) { range.anchor = kids[lo]; range.focus = el; }
+      } else {
         const i = range.extras.indexOf(el);
         if (i >= 0) range.extras.splice(i, 1); else range.extras.push(el);
       }
