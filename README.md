@@ -5,7 +5,7 @@
 **Tell your AI agent exactly which element you mean.** One click on any page element copies its URL and a unique, readable CSS selector – and, when you want it, the selected text, a screenshot of the element or its rendered HTML with the CSS that applies to it. Paste into Claude, ChatGPT, Copilot, Cursor or any coding agent.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-LLMent%20Picker-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/llment-picker/oikfninjgnggbbhbdeefdlmeidminbnm)
-[![Firefox Add-ons](https://img.shields.io/badge/Firefox%20Add--ons-in%20review-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/llment-picker/)
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox%20Add--ons-LLMent%20Picker-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/llment-picker/)
 
 Deutsche Fassung: [README.de.md](README.de.md)
 
@@ -115,7 +115,7 @@ test/                 clipboard-test.html (does a target take image + text from 
 
 **Chrome:** [Chrome Web Store](https://chromewebstore.google.com/detail/llment-picker/oikfninjgnggbbhbdeefdlmeidminbnm)
 
-**Firefox:** [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/llment-picker/) (listing in review); until then the signed `.xpi` from the [releases](https://github.com/paehtz/llment-picker/releases).
+**Firefox:** [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/llment-picker/)
 
 ### For testing
 
