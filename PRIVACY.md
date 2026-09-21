@@ -13,7 +13,7 @@ LLMent Picker is a browser extension for Firefox and Chrome. It does not collect
 
 Everything stays on your device. The extension has no network access, no analytics, no server component and no account. It does not read pages until you invoke it on them (`activeTab` permission only) and has no access to other tabs.
 
-**Settings** – eight preferences (subfolder, "Save as" dialog, screenshot target, CSS context, slim HTML, environment line, English output, key hints) are stored in the browser's extension storage. They contain no personal data and are removed when you uninstall the extension.
+**Settings** – the preferences (subfolder, "Save as" dialog, screenshot target, CSS context, slim HTML, context-line parts, English output, key hints) are stored in the browser's extension storage. They contain no personal data and are removed when you uninstall the extension.
 
 **Contact** – Henning Pähtz, Lutherstadt Eisleben, Germany · henning@paehtz.de · https://www.paehtz.de
 
@@ -34,6 +34,6 @@ LLMent Picker ist eine Browser-Erweiterung für Firefox und Chrome. Sie erhebt, 
 
 Alles bleibt auf Ihrem Gerät. Die Erweiterung hat keinen Netzwerkzugriff, keine Analyse-Funktionen, keine Server-Komponente und kein Konto. Sie liest Seiten erst, wenn Sie sie dort aufrufen (nur die Berechtigung `activeTab`), und hat keinen Zugriff auf andere Tabs.
 
-**Einstellungen:** acht Voreinstellungen (Unterordner, „Speichern unter"-Dialog, Screenshot-Ziel, CSS-Kontext, verschlanktes HTML, Umgebungszeile, englische Ausgabe, Tastenhinweise) werden im Erweiterungsspeicher des Browsers abgelegt. Sie enthalten keine personenbezogenen Daten und werden mit der Deinstallation entfernt.
+**Einstellungen:** die Voreinstellungen (Unterordner, „Speichern unter"-Dialog, Screenshot-Ziel, CSS-Kontext, verschlanktes HTML, Bestandteile der Kontextzeile, englische Ausgabe, Tastenhinweise) werden im Erweiterungsspeicher des Browsers abgelegt. Sie enthalten keine personenbezogenen Daten und werden mit der Deinstallation entfernt.
 
 **Verantwortlich:** Henning Pähtz, Lutherstadt Eisleben · henning@paehtz.de · https://www.paehtz.de

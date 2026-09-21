@@ -13,7 +13,7 @@ English version: [README.md](README.md)
 [LLMent: element, text, shot:file, html:file]
 https://www.paehtz.de/#leistungen
 #leistungen .service-list > .service:nth-of-type(2) > .service__body
-Chrome 140 · Windows · 1440×900 · DPR 1.25
+Chrome 140 · 1440×900 · DPR 1.25
 "Unternehmenswebseiten: von der Sitemap über die Nutzerführung und Content-Architektur bis"
 Screenshot 454×239 px (+24 px Rand)
 Box 406×191 px @ 517,1240
@@ -23,7 +23,7 @@ HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 
 0. eine Kopfzeile, die die folgenden Bestandteile nennt – immer Englisch, damit ein Agent das Schema erkennt statt zu raten (siehe „Format der Zwischenablage")
 1. vollständige Seiten-URL (inkl. Hash)
-1a. Umgebung: Browser, System, Viewport, Pixelverhältnis, dazu `dark` / `reduced-motion`, wenn aktiv – was ein Agent zur Einordnung einer Darstellung braucht und dem Text nicht ansieht (Einstellung, Standard an)
+1a. Kontext: Browser mit Version, Viewport und Pixelverhältnis, dazu `dark` / `reduced-motion`, wenn aktiv – was ein Agent zur Einordnung einer Darstellung braucht und dem Text nicht ansieht; jeder Teil ist in den Einstellungen einzeln abschaltbar, das Betriebssystem ist standardmäßig aus
 2. kürzester CSS-Selektor, der das Element eindeutig trifft
 3. **nur wenn vorher Text markiert war:** der markierte Text in Anführungszeichen (max. 240 Zeichen)
 4. **nur im Screenshot-Modus:** Bildgröße, die Box des Elements (Größe und Seitenposition in CSS-px) sowie der Pfad des PNG im Download-Ordner (nächste Zeile). Die Datei ist die tokensparende Form: der Agent liest sie nur, wenn er sie braucht, sie hängt nicht in jeder weiteren Nachricht der Konversation, andere Chats können sie ebenfalls lesen, und der Agent kann aus dem Original in voller Auflösung ausschneiden. Einstellung: Datei (Standard), Zwischenablage (Bild und Text in einem Strg+V, für Web-Chats ohne Zugriff auf lokale Dateien) oder beides
@@ -72,7 +72,7 @@ Solange der Picker läuft, trägt das Toolbar-Icon einen blauen Punkt (Tooltip �
 | … → „Mit Screenshot kopieren" / „Als HTML-Datei speichern" | dasselbe mit Bild bzw. HTML-Datei |
 | **Rechtsklick auf das Toolbar-Icon → „Element wählen – mit Screenshot" / „– als HTML-Datei"** | startet den Picker mit Voreinstellung: das Symbol über dem Rahmen leuchtet schon, der Klick auf der Seite löst es ohne Taste aus |
 
-**Einstellungen** (Add-on-/Erweiterungsverwaltung → LLMent Picker → Einstellungen): Unterordner im Download-Ordner (Standard `LLMent Picker`), „Speichern unter"-Dialog, Ziel des Screenshots (PNG-Datei – Standard –, Zwischenablage, beides), CSS-Kontext an/aus, **Umgebungszeile** an/aus, **HTML-Dateien verschlanken** an/aus (Standard an: versteckte Formularfelder, Event-Handler, lange data-Attribute, srcset-Listen, SVG-Pfade, `<style>`-Blöcke, Kommentare, lange `data:`-URIs und wiederholte `<select>`-Optionslisten werden entfernt; die Kopfzeile nennt, was fehlt – eine DNS-Tabelle schrumpfte von 113 auf 52 KB bei gleichem Inhalt), **Zwischenablage und Dateien immer auf Englisch** (Standard aus: die Browsersprache entscheidet; die Oberfläche bleibt in jedem Fall in der Browsersprache), Tastenhinweise an/aus. Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben; ein freier Zielpfad ist nicht möglich.
+**Einstellungen** (Add-on-/Erweiterungsverwaltung → LLMent Picker → Einstellungen): Unterordner im Download-Ordner (Standard `LLMent Picker`), „Speichern unter"-Dialog, Ziel des Screenshots (PNG-Datei – Standard –, Zwischenablage, beides), CSS-Kontext an/aus, **Kontextzeile** teilweise (Browser, System, Viewport, Farbschema/Bewegung, Box), **HTML-Dateien verschlanken** an/aus (Standard an: versteckte Formularfelder, Event-Handler, lange data-Attribute, srcset-Listen, SVG-Pfade, `<style>`-Blöcke, Kommentare, lange `data:`-URIs und wiederholte `<select>`-Optionslisten werden entfernt; die Kopfzeile nennt, was fehlt – eine DNS-Tabelle schrumpfte von 113 auf 52 KB bei gleichem Inhalt), **Zwischenablage und Dateien immer auf Englisch** (Standard aus: die Browsersprache entscheidet; die Oberfläche bleibt in jedem Fall in der Browsersprache), Tastenhinweise an/aus. Erweiterungen dürfen nur in den Download-Ordner des Browsers schreiben; ein freier Zielpfad ist nicht möglich.
 
 Die dritte Zeile gibt es also nur, wenn Du sie durch eine Markierung ausdrücklich verlangst. Ein angeklickter Block ohne Markierung liefert nur URL und Selektor – sonst läse ein Chat „dieser Satz ist gemeint", obwohl der Block gemeint war.
 

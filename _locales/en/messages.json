@@ -599,10 +599,10 @@
     }
   },
   "optEnv": {
-    "message": "Environment line (browser, system, viewport, colour scheme)"
+    "message": "Context line after the selector"
   },
   "optEnvHint": {
-    "message": "One line after the selector, e.g. \"Chrome 140 · Windows · 2560×1271 · DPR 1 · dark\" – what an agent needs to judge a rendering and cannot see in the text. With a screenshot, a line \"Box W×H px @ x,y\" (page coordinates) follows. About 8 tokens."
+    "message": "What an agent needs to judge a rendering and cannot see in the text. Each part costs one or two tokens; with everything off the line is omitted (viewport and pixel ratio then stay in the screenshot line)."
   },
   "lineShotShort": {
     "message": "Screenshot $SW$×$SH$ px",
@@ -631,5 +631,20 @@
         "content": "$4"
       }
     }
+  },
+  "optEnvBrowser": {
+    "message": "Browser and version (e.g. Chrome 140)"
+  },
+  "optEnvOs": {
+    "message": "Operating system (off by default – noise on a developer machine)"
+  },
+  "optEnvViewport": {
+    "message": "Viewport and pixel ratio (e.g. 2560×1271 · DPR 1)"
+  },
+  "optEnvFlags": {
+    "message": "\"dark\" / \"reduced-motion\" when active"
+  },
+  "optEnvBox": {
+    "message": "Box line with screenshots: size and page position of the element"
   }
 }

@@ -243,13 +243,25 @@
       if (m) browser = ({ Edg: "Edge", OPR: "Opera" }[m[1]] || m[1]) + " " + m[2];
     }
     if (!os) os = /Windows/.test(ua) ? "Windows" : /Mac OS/.test(ua) ? "macOS" : /Android/.test(ua) ? "Android" : /Linux/.test(ua) ? "Linux" : /iPhone|iPad/.test(ua) ? "iOS" : "";
-    const parts = [browser, os, `${innerWidth}\u00d7${innerHeight}`, "DPR " + Math.round(devicePixelRatio * 100) / 100].filter(Boolean);
-    try { if (matchMedia("(prefers-color-scheme: dark)").matches) parts.push("dark"); } catch {}
-    try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) parts.push("reduced-motion"); } catch {}
+    const parts = [];
+    if (ENV.envBrowser && browser) parts.push(browser);
+    if (ENV.envOs && os) parts.push(os);
+    if (ENV.envViewport) parts.push(`${innerWidth}\u00d7${innerHeight}`, "DPR " + Math.round(devicePixelRatio * 100) / 100);
+    if (ENV.envFlags) {
+      try { if (matchMedia("(prefers-color-scheme: dark)").matches) parts.push("dark"); } catch {}
+      try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) parts.push("reduced-motion"); } catch {}
+    }
     return parts.join(" \u00b7 ");
   }
-  let withEnv = true; // Einstellung envLine
-  const prefsReady = (async () => { try { withEnv = (await api.storage.sync.get({ envLine: true })).envLine !== false; } catch {} })();
+  // Einzeln schaltbar (Einstellungen); Betriebssystem standardmäßig aus – auf
+  // einem Entwicklerrechner ist es Rauschen, der Browser dagegen wechselt
+  const ENV_DEFAULTS = { envBrowser: true, envOs: false, envViewport: true, envFlags: true, envBox: true };
+  let ENV = Object.assign({}, ENV_DEFAULTS);
+  let withEnv = true; // mindestens ein Bestandteil der Umgebungszeile aktiv
+  const prefsReady = (async () => {
+    try { ENV = Object.assign({}, ENV_DEFAULTS, await api.storage.sync.get(ENV_DEFAULTS)); } catch {}
+    withEnv = !!(ENV.envBrowser || ENV.envOs || ENV.envViewport || ENV.envFlags);
+  })();
   // Lage und Größe in CSS-Pixeln, Seitenkoordinaten
   const boxLine = (r) => t("lineBox", Math.round(r.width), Math.round(r.height), Math.round(r.left + scrollX), Math.round(r.top + scrollY));
   // Schlussmarke: schließt den Block; der Cursor steht nach dem Einfügen in der
@@ -268,7 +280,7 @@
     if (note) lines.push(note);
     if (text) lines.push(JSON.stringify(text));
     if (shotInfo) lines.push(shotInfo);
-    if (shotInfo && box) lines.push(boxLine(box));
+    if (shotInfo && box && ENV.envBox) lines.push(boxLine(box));
     if (shotPath) lines.push(t("lineShotFile") + shotPath);
     if (htmlPath) lines.push(t("lineHtml") + htmlPath);
     if (fl) lines.push(fl);
@@ -624,7 +636,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (!cv) throw new Error("keine Aufnahme");
     const blob = await new Promise((f) => cv.toBlob(f, "image/png"));
     const dpr = String(Math.round(devicePixelRatio * 100) / 100);
-    let info = withEnv ? t("lineShotShort", cv.width, cv.height) : t("lineShot", innerWidth, innerHeight, dpr, cv.width, cv.height);
+    let info = withEnv && ENV.envViewport ? t("lineShotShort", cv.width, cv.height) : t("lineShot", innerWidth, innerHeight, dpr, cv.width, cv.height);
     if (pad) info += t("lineShotPad", pad);
     if (tiles > 1) info += t("lineShotTiles", tiles);
     if (scale < 1) info += t("lineShotScaled", Math.round(scale * 100));

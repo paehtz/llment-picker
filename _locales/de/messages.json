@@ -599,10 +599,10 @@
     }
   },
   "optEnv": {
-    "message": "Umgebungszeile (Browser, System, Viewport, Farbschema)"
+    "message": "Kontextzeile nach dem Selektor"
   },
   "optEnvHint": {
-    "message": "Eine Zeile nach dem Selektor, z. B. „Chrome 140 · Windows · 2560×1271 · DPR 1 · dark\" – was ein Agent zur Einordnung einer Darstellung braucht und dem Text nicht ansieht. Bei Screenshot folgt „Box B×H px @ x,y\" (Seitenkoordinaten). Etwa 8 Token."
+    "message": "Was ein Agent zur Einordnung einer Darstellung braucht und dem Text nicht ansieht. Jeder Teil kostet ein bis zwei Token; ist alles aus, entfällt die Zeile (Viewport und Pixelverhältnis bleiben dann in der Screenshot-Zeile)."
   },
   "lineShotShort": {
     "message": "Screenshot $SW$×$SH$ px",
@@ -631,5 +631,20 @@
         "content": "$4"
       }
     }
+  },
+  "optEnvBrowser": {
+    "message": "Browser mit Version (z. B. Chrome 140)"
+  },
+  "optEnvOs": {
+    "message": "Betriebssystem (Standard aus – auf einem Entwicklerrechner Rauschen)"
+  },
+  "optEnvViewport": {
+    "message": "Viewport und Pixelverhältnis (z. B. 2560×1271 · DPR 1)"
+  },
+  "optEnvFlags": {
+    "message": "„dark\" / „reduced-motion\", wenn aktiv"
+  },
+  "optEnvBox": {
+    "message": "Box-Zeile bei Screenshots: Größe und Seitenposition des Elements"
   }
 }

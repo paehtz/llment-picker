@@ -13,7 +13,7 @@ Deutsche Fassung: [README.de.md](README.de.md)
 [LLMent: element, text, shot:file, html:file]
 https://www.paehtz.de/#leistungen
 #leistungen .service-list > .service:nth-of-type(2) > .service__body
-Chrome 140 · Windows · 1440×900 · DPR 1.25
+Chrome 140 · 1440×900 · DPR 1.25
 "Unternehmenswebseiten: von der Sitemap über die Nutzerführung und Content-Architektur bis"
 Screenshot 454×239 px (+24 px margin)
 Box 406×191 px @ 517,1240
@@ -23,7 +23,7 @@ HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 
 0. a one-line label naming the parts that follow – always English, so an agent recognises the schema instead of guessing (see "Payload format")
 1. the full page URL (including hash)
-1a. environment: browser, system, viewport, pixel ratio, plus `dark` / `reduced-motion` when active – what an agent needs to judge a rendering and cannot see in the text (setting, default on)
+1a. context: browser with version, viewport and pixel ratio, plus `dark` / `reduced-motion` when active – what an agent needs to judge a rendering and cannot see in the text; each part can be switched off in the settings, the operating system is off by default
 2. the shortest CSS selector that matches exactly this element
 3. **only if text was selected first:** the selected text in quotes (max. 240 characters)
 4. **only in screenshot mode:** image size, the element's box (size and page position in CSS px), and the path of the PNG in the downloads folder (next line). A file is the token-friendly form: the agent reads it only when it needs it, it does not sit in the conversation for every later turn, other chats can read it too, and the agent can crop the full-size original. Setting: file (default), clipboard (image and text in one Ctrl+V, for web chats that cannot open local files) or both
@@ -71,7 +71,7 @@ The text line appears only when you ask for it by selecting text. A block clicke
 
 **Elements inside iframes** can be picked too; the clipboard then carries an extra line `Inside frame: <url> ← <iframe id="…">` and the selector refers to the frame document. The screenshot works for same-origin frames.
 
-**Settings** (extension management → LLMent Picker → Options): subfolder inside the downloads folder (default `LLMent Picker`), "Save as" dialog, screenshot target (PNG file – the default –, clipboard, both), CSS context on/off, **environment line** on/off, **slim HTML files** on/off (default on: hidden form fields, event handlers, long data attributes, srcset lists, SVG paths, `<style>` blocks, comments, long `data:` URIs and repeated `<select>` option lists are removed; the file header lists what was dropped – a DNS table of 113 KB became 52 KB with the same content), **clipboard and files always in English** (default off: the browser language decides; the extension UI keeps the browser language either way), key hints on/off. Extensions may only write to the browser's download folder; a free target path is not possible.
+**Settings** (extension management → LLMent Picker → Options): subfolder inside the downloads folder (default `LLMent Picker`), "Save as" dialog, screenshot target (PNG file – the default –, clipboard, both), CSS context on/off, **context line** part by part (browser, system, viewport, colour scheme/motion, box), **slim HTML files** on/off (default on: hidden form fields, event handlers, long data attributes, srcset lists, SVG paths, `<style>` blocks, comments, long `data:` URIs and repeated `<select>` option lists are removed; the file header lists what was dropped – a DNS table of 113 KB became 52 KB with the same content), **clipboard and files always in English** (default off: the browser language decides; the extension UI keeps the browser language either way), key hints on/off. Extensions may only write to the browser's download folder; a free target path is not possible.
 
 Change the shortcut: Firefox `about:addons` → gear → "Manage Extension Shortcuts"; Chrome `chrome://extensions/shortcuts`. (Alt+Shift+P opens the profile manager in Firefox; Chrome does not allow Ctrl+Alt combinations – hence two defaults.)
 

@@ -58,13 +58,15 @@
   </div>
 </div>
 
-<div class="row">
-  <input type="checkbox" id="envLine">
-  <div>
-    <label for="envLine" data-i18n="optEnv"></label>
-    <div class="hint" data-i18n="optEnvHint"></div>
-  </div>
-</div>
+<fieldset id="env">
+  <legend data-i18n="optEnv"></legend>
+  <label class="radio"><input type="checkbox" id="envBrowser"><span data-i18n="optEnvBrowser"></span></label>
+  <label class="radio"><input type="checkbox" id="envOs"><span data-i18n="optEnvOs"></span></label>
+  <label class="radio"><input type="checkbox" id="envViewport"><span data-i18n="optEnvViewport"></span></label>
+  <label class="radio"><input type="checkbox" id="envFlags"><span data-i18n="optEnvFlags"></span></label>
+  <label class="radio"><input type="checkbox" id="envBox"><span data-i18n="optEnvBox"></span></label>
+  <div class="hint" data-i18n="optEnvHint"></div>
+</fieldset>
 
 <div class="row">
   <input type="checkbox" id="clipEnglish">
