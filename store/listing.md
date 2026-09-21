@@ -30,6 +30,9 @@ Usage
 • Select text, then icon or shortcut → element containing the selection + text copied immediately
 • Nothing selected: icon or shortcut → picker starts; the element under the cursor gets an outline; click copies
 • Alt+click → with screenshot · Ctrl+click → as HTML file · both → both · drag → lasso region as screenshot · R → record the interaction for 5 s (hover rules, transitions, state diff, DOM changes, frame timing, contact sheet)
+• Hold Shift → multi-selection: Shift+↑/↓ or Shift+click extend to neighbouring sections, any other element joins individually, a container becomes the context of the inner elements; Enter or a click copies everything with one screenshot
+• Tap Alt, Ctrl or R to arm a mode for the next click – no need to hold the key while aiming
+• Every copy starts with a label such as [LLMent: element, shot:file] and a context line (browser, viewport, pixel ratio, dark/reduced-motion) – an agent recognises the format instead of guessing; every part can be switched off
 • Right-click on the page → "Copy this element" / "Copy with screenshot" / "Save as HTML file" / "Record interaction here", without picker mode
 • Right-click the icon → start the picker with a preset
 • Works inside iframes; the clipboard says which frame
@@ -54,6 +57,9 @@ Bedienung
 • Text markieren, dann Icon oder Tastenkürzel → Element der Markierung + Text sofort kopiert
 • Nichts markiert: Icon oder Tastenkürzel → Picker startet, Element unter der Maus wird umrahmt, Klick kopiert
 • Alt+Klick → mit Screenshot · Strg+Klick → als HTML-Datei · beides → beides · Ziehen → Lasso-Bereich als Screenshot · R → Interaktion 5 s aufnehmen (Hover-Regeln, Übergänge, Zustandsdiff, DOM-Änderungen, Bildrate, Kontaktbogen)
+• Shift halten → Mehrfachauswahl: Shift+↑/↓ oder Shift+Klick erweitern auf Nachbar-Sections, jedes andere Element kommt einzeln dazu, ein Container wird zum Kontext der inneren Elemente; Enter oder Klick kopiert alles mit einem Screenshot
+• Alt, Strg oder R antippen schaltet den Modus für den nächsten Klick scharf – die Taste muss beim Zielen nicht gehalten werden
+• Jede Kopie beginnt mit einem Label wie [LLMent: element, shot:file] und einer Kontextzeile (Browser, Viewport, Pixelverhältnis, dark/reduced-motion) – ein Agent erkennt das Format, statt zu raten; jeder Teil ist abschaltbar
 • Rechtsklick auf der Seite → „Dieses Element kopieren" / „Mit Screenshot kopieren" / „Als HTML-Datei speichern" / „Interaktion hier aufnehmen", ohne Picker-Modus
 • Rechtsklick auf das Icon → Picker mit Voreinstellung starten
 • Funktioniert auch in iframes; die Zwischenablage nennt den Frame
