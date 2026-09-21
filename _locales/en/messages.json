@@ -586,5 +586,16 @@
   },
   "hintMixed": {
     "message": "elements"
+  },
+  "lineContext": {
+    "message": "Context: $C$ (screenshot and HTML show this container; the $N$ element(s) above are meant)",
+    "placeholders": {
+      "c": {
+        "content": "$1"
+      },
+      "n": {
+        "content": "$2"
+      }
+    }
   }
 }

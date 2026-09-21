@@ -688,7 +688,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const toClip = target !== "file", toFile = target !== "clipboard";
     if (withShot) {
       try {
-        shot = await (opts.region ? captureRegion(opts.region.measure, el, 0) : opts.list ? captureRegion(() => inflate(unionRect(opts.list), SHOT_PAD), el, SHOT_PAD) : captureElement(el));
+        shot = await (opts.region ? captureRegion(opts.region.measure, el, 0) : opts.list ? captureRegion(() => inflate(unionRect(opts.context || opts.list), SHOT_PAD), (opts.context || opts.list)[0], SHOT_PAD) : captureElement(el));
       } catch (e) {
         shotErr = (e && e.message) || String(e);
         console.warn("LLMent Picker: Screenshot fehlgeschlagen –", shotErr);
@@ -706,14 +706,15 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     }
     if (withHtml) {
       try {
-        htmlPath = await saveHtml(opts.list || el, selector, base);
+        htmlPath = await saveHtml(opts.context || opts.list || el, opts.context ? opts.context.map((x) => buildSelector(x)).join(", ") : selector, base);
       } catch (e) {
         htmlErr = ((e && e.message) || String(e)).replace(/data:[^\s]+/g, "data:…").slice(0, 120);
         console.warn("LLMent Picker: HTML nicht gespeichert –", htmlErr);
       }
     }
     const adjacent = opts.list && opts.list.every((x, i) => i === 0 || x.parentElement === opts.list[0].parentElement);
-    const note = opts.region ? opts.region.line : opts.list ? (adjacent ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : t("lineSelection", opts.list.length)) : null;
+    let note = opts.region ? opts.region.line : opts.list ? (opts.list.length > 1 ? (adjacent ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : t("lineSelection", opts.list.length)) : "") : null;
+    if (opts.context) note = (note ? note + "\n" : "") + t("lineContext", opts.context.map((x) => buildSelector(x)).join(", "), opts.list.length);
     let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "selection" : null);
     let ok = false, imageOk = false;
     if (shot && toClip && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
@@ -1484,9 +1485,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const a = kids.indexOf(range.anchor), f = kids.indexOf(range.focus);
     const items = kids.slice(Math.min(a, f), Math.max(a, f) + 1).filter((n) => !isOwn(n) && !SKIP_TAG.test(n.tagName));
     for (const x of range.extras) if (!items.includes(x)) items.push(x);
-    // Ein Container schließt seine gewählten Nachkommen ein – die fallen weg
-    const top = items.filter((x) => !items.some((o) => o !== x && o.contains(x)));
-    return top.sort((x, y) => (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    return items.sort((x, y) => (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
   }
   // Rahmen je gewähltem Element (nicht benachbarte liegen sonst in einem Kasten mit Lücken)
   const selBoxes = document.createElement("div");
@@ -1626,19 +1625,25 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   // Auslösen: Klick oder Enter – Auswahl, falls eine steht, sonst das umrahmte Element
   async function commit(el, withShot, withHtml) {
     if (range) {
-      const list = rangeList();
-      const r = unionRect(list);
+      const all = rangeList();
+      // Kontext + Fokus: Elemente, die andere gewählte enthalten, sind der Kontext
+      // (Screenshot, HTML), die inneren die eigentliche Referenz (Selektoren)
+      const outer = all.filter((x) => all.some((o) => o !== x && x.contains(o)));
+      const context = outer.filter((x) => !outer.some((o) => o !== x && o.contains(x)));
+      const list = context.length ? all.filter((x) => !outer.includes(x)) : all;
+      const r = unionRect(context.length ? context : list);
       endRange();
       cleanup();
-      if (list.length === 1) { // nach außen gewandert, aber nur ein Element: wie ein Klick darauf
+      if (list.length === 1 && !context.length) { // nach außen gewandert, aber nur ein Element: wie ein Klick darauf
         flash(list[0]);
         if (armRecord) { await recordInteraction(list[0], null, { html: withHtml }); reportState(false); return; }
         await copyElement(list[0], undefined, { shot: true, html: withHtml });
         return;
       }
       flashRect(r);
-      if (armRecord) { await recordInteraction(list[0].parentElement, inflate(r, REC_PAD), { html: withHtml }); reportState(false); return; }
-      await copyElement(list[0], undefined, { shot: true, html: withHtml, list });
+      const root = context.length === 1 ? context[0] : list[0].parentElement;
+      if (armRecord) { await recordInteraction(root, inflate(r, REC_PAD), { html: withHtml }); reportState(false); return; }
+      await copyElement(list[0], undefined, { shot: true, html: withHtml, list, context: context.length ? context : null });
       return;
     }
     if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;

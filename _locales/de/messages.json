@@ -586,5 +586,16 @@
   },
   "hintMixed": {
     "message": "Elemente"
+  },
+  "lineContext": {
+    "message": "Kontext: $C$ (Screenshot und HTML zeigen diesen Container; gemeint sind die $N$ Element(e) darüber)",
+    "placeholders": {
+      "c": {
+        "content": "$1"
+      },
+      "n": {
+        "content": "$2"
+      }
+    }
   }
 }
