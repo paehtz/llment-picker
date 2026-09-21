@@ -1352,7 +1352,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const collide = labelW && labelW + w + 8 > r.width;
     const above = r.top > 24 && !collide;
     hud.style.left = Math.max(0, Math.min(innerWidth - w - 4, r.right - w)) + "px";
-    hud.style.top = (above ? r.top - 22 : Math.min(innerHeight - 22, r.bottom + 2)) + "px";
+    hud.style.top = Math.max(2, Math.min(innerHeight - 22, above ? r.top - 22 : r.bottom + 2)) + "px";
   }
   const box = document.createElement("div");
   box.setAttribute("data-llment-picker", "");
@@ -1390,7 +1390,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     label.style.display = "block";
     const above = r.top > 24;
     label.style.left = Math.max(0, r.left) + "px";
-    label.style.top = (above ? r.top - 22 : r.bottom + 2) + "px";
+    label.style.top = Math.max(2, Math.min(innerHeight - 22, above ? r.top - 22 : r.bottom + 2)) + "px";
     placeHud(r);
   }
 
@@ -1509,7 +1509,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     label.style.display = "block";
     const above = r.top > 24;
     label.style.left = Math.max(0, r.left) + "px";
-    label.style.top = (above ? r.top - 22 : r.bottom + 2) + "px";
+    // Ragt der Bereich über den Rand, sitzt das Label innen am oberen Rand
+    label.style.top = Math.max(2, Math.min(innerHeight - 22, above ? r.top - 22 : r.bottom + 2)) + "px";
     setMods(false, false, true);
     placeHud(r);
   }
