@@ -597,5 +597,39 @@
         "content": "$2"
       }
     }
+  },
+  "optEnv": {
+    "message": "Environment line (browser, system, viewport, colour scheme)"
+  },
+  "optEnvHint": {
+    "message": "One line after the selector, e.g. \"Chrome 140 · Windows · 2560×1271 · DPR 1 · dark\" – what an agent needs to judge a rendering and cannot see in the text. With a screenshot, a line \"Box W×H px @ x,y\" (page coordinates) follows. About 8 tokens."
+  },
+  "lineShotShort": {
+    "message": "Screenshot $SW$×$SH$ px",
+    "placeholders": {
+      "sw": {
+        "content": "$1"
+      },
+      "sh": {
+        "content": "$2"
+      }
+    }
+  },
+  "lineBox": {
+    "message": "Box $W$×$H$ px @ $X$,$Y$",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      },
+      "x": {
+        "content": "$3"
+      },
+      "y": {
+        "content": "$4"
+      }
+    }
   }
 }

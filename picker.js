@@ -225,11 +225,38 @@
   // Erste Zeile: Maschinenlabel mit den Bestandteilen, immer Englisch – ein
   // Agent erkennt daran das Schema, ohne aus den Zeilen zu raten.
   const tagLine = (parts) => `[LLMent: ${parts.join(", ")}]`;
+  // Umgebungszeile: Browser · System · Viewport · DPR (· dark · reduced-motion) –
+  // was ein Agent zur Einordnung einer Darstellung braucht und dem Text nicht ansieht
+  function envLine() {
+    let browser = "", os = "";
+    try {
+      const d = navigator.userAgentData;
+      if (d && d.brands) {
+        const b = d.brands.find((x) => /Edge|Chrome|Chromium|Opera|Brave/.test(x.brand) && !/Not/.test(x.brand)) || d.brands.find((x) => !/Not/.test(x.brand));
+        if (b) browser = b.brand.replace("Google ", "").replace("Microsoft ", "") + " " + b.version;
+        os = d.platform || "";
+      }
+    } catch {}
+    const ua = navigator.userAgent;
+    if (!browser) {
+      const m = ua.match(/(Firefox|Edg|OPR|Chrome|Safari)\/(\d+)/);
+      if (m) browser = ({ Edg: "Edge", OPR: "Opera" }[m[1]] || m[1]) + " " + m[2];
+    }
+    if (!os) os = /Windows/.test(ua) ? "Windows" : /Mac OS/.test(ua) ? "macOS" : /Android/.test(ua) ? "Android" : /Linux/.test(ua) ? "Linux" : /iPhone|iPad/.test(ua) ? "iOS" : "";
+    const parts = [browser, os, `${innerWidth}\u00d7${innerHeight}`, "DPR " + Math.round(devicePixelRatio * 100) / 100].filter(Boolean);
+    try { if (matchMedia("(prefers-color-scheme: dark)").matches) parts.push("dark"); } catch {}
+    try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) parts.push("reduced-motion"); } catch {}
+    return parts.join(" \u00b7 ");
+  }
+  let withEnv = true; // Einstellung envLine
+  const prefsReady = (async () => { try { withEnv = (await api.storage.sync.get({ envLine: true })).envLine !== false; } catch {} })();
+  // Lage und Größe in CSS-Pixeln, Seitenkoordinaten
+  const boxLine = (r) => t("lineBox", Math.round(r.width), Math.round(r.height), Math.round(r.left + scrollX), Math.round(r.top + scrollY));
   // Schlussmarke: schließt den Block; der Cursor steht nach dem Einfügen in der
   // Zeile darunter, frei für den eigenen Hinweis
   const END = "\n---\n";
   const shotPart = (file, clip) => "shot:" + [file && "file", clip && "clip"].filter(Boolean).join("+");
-  function payloadFor(el, text, shotInfo, htmlPath, note, shotPath, shotClip, selectorText, kind) {
+  function payloadFor(el, text, shotInfo, htmlPath, note, shotPath, shotClip, selectorText, kind, box) {
     const fl = frameLine();
     const parts = [kind || (note ? "region" : "element")];
     if (text) parts.push("text");
@@ -237,9 +264,11 @@
     if (htmlPath) parts.push("html:file");
     if (fl) parts.push("frame");
     const lines = [tagLine(parts), location.href, selectorText || buildSelector(el)];
+    if (withEnv) lines.push(envLine());
     if (note) lines.push(note);
     if (text) lines.push(JSON.stringify(text));
     if (shotInfo) lines.push(shotInfo);
+    if (shotInfo && box) lines.push(boxLine(box));
     if (shotPath) lines.push(t("lineShotFile") + shotPath);
     if (htmlPath) lines.push(t("lineHtml") + htmlPath);
     if (fl) lines.push(fl);
@@ -595,7 +624,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (!cv) throw new Error("keine Aufnahme");
     const blob = await new Promise((f) => cv.toBlob(f, "image/png"));
     const dpr = String(Math.round(devicePixelRatio * 100) / 100);
-    let info = t("lineShot", innerWidth, innerHeight, dpr, cv.width, cv.height);
+    let info = withEnv ? t("lineShotShort", cv.width, cv.height) : t("lineShot", innerWidth, innerHeight, dpr, cv.width, cv.height);
     if (pad) info += t("lineShotPad", pad);
     if (tiles > 1) info += t("lineShotTiles", tiles);
     if (scale < 1) info += t("lineShotScaled", Math.round(scale * 100));
@@ -681,7 +710,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     }
   }
   async function copyElementInner(el, text, opts) {
-    await enReady;
+    await enReady; await prefsReady;
     const withShot = !!opts.shot, withHtml = !!opts.html;
     let shot = null, htmlPath = null, htmlErr = null, shotErr = null, shotPath = null, shotFileErr = null;
     const target = withShot ? await shotTarget() : "file";
@@ -715,12 +744,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const adjacent = opts.list && opts.list.every((x, i) => i === 0 || x.parentElement === opts.list[0].parentElement);
     let note = opts.region ? opts.region.line : opts.list ? (opts.list.length > 1 ? (adjacent ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : t("lineSelection", opts.list.length)) : "") : null;
     if (opts.context) note = (note ? note + "\n" : "") + t("lineContext", opts.context.map((x) => buildSelector(x)).join(", "), opts.list.length);
-    let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "selection" : null);
+    const box = shot ? (opts.region ? opts.region.measure() : unionRect(opts.context || opts.list || [el])) : null;
+    let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "selection" : null, box);
     let ok = false, imageOk = false;
     if (shot && toClip && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
     else {
       // Bild nicht in der Zwischenablage → das Label darf es nicht behaupten
-      payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, false, selector, opts.list ? "selection" : null);
+      payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, false, selector, opts.list ? "selection" : null, box);
       ok = await copy(payload);
     }
     const parts = [];
@@ -1115,7 +1145,9 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     await sleep(REC_SETTLE + 50); // ausstehende Diffs einsammeln
 
     // Protokoll
-    const L = [location.href, selOf(root), t("recLine", secs(duration), frames.length)];
+    await prefsReady;
+    const L = [location.href, selOf(root), ...(withEnv ? [envLine()] : []), t("recLine", secs(duration), frames.length)];
+    const O = withEnv ? 1 : 0; // Versatz der Einschubstellen
     const section = (title, lines, empty) => { L.push("", `== ${title} ==`); L.push(...(lines.length ? lines : [empty || t("fileNone")])); };
     section(t("recEvents"), events);
     section(t("recRules"), pseudoRules(root, 40));
@@ -1154,19 +1186,19 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
         const first = await loadImage(frames[0].dataUrl);
         const cv = await contactSheet(frames, region, first.naturalWidth / innerWidth);
         sheet = await new Promise((f) => cv.toBlob(f, "image/png"));
-        L.splice(3, 0, t(toClip ? "recSheet" : "recSheetFile", cv.width, cv.height));
+        L.splice(3 + O, 0, t(toClip ? "recSheet" : "recSheetFile", cv.width, cv.height));
       } catch (e) {
         sheetErr = (e && e.message) || String(e);
         console.warn("LLMent Picker: Kontaktbogen fehlgeschlagen –", sheetErr);
       }
     }
     if (sheet && toFile) {
-      try { sheetPath = await saveShot(sheet, fileBase(root) + "-rec"); L.splice(4, 0, t("lineShotFile") + sheetPath); } catch (e) { sheetErr = (e && e.message) || String(e); }
+      try { sheetPath = await saveShot(sheet, fileBase(root) + "-rec"); L.splice(4 + O, 0, t("lineShotFile") + sheetPath); } catch (e) { sheetErr = (e && e.message) || String(e); }
     }
     // Strg: HTML-Datei des Ziel-Containers dazu
     let htmlPath = null, htmlErr = null;
     if (opts && opts.html) {
-      try { htmlPath = await saveHtml(root, selOf(root), fileBase(root)); L.splice(sheetPath ? 5 : sheet ? 4 : 3, 0, t("lineHtml") + htmlPath); }
+      try { htmlPath = await saveHtml(root, selOf(root), fileBase(root)); L.splice((sheetPath ? 5 : sheet ? 4 : 3) + O, 0, t("lineHtml") + htmlPath); }
       catch (e) { htmlErr = ((e && e.message) || String(e)).slice(0, 120); }
     }
     const recTag = (clip) => tagLine(["recording", ...(sheet ? ["sheet:" + [sheetPath && "file", clip && "clip"].filter(Boolean).join("+")] : []), ...(htmlPath ? ["html:file"] : []), ...(fl ? ["frame"] : [])]);

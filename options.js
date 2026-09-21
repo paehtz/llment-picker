@@ -1,6 +1,6 @@
 // Einstellungen: werden bei jeder Änderung sofort gespeichert (storage.sync).
 const api = globalThis.browser ?? globalThis.chrome;
-const DEFAULTS = { subfolder: "LLMent Picker", saveAs: false, cssInHtml: true, hideHints: false, shotTarget: "file", htmlSlim: true, clipEnglish: false };
+const DEFAULTS = { subfolder: "LLMent Picker", saveAs: false, cssInHtml: true, hideHints: false, shotTarget: "file", htmlSlim: true, clipEnglish: false, envLine: true };
 const $ = (id) => document.getElementById(id);
 const t = (k) => api.i18n.getMessage(k) || k;
 document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
@@ -14,6 +14,7 @@ async function load() {
   $("hideHints").checked = !!cfg.hideHints;
   $("htmlSlim").checked = cfg.htmlSlim !== false;
   $("clipEnglish").checked = !!cfg.clipEnglish;
+  $("envLine").checked = cfg.envLine !== false;
   const r = document.querySelector(`input[name=shotTarget][value="${cfg.shotTarget}"]`) || document.querySelector('input[name=shotTarget][value="file"]');
   r.checked = true;
 }
@@ -23,7 +24,7 @@ let timer;
 function save() {
   clearTimeout(timer);
   timer = setTimeout(async () => {
-    await api.storage.sync.set({ subfolder: $("subfolder").value.trim(), saveAs: $("saveAs").checked, cssInHtml: $("cssInHtml").checked, hideHints: $("hideHints").checked, shotTarget: shotTargetValue(), htmlSlim: $("htmlSlim").checked, clipEnglish: $("clipEnglish").checked });
+    await api.storage.sync.set({ subfolder: $("subfolder").value.trim(), saveAs: $("saveAs").checked, cssInHtml: $("cssInHtml").checked, hideHints: $("hideHints").checked, shotTarget: shotTargetValue(), htmlSlim: $("htmlSlim").checked, clipEnglish: $("clipEnglish").checked, envLine: $("envLine").checked });
     $("status").textContent = t("optSaved");
     setTimeout(() => ($("status").textContent = ""), 1500);
   }, 300);
@@ -35,5 +36,6 @@ $("cssInHtml").addEventListener("change", save);
 $("hideHints").addEventListener("change", save);
 $("htmlSlim").addEventListener("change", save);
 $("clipEnglish").addEventListener("change", save);
+$("envLine").addEventListener("change", save);
 document.querySelectorAll("input[name=shotTarget]").forEach((r) => r.addEventListener("change", save));
 load();

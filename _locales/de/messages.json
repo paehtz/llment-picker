@@ -597,5 +597,39 @@
         "content": "$2"
       }
     }
+  },
+  "optEnv": {
+    "message": "Umgebungszeile (Browser, System, Viewport, Farbschema)"
+  },
+  "optEnvHint": {
+    "message": "Eine Zeile nach dem Selektor, z. B. „Chrome 140 · Windows · 2560×1271 · DPR 1 · dark\" – was ein Agent zur Einordnung einer Darstellung braucht und dem Text nicht ansieht. Bei Screenshot folgt „Box B×H px @ x,y\" (Seitenkoordinaten). Etwa 8 Token."
+  },
+  "lineShotShort": {
+    "message": "Screenshot $SW$×$SH$ px",
+    "placeholders": {
+      "sw": {
+        "content": "$1"
+      },
+      "sh": {
+        "content": "$2"
+      }
+    }
+  },
+  "lineBox": {
+    "message": "Box $W$×$H$ px @ $X$,$Y$",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      },
+      "x": {
+        "content": "$3"
+      },
+      "y": {
+        "content": "$4"
+      }
+    }
   }
 }

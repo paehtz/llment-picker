@@ -1,6 +1,6 @@
 # Privacy Policy – LLMent Picker
 
-*Last updated: 18 September 2026 · [Deutsche Fassung unten](#datenschutzerklärung-llment-picker)*
+*Last updated: 21 September 2026 · [Deutsche Fassung unten](#datenschutzerklärung-llment-picker)*
 
 LLMent Picker is a browser extension for Firefox and Chrome. It does not collect, store or transmit any personal data.
 
@@ -13,7 +13,7 @@ LLMent Picker is a browser extension for Firefox and Chrome. It does not collect
 
 Everything stays on your device. The extension has no network access, no analytics, no server component and no account. It does not read pages until you invoke it on them (`activeTab` permission only) and has no access to other tabs.
 
-**Settings** – seven preferences (subfolder, "Save as" dialog, screenshot target, CSS context, slim HTML, English output, key hints) are stored in the browser's extension storage. They contain no personal data and are removed when you uninstall the extension.
+**Settings** – eight preferences (subfolder, "Save as" dialog, screenshot target, CSS context, slim HTML, environment line, English output, key hints) are stored in the browser's extension storage. They contain no personal data and are removed when you uninstall the extension.
 
 **Contact** – Henning Pähtz, Lutherstadt Eisleben, Germany · henning@paehtz.de · https://www.paehtz.de
 
@@ -21,7 +21,7 @@ Everything stays on your device. The extension has no network access, no analyti
 
 # Datenschutzerklärung – LLMent Picker
 
-*Stand: 18. September 2026*
+*Stand: 21. September 2026*
 
 LLMent Picker ist eine Browser-Erweiterung für Firefox und Chrome. Sie erhebt, speichert und übermittelt keine personenbezogenen Daten.
 
@@ -34,6 +34,6 @@ LLMent Picker ist eine Browser-Erweiterung für Firefox und Chrome. Sie erhebt, 
 
 Alles bleibt auf Ihrem Gerät. Die Erweiterung hat keinen Netzwerkzugriff, keine Analyse-Funktionen, keine Server-Komponente und kein Konto. Sie liest Seiten erst, wenn Sie sie dort aufrufen (nur die Berechtigung `activeTab`), und hat keinen Zugriff auf andere Tabs.
 
-**Einstellungen:** sieben Voreinstellungen (Unterordner, „Speichern unter"-Dialog, Screenshot-Ziel, CSS-Kontext, verschlanktes HTML, englische Ausgabe, Tastenhinweise) werden im Erweiterungsspeicher des Browsers abgelegt. Sie enthalten keine personenbezogenen Daten und werden mit der Deinstallation entfernt.
+**Einstellungen:** acht Voreinstellungen (Unterordner, „Speichern unter"-Dialog, Screenshot-Ziel, CSS-Kontext, verschlanktes HTML, Umgebungszeile, englische Ausgabe, Tastenhinweise) werden im Erweiterungsspeicher des Browsers abgelegt. Sie enthalten keine personenbezogenen Daten und werden mit der Deinstallation entfernt.
 
 **Verantwortlich:** Henning Pähtz, Lutherstadt Eisleben · henning@paehtz.de · https://www.paehtz.de
