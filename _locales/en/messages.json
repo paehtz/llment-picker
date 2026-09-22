@@ -113,7 +113,7 @@
     "message": "Frame"
   },
   "fileEffective": {
-    "message": "== Effective values (element) =="
+    "message": "== Effective values (element; defaults omitted) =="
   },
   "fileRules": {
     "message": "== Applied CSS rules (element) =="
@@ -646,5 +646,59 @@
   },
   "optEnvBox": {
     "message": "Box line with screenshots: size and page position of the element"
+  },
+  "fileBox": {
+    "message": "Box (CSS px, page)"
+  },
+  "fileChildren": {
+    "message": "== Children ($N$) – box model and rules ==",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSpacing": {
+    "message": "== Spacing chain – where the distance comes from =="
+  },
+  "fileBefore": {
+    "message": "before"
+  },
+  "fileAfter": {
+    "message": "after"
+  },
+  "fileSelf": {
+    "message": "element"
+  },
+  "fileChildrenShort": {
+    "message": "children"
+  },
+  "fileAncestors": {
+    "message": "== Ancestors – deviations only =="
+  },
+  "fileOverridden": {
+    "message": "overridden"
+  },
+  "fileNoSpecific": {
+    "message": "(no element-specific rules)"
+  },
+  "fileOriginInline": {
+    "message": "inline, loads last"
+  },
+  "fileSlimFooter": {
+    "message": "Note: slim export (token saving). Removed: $LIST$. If something from that is needed for the task, the user can provide the full export (setting \"Slim HTML files\" off).",
+    "placeholders": {
+      "list": {
+        "content": "$1"
+      }
+    }
+  },
+  "lineSlimNote": {
+    "message": "HTML file slimmed (removed: $LIST$); full export via the setting \"Slim HTML files\" off",
+    "placeholders": {
+      "list": {
+        "content": "$1"
+      }
+    }
   }
 }

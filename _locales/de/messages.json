@@ -113,7 +113,7 @@
     "message": "Frame"
   },
   "fileEffective": {
-    "message": "== Effektive Werte (Element) =="
+    "message": "== Effektive Werte (Element; Voreinstellungen weggelassen) =="
   },
   "fileRules": {
     "message": "== Angewandte CSS-Regeln (Element) =="
@@ -646,5 +646,59 @@
   },
   "optEnvBox": {
     "message": "Box-Zeile bei Screenshots: Größe und Seitenposition des Elements"
+  },
+  "fileBox": {
+    "message": "Box (CSS-px, Seite)"
+  },
+  "fileChildren": {
+    "message": "== Kinder ($N$) – Box-Modell und Regeln ==",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileSpacing": {
+    "message": "== Abstands-Kette – woher der Abstand kommt =="
+  },
+  "fileBefore": {
+    "message": "vorher"
+  },
+  "fileAfter": {
+    "message": "nachher"
+  },
+  "fileSelf": {
+    "message": "Element"
+  },
+  "fileChildrenShort": {
+    "message": "Kinder"
+  },
+  "fileAncestors": {
+    "message": "== Vorfahren – nur Abweichungen =="
+  },
+  "fileOverridden": {
+    "message": "überschrieben"
+  },
+  "fileNoSpecific": {
+    "message": "(keine elementspezifischen Regeln)"
+  },
+  "fileOriginInline": {
+    "message": "inline, lädt zuletzt"
+  },
+  "fileSlimFooter": {
+    "message": "Hinweis: verschlankter Export (Token sparen). Entfernt: $LIST$. Falls für die Aufgabe etwas davon fehlt, kann der Nutzer den vollen Export liefern (Einstellung „HTML-Dateien verschlanken\" aus).",
+    "placeholders": {
+      "list": {
+        "content": "$1"
+      }
+    }
+  },
+  "lineSlimNote": {
+    "message": "HTML-Datei verschlankt (entfernt: $LIST$); voller Export über die Einstellung „HTML-Dateien verschlanken\" aus",
+    "placeholders": {
+      "list": {
+        "content": "$1"
+      }
+    }
   }
 }

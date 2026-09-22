@@ -283,6 +283,7 @@
     if (shotInfo && box && ENV.envBox) lines.push(boxLine(box));
     if (shotPath) lines.push(t("lineShotFile") + shotPath);
     if (htmlPath) lines.push(t("lineHtml") + htmlPath);
+    if (htmlPath && lastSlimParts) lines.push(t("lineSlimNote", lastSlimParts));
     if (fl) lines.push(fl);
     return lines.join("\n") + END;
   }
@@ -307,56 +308,154 @@
   const CONTAINER_PROPS = ["display", "position", "width", "max-width", "padding", "gap", "flex-direction", "flex-wrap",
     "align-items", "justify-content", "grid-template-columns", "grid-template-rows", "overflow", "box-sizing"];
 
-  function effectiveStyles(el, props) {
+  // ── Effektive Werte: Leitprinzip „das Ableitbare weg, das Abweichende bleibt" ──
+  // Initialwerte sagen nichts (der Agent kennt die Defaults), Flex-/Grid-Werte nur
+  // bei passendem display; ein fester Kern (display, Maße, Box) bleibt immer.
+  const ALWAYS_PROPS = ["display", "position", "width", "height", "margin", "padding", "box-sizing", "font-size", "color"];
+  const INITIAL_RE = /^(auto|none|normal|0px|0|visible|clip|static|nowrap|row|stretch|0 1 auto|auto \/ auto|rgba\(0, 0, 0, 0\)|all 0s ease 0s|all|start|400|1|content-box|ease)$/;
+  const FLEX_PROPS = new Set(["flex", "flex-direction", "flex-wrap", "align-items", "align-self", "justify-content", "align-content", "order"]);
+  const GRID_PROPS = new Set(["grid-template-columns", "grid-template-rows", "grid-column", "grid-row"]);
+  function effectiveStyles(el, props, always = ALWAYS_PROPS) {
     const cs = getComputedStyle(el);
-    return props.map((p) => `${p}: ${cs.getPropertyValue(p)}`);
+    const disp = cs.display, isFlex = /flex/.test(disp), isGrid = /grid/.test(disp);
+    const out = [];
+    for (const p of props) {
+      if (FLEX_PROPS.has(p) && !isFlex) continue;
+      if (GRID_PROPS.has(p) && !isGrid) continue;
+      if (p === "gap" && !isFlex && !isGrid) continue;
+      let v = cs.getPropertyValue(p).trim();
+      if (p === "border" && /^0px\b/.test(v)) v = "0";
+      if (p === "transition" && /^all 0s/.test(v)) continue;
+      if (!always.includes(p) && INITIAL_RE.test(v)) continue;
+      out.push(`${p}: ${v}`);
+    }
+    return out;
+  }
+  // Lage und Größe in CSS-px, Seitenkoordinaten
+  const boxOf = (el) => { const r = el.getBoundingClientRect(); return `${Math.round(r.width)}\u00d7${Math.round(r.height)} @ ${Math.round(r.left + scrollX)},${Math.round(r.top + scrollY)}`; };
+
+  // Spezifität eines Selektors (IDs, Klassen/Attribute/Pseudoklassen, Elemente)
+  function specificity(sel) {
+    let x = sel.replace(/:not\(([^)]*)\)/g, " $1 ").replace(/::?(is|where|has)\([^)]*\)/g, "");
+    const ids = (x.match(/#[\w-]+/g) || []).length;
+    const cls = (x.match(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+(\([^)]*\))?/g) || []).length;
+    const tags = (x.match(/(^|[\s>+~(])[a-zA-Z][\w-]*|::[\w-]+/g) || []).length;
+    return [ids, cls, tags];
+  }
+  const cmpSpec = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  // Universelle Selektoren (`*`, `*::before`, `html *`) treffen alles und sagen nichts
+  const isUniversal = (part) => /^(\*|[\w-]+\s+\*)$/.test(part.replace(/::?[\w-]+(\([^)]*\))?/g, "").trim() || "*");
+  // Herkunft eines Stylesheets: inline <style>, Theme, Plugin, Core – per Pfad-Heuristik
+  function originOf(sheet) {
+    const node = sheet.ownerNode;
+    if (!sheet.href) return { name: node && node.id ? `inline <style id="${node.id}">` : "inline <style>", tag: t("fileOriginInline") };
+    const href = sheet.href.replace(location.origin, "");
+    const tag = /wp-content\/themes\/|\/themes?\//i.test(href) ? "Theme" : /wp-content\/plugins\/|\/plugins?\//i.test(href) ? "Plugin" : /wp-includes\/|\/bundles\/|\/vendor\/|\/core\//i.test(href) ? "Core" : "";
+    return { name: href, tag };
+  }
+  // CSS-Variablen im Regeltext auflösen: var(--x) → var(--x → 12px)
+  function resolveVars(css, cs) {
+    return css.replace(/var\((--[\w-]+)([^()]*(\([^()]*\))?[^()]*)?\)/g, (m, name) => {
+      const v = cs.getPropertyValue(name).trim();
+      return v ? `${m} \u2192 ${v}` : m;
+    });
   }
 
+  // Greifende Regeln mit Herkunft, Spezifität und Kaskade (welche Deklaration gewinnt)
   function matchedRules(el, limit) {
     const found = [], blocked = [];
-    const walk = (rules, sheet, ctx) => {
+    let order = 0;
+    const walk = (rules, origin, ctx, active) => {
       for (const r of rules) {
         if (r instanceof CSSStyleRule) {
-          try {
-            if (el.matches(r.selectorText)) found.push({ sheet, ctx, css: r.cssText });
-          } catch {}
+          let parts = [];
+          try { parts = r.selectorText.split(",").map((x) => x.trim()).filter((x) => el.matches(x)); } catch {}
+          if (!parts.length || parts.every(isUniversal)) continue;
+          const spec = parts.map(specificity).sort(cmpSpec).pop();
+          found.push({ origin, ctx, active, spec, order: order++, rule: r, css: r.cssText });
         } else if (r instanceof CSSMediaRule) {
           const cond = r.conditionText || r.media.mediaText;
-          const on = matchMedia(cond).matches ? t("mediaActive") : t("mediaInactive");
-          walk(r.cssRules, sheet, (ctx ? ctx + " · " : "") + `@media ${cond} [${on}]`);
+          const on = matchMedia(cond).matches;
+          walk(r.cssRules, origin, (ctx ? ctx + " · " : "") + `@media ${cond} [${on ? t("mediaActive") : t("mediaInactive")}]`, active && on);
         } else if (r.cssRules) {
-          try { walk(r.cssRules, sheet, ctx); } catch {}
+          try { walk(r.cssRules, origin, ctx, active); } catch {}
         }
       }
     };
     for (const sh of Array.from(document.styleSheets)) {
       let rules;
       try { rules = sh.cssRules; } catch { blocked.push(sh.href || "<style>"); continue; }
-      const node = sh.ownerNode;
-      const name = sh.href ? sh.href.replace(location.origin, "") : node && node.id ? `<style id="${node.id}">` : "<style>";
-      walk(rules, name, "");
+      walk(rules, originOf(sh), "", true);
     }
+    // Kaskade: je Eigenschaft gewinnt !important, dann Spezifität, dann Reihenfolge; style="" schlägt alles ohne !important
     const inline = el.getAttribute("style");
-    if (inline) found.unshift({ sheet: t("fileInlineStyle"), ctx: "", css: inline });
-    return { rules: found.slice(0, limit), total: found.length, blocked };
+    const winner = new Map();
+    const better = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
+    const consider = (key, prop, important, spec, ord) => {
+      const cur = winner.get(prop);
+      const rank = [important ? 1 : 0, ...spec, ord];
+      if (!cur || better(rank, cur.rank)) winner.set(prop, { key, rank });
+    };
+    found.forEach((f, i) => { if (!f.active) return; const st = f.rule.style; for (let k = 0; k < st.length; k++) consider(i, st[k], st.getPropertyPriority(st[k]) === "important", f.spec, f.order); });
+    if (inline) { const d = document.createElement("div"); d.setAttribute("style", inline); const st = d.style; for (let k = 0; k < st.length; k++) consider("inline", st[k], st.getPropertyPriority(st[k]) === "important", [9, 0, 0], 1e6); }
+    found.forEach((f, i) => { const st = f.rule.style, lost = []; for (let k = 0; k < st.length; k++) { const w = winner.get(st[k]); if (f.active && w && w.key !== i) lost.push(st[k]); } f.lost = lost; });
+    const rules = found.slice(0, limit);
+    if (inline) rules.unshift({ origin: { name: t("fileInlineStyle"), tag: "" }, ctx: "", spec: [9, 0, 0], css: inline, lost: [] });
+    return { rules, total: found.length + (inline ? 1 : 0), blocked };
   }
 
   function describe(el) {
     const cls = bestClass(el);
     return `<${el.tagName.toLowerCase()}${el.id ? " id=\"" + el.id + "\"" : ""}${cls ? " class=\"" + cls + "\"" : ""}>`;
   }
+  const short = (el) => el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") + (bestClass(el) ? "." + bestClass(el) : "");
+  const spacingOf = (el) => { const cs = getComputedStyle(el); const g = cs.gap; return `margin ${cs.margin}, padding ${cs.padding}${g && g !== "normal" ? ", gap " + g : ""}`; };
 
   function cssContext(el) {
-    const safe = (t) => t.replace(/-->/g, "--&gt;");
-    const fmt = (m) => m.rules.map((r) => `/* ${r.sheet}${r.ctx ? " · " + r.ctx : ""} */ ${safe(r.css.length > 1500 ? r.css.slice(0, 1500) + " …" : r.css)}`).join("\n") || t("fileNone");
+    const safe = (x) => x.replace(/-->/g, "--&gt;");
+    const cs = getComputedStyle(el);
+    const fmt = (m, target) => {
+      const tcs = getComputedStyle(target);
+      return m.rules.map((r) => {
+        const head = [r.origin.name, r.origin.tag, r.ctx, r.spec[0] >= 9 ? "" : `(${r.spec.join(",")})`].filter(Boolean).join(" · ");
+        let css = safe(resolveVars(r.css, tcs));
+        if (css.length > 1500) css = css.slice(0, 1500) + " …";
+        return `/* ${head} */ ${css}${r.lost && r.lost.length ? `  /* ${t("fileOverridden")}: ${r.lost.join(", ")} */` : ""}`;
+      }).join("\n") || t("fileNoSpecific");
+    };
     const me = matchedRules(el, 60);
     const lines = [t("fileEffective"), ...effectiveStyles(el, LAYOUT_PROPS), "",
-      `${t("fileRules")} ${me.total > me.rules.length ? `[${me.rules.length}/${me.total}]` : `[${me.total}]`}`, fmt(me)];
+      `${t("fileRules")} ${me.total > me.rules.length ? `[${me.rules.length}/${me.total}]` : `[${me.total}]`}`, fmt(me, el)];
+    // Kinder: bei Layoutaufgaben sitzen die Stellschrauben eine Ebene darunter
+    const kids = Array.from(el.children).filter((k) => !isOwn(k) && !/^(SCRIPT|STYLE|TEMPLATE)$/.test(k.tagName));
+    if (kids.length) {
+      lines.push("", t("fileChildren", kids.length));
+      kids.slice(0, 12).forEach((k, i) => {
+        lines.push(`${i + 1}. ${describe(k)} · ${boxOf(k)} · ${effectiveStyles(k, ["display", "margin", "padding", "gap", "width", "height", "flex", "align-self"], ["display", "margin", "padding"]).join("; ")}`);
+        if (kids.length <= 6) { const km = matchedRules(k, 6); if (km.rules.length) lines.push(fmt(km, k).split("\n").map((l) => "   " + l).join("\n")); }
+      });
+      if (kids.length > 12) lines.push(`   … +${kids.length - 12}`);
+    }
+    // Abstands-Kette: woher kommt der Abstand
+    const prev = el.previousElementSibling, next = el.nextElementSibling;
+    lines.push("", t("fileSpacing"));
+    if (prev) lines.push(`${t("fileBefore")} ${short(prev)}: ${spacingOf(prev)}`);
+    lines.push(`${t("fileSelf")}: ${spacingOf(el)} · border-box ${boxOf(el)}`);
+    if (next) lines.push(`${t("fileAfter")} ${short(next)}: ${spacingOf(next)}`);
+    if (kids.length) lines.push(`${t("fileChildrenShort")}: ` + kids.slice(0, 12).map((k, i) => `${i + 1}. ${short(k)} margin ${getComputedStyle(k).margin}`).join(" · "));
+    // Elternelement
     const parent = el.parentElement;
     if (parent && parent !== document.documentElement) {
       const pm = matchedRules(parent, 30);
-      lines.push("", t("fileParent", describe(parent)), t("fileParentEffective") + effectiveStyles(parent, CONTAINER_PROPS).join("; "), `${t("fileParentRules")} [${pm.total}]:`, fmt(pm));
+      lines.push("", t("fileParent", describe(parent)), t("fileParentEffective") + effectiveStyles(parent, CONTAINER_PROPS, ["display", "width", "padding"]).join("; "), `${t("fileParentRules")} [${pm.total}]:`, fmt(pm, parent));
     }
+    // Vorfahren: nur Abweichungen (overflow:hidden, position:relative … sind oft die Ursache)
+    const anc = [];
+    for (let a = parent && parent.parentElement, n = 0; a && a !== document.documentElement && n < 5; a = a.parentElement, n++) {
+      const dev = effectiveStyles(a, ["overflow", "position", "display", "transform", "z-index", "max-width", "padding", "gap", "contain"], []).filter((x) => !/^display: (block|inline)$/.test(x) && !/^padding: 0px$/.test(x));
+      if (dev.length) anc.push(`${describe(a)}: ${dev.join("; ")}`);
+    }
+    if (anc.length) lines.push("", t("fileAncestors"), ...anc);
     if (me.blocked.length) lines.push("", t("fileBlocked", me.blocked.length, me.blocked.join(", ")));
     return lines.join("\n");
   }
@@ -373,7 +472,13 @@
     comments.forEach((c) => { c.remove(); n.comments++; });
     root.querySelectorAll("style, template").forEach((x) => { x.remove(); n.blocks++; });
     root.querySelectorAll('input[type="hidden"]').forEach((x) => { x.remove(); n.hidden++; });
-    root.querySelectorAll("svg").forEach((x) => { if (x.childElementCount) { n.svg++; x.replaceChildren(document.createComment(" " + x.childElementCount + " ")); } });
+    root.querySelectorAll("svg").forEach((x) => {
+      if (!x.childElementCount) return;
+      n.svg++;
+      const label = x.getAttribute("aria-label") || (x.querySelector("title") || {}).textContent || "";
+      const desc = ["svg", x.getAttribute("viewBox") ? `viewBox="${x.getAttribute("viewBox")}"` : "", `${x.querySelectorAll("path").length} path`, label ? `„${label.trim().slice(0, 40)}“` : ""].filter(Boolean).join(" ");
+      x.replaceChildren(document.createComment(" " + desc + " "));
+    });
     // Gleiche Auswahllisten (z. B. je Tabellenzeile ein Select mit denselben Optionen):
     // ab der zweiten nur die gewählte Option, der Rest steht in der ersten
     const seen = new Map();
@@ -399,6 +504,7 @@
     return n;
   }
 
+  let lastSlimParts = ""; // was der letzte Schlank-Export entfernt hat (für Footer und Zwischenablage-Hinweis)
   function htmlFor(el, selector, withCss, slim) {
     const list = Array.isArray(el) ? el : [el];
     el = list[0];
@@ -413,19 +519,25 @@ ${t("fileTitle")}: ${document.title.replace(/-->/g, "--&gt;")}
 ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100) / 100}
 `;
     if (IN_FRAME) head += `${t("fileFrame")}: ${location.href}\n`;
+    lastSlimParts = "";
     if (slimmed) {
       const parts = [["blocks", "fileSlimBlocks"], ["hidden", "fileSlimHidden"], ["handlers", "fileSlimHandlers"], ["data", "fileSlimData"], ["srcset", "fileSlimSrcset"], ["svg", "fileSlimSvg"], ["comments", "fileSlimComments"], ["uris", "fileSlimUris"], ["selects", "fileSlimSelects"]]
         .filter(([k]) => slimmed[k]).map(([k, key]) => t(key, slimmed[k]));
       head += `${t("fileSlim")}: ${parts.length ? parts.join(", ") : t("fileNone")}\n`;
+      lastSlimParts = parts.join(", ");
     }
+    head += `${t("fileBox")}: ${list.map(boxOf).join(" | ")}\n`;
     if (withCss) {
       let ctx = t("fileCssUnavailable");
       try { ctx = cssContext(el); } catch (e) { ctx += ": " + (e && e.message); }
       head += "\n" + ctx + "\n";
     }
     const raw = clones.map((c) => c.outerHTML).join("\n");
-    const html = slim ? raw.replace(/\n[ \t]*\n+/g, "\n") : raw;
-    return head + "-->\n" + html + "\n";
+    // Verschlankt: Leerzeilen weg, Einrückung auf ein Viertel (40 Leerzeichen sagen nichts)
+    const html = slim ? raw.replace(/\n[ \t]*\n+/g, "\n").replace(/^[ \t]{4,}/gm, (m) => " ".repeat(Math.ceil(m.length / 4))) : raw;
+    // Sicherheitsventil: was fehlt, steht am Ende – als Information, nicht als Befehl
+    const footer = lastSlimParts ? `\n<!-- ${t("fileSlimFooter", lastSlimParts)} -->\n` : "";
+    return head + "-->\n" + html + "\n" + footer;
   }
 
   function slugFor(el) {
@@ -1210,7 +1322,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     // Strg: HTML-Datei des Ziel-Containers dazu
     let htmlPath = null, htmlErr = null;
     if (opts && opts.html) {
-      try { htmlPath = await saveHtml(root, selOf(root), fileBase(root)); L.splice((sheetPath ? 5 : sheet ? 4 : 3) + O, 0, t("lineHtml") + htmlPath); }
+      try { htmlPath = await saveHtml(root, selOf(root), fileBase(root)); L.splice((sheetPath ? 5 : sheet ? 4 : 3) + O, 0, t("lineHtml") + htmlPath, ...(lastSlimParts ? [t("lineSlimNote", lastSlimParts)] : [])); }
       catch (e) { htmlErr = ((e && e.message) || String(e)).slice(0, 120); }
     }
     const recTag = (clip) => tagLine(["recording", ...(sheet ? ["sheet:" + [sheetPath && "file", clip && "clip"].filter(Boolean).join("+")] : []), ...(htmlPath ? ["html:file"] : []), ...(fl ? ["frame"] : [])]);

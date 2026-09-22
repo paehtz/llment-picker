@@ -1,0 +1,9 @@
+*, ::before, ::after { box-sizing: border-box; }
+:root { --space-md: 16px; --brand: #0a84ff; }
+.garan-wrapper { display: block; margin: var(--space-md) 0; padding: 8px; border: 0px solid red; transition: all 0s ease 0s; }
+.garan-wrapper .label { display: inline-block; margin: 0 12px 0 0; padding: 4px 8px; background: var(--brand); color: #fff; }
+.garan-wrapper .show-link { margin-top: 10px; padding: 6px 10px; }
+.intro { margin: 0 0 24px; }
+.actions { margin-top: 32px; }
+.shell { overflow: hidden; position: relative; max-width: 960px; }
+@media (max-width: 600px) { .garan-wrapper { padding: 4px; } }
