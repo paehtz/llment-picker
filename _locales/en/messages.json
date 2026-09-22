@@ -731,5 +731,25 @@
   },
   "fileContextNote": {
     "message": "the markup below is this container; the analysis is about the picked element(s), marked data-llment-picked"
+  },
+  "lineInShot": {
+    "message": "In screenshot: $SEL$ @ $X$,$Y$ · $W$×$H$ px",
+    "placeholders": {
+      "sel": {
+        "content": "$1"
+      },
+      "x": {
+        "content": "$2"
+      },
+      "y": {
+        "content": "$3"
+      },
+      "w": {
+        "content": "$4"
+      },
+      "h": {
+        "content": "$5"
+      }
+    }
   }
 }

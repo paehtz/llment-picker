@@ -731,5 +731,25 @@
   },
   "fileContextNote": {
     "message": "das Markup unten ist dieser Container; die Analyse gilt den gewählten Elementen, markiert mit data-llment-picked"
+  },
+  "lineInShot": {
+    "message": "Im Screenshot: $SEL$ @ $X$,$Y$ · $W$×$H$ px",
+    "placeholders": {
+      "sel": {
+        "content": "$1"
+      },
+      "x": {
+        "content": "$2"
+      },
+      "y": {
+        "content": "$3"
+      },
+      "w": {
+        "content": "$4"
+      },
+      "h": {
+        "content": "$5"
+      }
+    }
   }
 }

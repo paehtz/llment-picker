@@ -796,7 +796,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (tiles > 1) info += t("lineShotTiles", tiles);
     if (scale < 1) info += t("lineShotScaled", Math.round(scale * 100));
     if (clipped) info += t("lineShotClipped");
-    return { blob, info };
+    return { blob, info, px: cv.width / W, py: cv.height / H };
   }
 
   const captureElement = (el) => captureRegion(() => inflate(el.getBoundingClientRect(), SHOT_PAD), el, SHOT_PAD);
@@ -912,6 +912,15 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     let note = opts.region ? opts.region.line : opts.list ? (opts.list.length > 1 ? (adjacent ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : t("lineSelection", opts.list.length)) : "") : null;
     if (opts.context) note = (note ? note + "\n" : "") + t("lineContext", opts.context.map((x) => buildSelector(x)).join(", "), opts.list.length);
     const box = shot ? (opts.region ? opts.region.measure() : unionRect(opts.context || opts.list || [el])) : null;
+    if (shot && opts.context && opts.list) {
+      // Der Screenshot bleibt unverändert (er soll das Frontend zeigen); die Lage der
+      // gewählten Elemente steht als Text in Bildpixeln, damit ein Agent sie findet
+      const rr = inflate(unionRect(opts.context), SHOT_PAD);
+      note += "\n" + opts.list.map((f) => {
+        const fr = f.getBoundingClientRect();
+        return t("lineInShot", buildSelector(f), Math.round((fr.left - rr.left) * shot.px), Math.round((fr.top - rr.top) * shot.py), Math.round(fr.width * shot.px), Math.round(fr.height * shot.py));
+      }).join("\n");
+    }
     let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "selection" : null, box);
     let ok = false, imageOk = false;
     if (shot && toClip && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
@@ -1834,9 +1843,10 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       const all = rangeList();
       // Kontext + Fokus: Elemente, die andere gewählte enthalten, sind der Kontext
       // (Screenshot, HTML), die inneren die eigentliche Referenz (Selektoren)
-      const outer = all.filter((x) => all.some((o) => o !== x && x.contains(o)));
-      const context = outer.filter((x) => !outer.some((o) => o !== x && o.contains(x)));
-      const list = context.length ? all.filter((x) => !outer.includes(x)) : all;
+      // Kontext = die äußersten gewählten Container; alles darin bleibt Referenz,
+      // auch Zwischenstufen (A ⊃ B ⊃ C: A Kontext, B und C gewählt) – nichts fällt still weg
+      const context = all.filter((x) => all.some((o) => o !== x && x.contains(o)) && !all.some((o) => o !== x && o.contains(x)));
+      const list = context.length ? all.filter((x) => !context.includes(x)) : all;
       const r = unionRect(context.length ? context : list);
       endRange();
       cleanup();
