@@ -784,5 +784,17 @@
   },
   "hintForeignFrame": {
     "message": "foreign frame, content not selectable"
+  },
+  "optFrames": {
+    "message": "Also allow elements inside embedded frames from other sites"
+  },
+  "optFramesHint": {
+    "message": "Forms and widgets that a page embeds from another provider (HubSpot, Typeform, payment fields, consent banners) sit in a frame of their own. Without this the extension only reaches the page itself, and those elements cannot be picked. Turning it on asks the browser for access to all sites; nothing is sent anywhere, the picker still only runs when you start it, and you can turn it off again here at any time."
+  },
+  "optFramesOn": {
+    "message": "Access granted: elements inside embedded frames can now be picked."
+  },
+  "optFramesOff": {
+    "message": "Access withdrawn: only the page itself, as before."
   }
 }

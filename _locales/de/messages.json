@@ -784,5 +784,17 @@
   },
   "hintForeignFrame": {
     "message": "fremder Frame, Inhalt nicht wählbar"
+  },
+  "optFrames": {
+    "message": "Auch Elemente in eingebetteten Frames fremder Herkunft wählbar machen"
+  },
+  "optFramesHint": {
+    "message": "Formulare und Bausteine, die eine Seite von einem anderen Anbieter einbettet (HubSpot, Typeform, Zahlungsfelder, Einwilligungsbanner), liegen in einem eigenen Frame. Ohne diese Freigabe erreicht die Erweiterung nur die Seite selbst, und solche Elemente sind nicht wählbar. Beim Einschalten fragt der Browser nach Zugriff auf alle Seiten; gesendet wird nichts, der Picker läuft weiterhin nur, wenn Du ihn startest, und Du kannst die Freigabe hier jederzeit wieder entziehen."
+  },
+  "optFramesOn": {
+    "message": "Freigabe erteilt: Elemente in eingebetteten Frames sind jetzt wählbar."
+  },
+  "optFramesOff": {
+    "message": "Freigabe entzogen: wieder nur die Seite selbst."
   }
 }

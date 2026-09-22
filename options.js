@@ -38,4 +38,24 @@ $("htmlSlim").addEventListener("change", save);
 $("clipEnglish").addEventListener("change", save);
 for (const k of ["envBrowser", "envOs", "envViewport", "envFlags", "envBox"]) $(k).addEventListener("change", save);
 document.querySelectorAll("input[name=shotTarget]").forEach((r) => r.addEventListener("change", save));
+
+// Zusatzberechtigung fuer eingebettete Frames fremder Herkunft (HubSpot-Formulare,
+// Zahlungsfelder, Cookie-Banner): activeTab deckt nur die Herkunft der Seite selbst ab.
+// Nicht gespeicherter Schalter, sondern der echte Stand der Berechtigung.
+const FRAMES = { origins: ["<all_urls>"] };
+async function loadFrames() {
+  try { $("frames").checked = await api.permissions.contains(FRAMES); } catch { $("frames").disabled = true; }
+}
+$("frames").addEventListener("change", async (e) => {
+  try {
+    const ok = e.target.checked ? await api.permissions.request(FRAMES) : !(await api.permissions.remove(FRAMES));
+    e.target.checked = ok;
+    $("status").textContent = t(ok ? "optFramesOn" : "optFramesOff");
+    setTimeout(() => ($("status").textContent = ""), 2500);
+  } catch (err) {
+    e.target.checked = await api.permissions.contains(FRAMES).catch(() => false);
+    $("status").textContent = (err && err.message) || String(err);
+  }
+});
 load();
+loadFrames();
