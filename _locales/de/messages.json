@@ -773,5 +773,16 @@
   },
   "fileNoRestRule": {
     "message": "(keine Ruheregel: Browser-Standard oder geerbt)"
+  },
+  "lineForeignFrame": {
+    "message": "Eingebetteter Frame fremder Herkunft: $U$ – die Elemente darin sind nicht wählbar (die Erweiterung hat nur Zugriff auf die Seite selbst); diese Zeile beschreibt den Frame, nicht seinen Inhalt",
+    "placeholders": {
+      "u": {
+        "content": "$1"
+      }
+    }
+  },
+  "hintForeignFrame": {
+    "message": "fremder Frame, Inhalt nicht wählbar"
   }
 }

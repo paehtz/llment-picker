@@ -82,6 +82,20 @@
   // Zweiter Durchlauf (alle Frames): ein bereits aktiver Picker wird nicht umgeschaltet
   const PASS2 = !!window.__llmentPass2;
   delete window.__llmentPass2;
+  // Ein Frame fremder Herkunft ist mit activeTab nicht bespielbar (Chrome: nur die
+  // Herkunft des Hauptframes, Firefox: nur gleiche Herkunft). Darin liegende Elemente
+  // sind deshalb nicht wählbar – der Hauptframe muss das wissen, um es zu sagen:
+  // jeder erreichte Frame meldet sich beim Eltern-Fenster, der Hauptframe merkt sich
+  // die lebenden contentWindows und behandelt alle übrigen Frames als „fremd".
+  const LIVE_FRAMES = window.__llmentLiveFrames || (window.__llmentLiveFrames = new Set());
+  if (!window.__llmentFrameListen) {
+    window.__llmentFrameListen = true;
+    window.addEventListener("message", (e) => {
+      if (e && e.data && e.data.__llment === "alive" && e.source) LIVE_FRAMES.add(e.source);
+    });
+  }
+  if (IN_FRAME) { try { parent.postMessage({ __llment: "alive" }, "*"); } catch {} }
+  const frameReachable = (el) => { try { return LIVE_FRAMES.has(el.contentWindow); } catch { return false; } };
   // Abbruch-Broadcast aus dem Hintergrund (ein anderer Frame hat kopiert/abgebrochen)
   if (!window.__llmentListening) {
     window.__llmentListening = true;
@@ -928,6 +942,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const adjacent = opts.list && opts.list.every((x, i) => i === 0 || x.parentElement === opts.list[0].parentElement);
     let note = opts.region ? opts.region.line : opts.list ? (opts.list.length > 1 ? (adjacent ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : t("lineSelection", opts.list.length)) : "") : null;
     if (opts.context) note = (note ? note + "\n" : "") + t("lineContext", opts.context.map((x) => buildSelector(x)).join(", "), opts.list.length);
+    // Fremde Herkunft: der Inhalt war nicht erreichbar – das gehört in den Block,
+    // sonst liest ein Agent den Frame-Selektor als Zugang zu dem, was darin steht
+    for (const f of (opts.list || [el]).filter((x) => isFrame(x) && !frameReachable(x))) {
+      let src = f.getAttribute("src") || "";
+      try { src = new URL(src, location.href).href; } catch {}
+      note = (note ? note + "\n" : "") + t("lineForeignFrame", src || f.tagName.toLowerCase());
+    }
     const box = shot ? (opts.region ? opts.region.measure() : unionRect(opts.context || opts.list || [el])) : null;
     if (shot && opts.context && opts.list) {
       // Der Screenshot bleibt unverändert (er soll das Frontend zeigen); die Lage der
@@ -1613,7 +1634,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     box.style.width = r.width + "px";
     box.style.height = r.height + "px";
     const cls = bestClass(el);
-    label.textContent = el.tagName.toLowerCase() + (el.id ? "#" + el.id : cls ? "." + cls : "");
+    label.textContent = el.tagName.toLowerCase() + (el.id ? "#" + el.id : cls ? "." + cls : "") + (isFrame(el) && !frameReachable(el) ? " · " + t("hintForeignFrame") : "");
     label.style.display = "block";
     const above = r.top > 24;
     label.style.left = Math.max(0, r.left) + "px";
@@ -1621,6 +1642,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     placeHud(r);
   }
 
+  const isFrame = (el) => el.tagName === "IFRAME" || el.tagName === "FRAME";
   function targetAt(x, y) {
     const el = document.elementFromPoint(x, y);
     if (!el || el.closest("[data-llment-picker]")) return null;
@@ -1773,7 +1795,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   function onMove(e) {
     if (range) { // Auswahl steht; unter der Maus nur eine Vorschau
       const el = targetAt(e.clientX, e.clientY);
-      showPreview(el && el.tagName !== "IFRAME" && el.tagName !== "FRAME" ? el : null);
+      showPreview(el && !(isFrame(el) && frameReachable(el)) ? el : null);
       return;
     }
     if (drag) {
@@ -1793,7 +1815,9 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     setMods(e.altKey, e.ctrlKey || e.metaKey);
     lastXY = [e.clientX, e.clientY];
     const el = targetAt(e.clientX, e.clientY);
-    if (el && (el.tagName === "IFRAME" || el.tagName === "FRAME")) { hideHighlight(); return; }
+    // Erreichbarer Frame: dort übernimmt sein eigener Picker. Fremder Frame: der
+    // Frame selbst bleibt wählbar (URL und Box sind die einzige Auskunft, die geht)
+    if (el && isFrame(el) && frameReachable(el)) { hideHighlight(); return; }
     if (el) highlight(el);
   }
   function onScroll() {
@@ -1837,7 +1861,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       // Shift+Klick: Geschwister des Ankers → Bereich bis dorthin; sonst einzeln dazu/weg
       if (!range) range = { anchor: current, focus: current, extras: [] };
       const el = targetAt(e.clientX, e.clientY);
-      if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
+      if (!el || (isFrame(el) && frameReachable(el))) return;
       if (el.parentElement === range.anchor.parentElement) {
         // Geschwister: Bereich bis dorthin erweitern, egal auf welcher Seite; innerhalb bleibt er
         const kids = Array.from(range.anchor.parentElement.children);
@@ -1881,7 +1905,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       await copyElement(list[0], undefined, { shot: true, html: withHtml, list, context: context.length ? context : null });
       return;
     }
-    if (!el || el.tagName === "IFRAME" || el.tagName === "FRAME") return;
+    if (!el || (isFrame(el) && frameReachable(el))) return;
     cleanup();
     flash(el);
     if (armRecord) { await recordInteraction(el, null, { html: withHtml }); reportState(false); return; }
@@ -1965,6 +1989,15 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     delete window[KEY];
   }
 
+  // Steht der Fokus in einem eingebetteten Frame (angeklicktes Formularfeld), gehen
+  // Alt/Strg/Shift dorthin und nie an den Picker – Fokus zurück ins Dokument holen
+  if (!IN_FRAME) {
+    try {
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === "IFRAME" || ae.tagName === "FRAME")) ae.blur();
+      window.focus();
+    } catch {}
+  }
   window.addEventListener("mousemove", onMove, opts);
   window.addEventListener("scroll", onScroll, opts);
   window.addEventListener("click", onClick, opts);

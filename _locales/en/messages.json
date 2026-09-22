@@ -773,5 +773,16 @@
   },
   "fileNoRestRule": {
     "message": "(no resting rule: browser default or inherited)"
+  },
+  "lineForeignFrame": {
+    "message": "Embedded frame from another origin: $U$ – the elements inside it are not selectable (the extension only has access to the page itself); this line describes the frame, not its content",
+    "placeholders": {
+      "u": {
+        "content": "$1"
+      }
+    }
+  },
+  "hintForeignFrame": {
+    "message": "foreign frame, content not selectable"
   }
 }
