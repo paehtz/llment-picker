@@ -1538,7 +1538,8 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   let mods = { alt: false, ctrl: false, lasso: false, rec: false };
   function setMods(alt, ctrl, force) {
     const lasso = !!(drag && drag.active), rec = armRecord;
-    alt = (alt || preset.shot || armShot || lasso) && !rec; // Lasso kopiert immer mit Screenshot; die Aufnahme ersetzt ihn
+    // Lasso und Mehrfachauswahl kopieren immer mit Screenshot (der Chip zeigt das); die Aufnahme ersetzt ihn
+    alt = (alt || preset.shot || armShot || lasso || !!range) && !rec;
     ctrl = ctrl || preset.html || armHtml;
     if (!force && mods.alt === alt && mods.ctrl === ctrl && mods.lasso === lasso && mods.rec === rec) return;
     mods = { alt, ctrl, lasso, rec };
@@ -1910,7 +1911,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   function onKeyUp(e) {
     if (e.key === "Alt") e.preventDefault(); // Firefox: Menüleiste nicht aufrufen
     // Shift losgelassen, ohne dass ein Bereich entstand → Hover wieder frei
-    if (e.key === "Shift" && range && range.pending) { endRange(); onScroll(); }
+    if (e.key === "Shift" && range && range.pending) { endRange(); onScroll(); setMods(e.altKey, e.ctrlKey || e.metaKey, true); }
     // Antippen schaltet um; Loslassen nach längerem Halten ist immer „aus"
     if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") {
       const short = tap === e.key && performance.now() - tapAt < TAP_MS;
