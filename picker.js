@@ -367,13 +367,18 @@
 
   // Greifende Regeln mit Herkunft, Spezifität und Kaskade (welche Deklaration gewinnt)
   function matchedRules(el, limit) {
-    const found = [], blocked = [];
+    const found = [], blocked = [], live = [];
     let order = 0;
     const walk = (rules, origin, ctx, active) => {
       for (const r of rules) {
         if (r instanceof CSSStyleRule) {
           let parts = [];
           try { parts = r.selectorText.split(",").map((x) => x.trim()).filter((x) => el.matches(x)); } catch {}
+          // Zustandsselektoren treffen nur, weil der Zeiger gerade auf dem Element liegt:
+          // sie zählen nicht zur Ruhelage, ihre Eigenschaften werden als „live" gemerkt
+          const rest = parts.filter((x) => !STATE_SEL.test(x));
+          if (active && parts.length > rest.length) for (const d of r.style.cssText.split(";")) { const n = d.split(":")[0].trim(); if (n && !live.includes(n)) live.push(n); }
+          parts = rest;
           if (!parts.length || parts.every(isUniversal)) continue;
           const spec = parts.map(specificity).sort(cmpSpec).pop();
           found.push({ origin, ctx, active, spec, order: order++, rule: r, css: r.cssText });
@@ -405,7 +410,15 @@
     found.forEach((f, i) => { const st = f.rule.style, lost = []; for (let k = 0; k < st.length; k++) { const w = winner.get(st[k]); if (f.active && w && w.key !== i) lost.push(st[k]); } f.lost = lost; });
     const rules = found.slice(0, limit);
     if (inline) rules.unshift({ origin: { name: t("fileInlineStyle"), tag: "" }, ctx: "", spec: [9, 0, 0], css: inline, lost: [] });
-    return { rules, total: found.length + (inline ? 1 : 0), blocked };
+    // Ruhewert je Eigenschaft, die gerade eine Zustandsregel setzt (aus der gewinnenden Ruheregel)
+    const restOf = (prop) => { // prop kann eine Kurzschreibweise sein (cssText), der Gewinner ist je Langform gemerkt
+      const key = winner.has(prop) ? prop : Array.from(winner.keys()).find((k) => k.startsWith(prop + "-"));
+      const w = key && winner.get(key);
+      if (!w || w.key === "inline") return w ? inline : null;
+      const st = found[w.key].rule.style;
+      return st.getPropertyValue(prop) || st.getPropertyValue(key);
+    };
+    return { rules, total: found.length + (inline ? 1 : 0), blocked, live: live.map((prop) => ({ prop, rest: restOf(prop) })) };
   }
 
   function describe(el) {
@@ -428,8 +441,12 @@
       }).join("\n") || t("fileNoSpecific");
     };
     const me = matchedRules(el, 60);
-    const lines = [t("fileEffective"), ...effectiveStyles(el, LAYOUT_PROPS), "",
-      `${t("fileRules")} ${me.total > me.rules.length ? `[${me.rules.length}/${me.total}]` : `[${me.total}]`}`, fmt(me, el)];
+    const lines = [t("fileEffective"), ...effectiveStyles(el, LAYOUT_PROPS)];
+    // Der Zeiger liegt beim Klick auf dem Element: effektive Werte zeigen den Hover-Zustand.
+    // Welche Zustände aktiv sind und welche Eigenschaften davon abhängen, samt Ruhewert
+    const on = [":hover", ":focus-visible", ":focus-within", ":focus", ":active"].filter((x) => { try { return el.matches(x); } catch { return false; } });
+    if (on.length && me.live.length) lines.push(t("fileLiveState", on.join(" "), me.live.map((x) => x.prop + (x.rest ? " → " + x.rest : " " + t("fileNoRestRule"))).join("; ")));
+    lines.push("", `${t("fileRules")} ${me.total > me.rules.length ? `[${me.rules.length}/${me.total}]` : `[${me.total}]`}`, fmt(me, el));
     // Pseudo-Elemente mit Inhalt (Chevrons, Linien, Icons)
     for (const ps of ["::before", "::after"]) {
       const pcs = getComputedStyle(el, ps);
@@ -439,7 +456,7 @@
     }
     // Zustandsregeln (:hover/:focus/:active) – gerade nicht aktiv, aber Teil des Verhaltens
     const states = pseudoRules(el, 12);
-    if (states.length) lines.push("", t("fileStates"), ...states.map((x) => safe(x)));
+    if (states.length) lines.push("", on.length ? t("fileStatesLive", on.join(" ")) : t("fileStates"), ...states.map((x) => safe(x)));
     // Kinder: bei Layoutaufgaben sitzen die Stellschrauben eine Ebene darunter
     const kids = Array.from(el.children).filter((k) => !isOwn(k) && !/^(SCRIPT|STYLE|TEMPLATE)$/.test(k.tagName));
     if (kids.length) {
@@ -1006,6 +1023,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     "width", "height", "top", "left", "right", "bottom", "margin", "padding", "max-height", "font-size", "font-weight",
     "text-decoration-line", "outline-width", "filter", "z-index", "cursor"];
   const PSEUDO = /:(hover|focus-within|focus-visible|focus|active)\b/g;
+  const STATE_SEL = /:(hover|focus-within|focus-visible|focus|active)\b/;
   const LAYOUT_RE = /\b(width|height|top|left|right|bottom|margin|padding|max-height|max-width|min-height|min-width|font-size|line-height|border-width|inset|flex|gap)\b/;
   const secs = (ms) => (ms / 1000).toFixed(2) + " s";
   const selOf = (el) => { try { return buildSelector(el); } catch { return el && el.tagName ? el.tagName.toLowerCase() : String(el); } };

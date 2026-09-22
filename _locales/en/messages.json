@@ -751,5 +751,27 @@
         "content": "$5"
       }
     }
+  },
+  "fileLiveState": {
+    "message": "⚠ captured under the pointer ($S$ active) – values above come from state rules, resting value after →: $P$",
+    "placeholders": {
+      "s": {
+        "content": "$1"
+      },
+      "p": {
+        "content": "$2"
+      }
+    }
+  },
+  "fileStatesLive": {
+    "message": "== State rules (:hover / :focus / :active – $S$ active at capture, see the note above) ==",
+    "placeholders": {
+      "s": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileNoRestRule": {
+    "message": "(no resting rule: browser default or inherited)"
   }
 }

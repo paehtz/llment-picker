@@ -751,5 +751,27 @@
         "content": "$5"
       }
     }
+  },
+  "fileLiveState": {
+    "message": "⚠ Aufnahme unter dem Zeiger ($S$ aktiv) – Werte oben aus Zustandsregeln, Ruhewert hinter →: $P$",
+    "placeholders": {
+      "s": {
+        "content": "$1"
+      },
+      "p": {
+        "content": "$2"
+      }
+    }
+  },
+  "fileStatesLive": {
+    "message": "== Zustandsregeln (:hover / :focus / :active – $S$ bei Aufnahme aktiv, siehe Hinweis oben) ==",
+    "placeholders": {
+      "s": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileNoRestRule": {
+    "message": "(keine Ruheregel: Browser-Standard oder geerbt)"
   }
 }
