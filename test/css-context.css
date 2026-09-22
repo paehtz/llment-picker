@@ -7,3 +7,6 @@
 .actions { margin-top: 32px; }
 .shell { overflow: hidden; position: relative; max-width: 960px; }
 @media (max-width: 600px) { .garan-wrapper { padding: 4px; } }
+.garan-wrapper .show-link::after { content: "A"; display: inline-block; margin-left: 6px; transform: rotate(90deg); }
+.garan-wrapper .show-link:hover { background: #eee; }
+.garan-wrapper .show-link:focus-visible { outline: 2px solid var(--brand); }

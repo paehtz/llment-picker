@@ -316,7 +316,7 @@
   const FLEX_PROPS = new Set(["flex", "flex-direction", "flex-wrap", "align-items", "align-self", "justify-content", "align-content", "order"]);
   const GRID_PROPS = new Set(["grid-template-columns", "grid-template-rows", "grid-column", "grid-row"]);
   function effectiveStyles(el, props, always = ALWAYS_PROPS) {
-    const cs = getComputedStyle(el);
+    const cs = el.__cs || getComputedStyle(el);
     const disp = cs.display, isFlex = /flex/.test(disp), isGrid = /grid/.test(disp);
     const out = [];
     for (const p of props) {
@@ -348,7 +348,11 @@
   // Herkunft eines Stylesheets: inline <style>, Theme, Plugin, Core – per Pfad-Heuristik
   function originOf(sheet) {
     const node = sheet.ownerNode;
-    if (!sheet.href) return { name: node && node.id ? `inline <style id="${node.id}">` : "inline <style>", tag: t("fileOriginInline") };
+    if (!sheet.href) {
+      const inl = Array.from(document.styleSheets).filter((x) => !x.href);
+      const pos = `${inl.indexOf(sheet) + 1}/${inl.length}`;
+      return { name: node && node.id ? `inline <style id="${node.id}"> [${pos}]` : `inline <style> [${pos}]`, tag: t("fileOriginInline") };
+    }
     const href = sheet.href.replace(location.origin, "");
     const tag = /wp-content\/themes\/|\/themes?\//i.test(href) ? "Theme" : /wp-content\/plugins\/|\/plugins?\//i.test(href) ? "Plugin" : /wp-includes\/|\/bundles\/|\/vendor\/|\/core\//i.test(href) ? "Core" : "";
     return { name: href, tag };
@@ -376,7 +380,7 @@
         } else if (r instanceof CSSMediaRule) {
           const cond = r.conditionText || r.media.mediaText;
           const on = matchMedia(cond).matches;
-          walk(r.cssRules, origin, (ctx ? ctx + " · " : "") + `@media ${cond} [${on ? t("mediaActive") : t("mediaInactive")}]`, active && on);
+          walk(r.cssRules, origin, (ctx ? ctx + " · " : "") + `@media ${cond} [${on ? t("mediaActive") : t("mediaInactive") + " " + innerWidth + "px"}]`, active && on);
         } else if (r.cssRules) {
           try { walk(r.cssRules, origin, ctx, active); } catch {}
         }
@@ -411,7 +415,7 @@
   const short = (el) => el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") + (bestClass(el) ? "." + bestClass(el) : "");
   const spacingOf = (el) => { const cs = getComputedStyle(el); const g = cs.gap; return `margin ${cs.margin}, padding ${cs.padding}${g && g !== "normal" ? ", gap " + g : ""}`; };
 
-  function cssContext(el) {
+  function cssContext(el, contextEl) {
     const safe = (x) => x.replace(/-->/g, "--&gt;");
     const cs = getComputedStyle(el);
     const fmt = (m, target) => {
@@ -426,6 +430,16 @@
     const me = matchedRules(el, 60);
     const lines = [t("fileEffective"), ...effectiveStyles(el, LAYOUT_PROPS), "",
       `${t("fileRules")} ${me.total > me.rules.length ? `[${me.rules.length}/${me.total}]` : `[${me.total}]`}`, fmt(me, el)];
+    // Pseudo-Elemente mit Inhalt (Chevrons, Linien, Icons)
+    for (const ps of ["::before", "::after"]) {
+      const pcs = getComputedStyle(el, ps);
+      const content = pcs.content;
+      if (!content || content === "none" || content === "normal") continue;
+      lines.push(`${ps}: content ${content}; ` + effectiveStyles({ getBoundingClientRect: () => el.getBoundingClientRect(), __cs: pcs }, ["display", "position", "width", "height", "margin", "padding", "transform", "color", "background-color", "font-size"], ["display"]).join("; "));
+    }
+    // Zustandsregeln (:hover/:focus/:active) – gerade nicht aktiv, aber Teil des Verhaltens
+    const states = pseudoRules(el, 12);
+    if (states.length) lines.push("", t("fileStates"), ...states.map((x) => safe(x)));
     // Kinder: bei Layoutaufgaben sitzen die Stellschrauben eine Ebene darunter
     const kids = Array.from(el.children).filter((k) => !isOwn(k) && !/^(SCRIPT|STYLE|TEMPLATE)$/.test(k.tagName));
     if (kids.length) {
@@ -443,6 +457,19 @@
     lines.push(`${t("fileSelf")}: ${spacingOf(el)} · border-box ${boxOf(el)}`);
     if (next) lines.push(`${t("fileAfter")} ${short(next)}: ${spacingOf(next)}`);
     if (kids.length) lines.push(`${t("fileChildrenShort")}: ` + kids.slice(0, 12).map((k, i) => `${i + 1}. ${short(k)} margin ${getComputedStyle(k).margin}`).join(" · "));
+    // Kette vom Element hoch bis zum Kontext-Container, je Stufe nur Abweichungen
+    if (contextEl && contextEl !== el && contextEl.contains(el)) {
+      const chain = [];
+      for (let a = el.parentElement; a; a = a.parentElement) {
+        const dev = effectiveStyles(a, ["display", "position", "overflow", "transform", "z-index", "width", "max-width", "margin", "padding", "gap", "flex-direction", "align-items", "justify-content"], []).filter((x) => !/^display: (block|inline)$/.test(x) && !/^(margin|padding): 0px$/.test(x));
+        chain.push(`${describe(a)} · ${boxOf(a)}${dev.length ? ": " + dev.join("; ") : ""}`);
+        if (a === contextEl) break;
+      }
+      const cm = matchedRules(contextEl, 20);
+      lines.push("", t("fileChain", describe(contextEl)), ...chain, `${t("fileParentRules")} ${describe(contextEl)} [${cm.total}]:`, fmt(cm, contextEl));
+      if (me.blocked.length) lines.push("", t("fileBlocked", me.blocked.length, me.blocked.join(", ")));
+      return lines.join("\n");
+    }
     // Elternelement
     const parent = el.parentElement;
     if (parent && parent !== document.documentElement) {
@@ -474,6 +501,7 @@
     root.querySelectorAll('input[type="hidden"]').forEach((x) => { x.remove(); n.hidden++; });
     root.querySelectorAll("svg").forEach((x) => {
       if (!x.childElementCount) return;
+      if (x.hasAttribute("data-llment-picked") || x.querySelector("[data-llment-picked]")) return; // das gewählte Element liegt darin: SVG ungekürzt lassen
       n.svg++;
       const label = x.getAttribute("aria-label") || (x.querySelector("title") || {}).textContent || "";
       const desc = ["svg", x.getAttribute("viewBox") ? `viewBox="${x.getAttribute("viewBox")}"` : "", `${x.querySelectorAll("path").length} path`, label ? `„${label.trim().slice(0, 40)}“` : ""].filter(Boolean).join(" ");
@@ -505,16 +533,26 @@
   }
 
   let lastSlimParts = ""; // was der letzte Schlank-Export entfernt hat (für Footer und Zwischenablage-Hinweis)
-  function htmlFor(el, selector, withCss, slim) {
+  function htmlFor(el, selector, withCss, slim, focus) {
     const list = Array.isArray(el) ? el : [el];
     el = list[0];
+    focus = (focus || list).filter((f) => list.some((c) => c === f || c.contains(f)));
+    if (!focus.length) focus = list;
+    // Gewählte Elemente im Markup markieren – in 12 KB Markup sonst nicht zu finden
+    focus.forEach((f) => f.setAttribute("data-llment-picked", ""));
     const clones = list.map((e) => e.cloneNode(true));
+    focus.forEach((f) => f.removeAttribute("data-llment-picked"));
     clones.forEach((c) => c.querySelectorAll("script, noscript").forEach((n) => n.remove()));
     let slimmed = null;
     if (slim) { slimmed = {}; for (const c of clones) for (const [k, v] of Object.entries(slimHtml(c))) slimmed[k] = (slimmed[k] || 0) + v; }
-    let head = `<!-- LLMent Picker · ${new Date().toISOString()}
+    const d0 = new Date(), p2 = (n) => String(n).padStart(2, "0");
+    const stampLocal = `${d0.getFullYear()}-${p2(d0.getMonth() + 1)}-${p2(d0.getDate())} ${p2(d0.getHours())}:${p2(d0.getMinutes())}`;
+    let head = `<!-- LLMent Picker · ${stampLocal}
 ${t("fileUrl")}: ${location.href}
-${t("fileSelector")}: ${selector}
+${t("fileSelector")}: ${selector}`;
+    const contextEl = list.length === 1 && !(focus.length === 1 && focus[0] === el) ? el : null;
+    if (contextEl) head += `\n${t("fileContext")}: ${describe(contextEl)} \u2013 ${t("fileContextNote")}`;
+    head += `
 ${t("fileTitle")}: ${document.title.replace(/-->/g, "--&gt;")}
 ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixelRatio * 100) / 100}
 `;
@@ -526,15 +564,18 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       head += `${t("fileSlim")}: ${parts.length ? parts.join(", ") : t("fileNone")}\n`;
       lastSlimParts = parts.join(", ");
     }
-    head += `${t("fileBox")}: ${list.map(boxOf).join(" | ")}\n`;
+    head += `${t("fileBox")}: ${focus.map(boxOf).join(" | ")}\n`;
     if (withCss) {
-      let ctx = t("fileCssUnavailable");
-      try { ctx = cssContext(el); } catch (e) { ctx += ": " + (e && e.message); }
-      head += "\n" + ctx + "\n";
+      // Analyse je gewähltem Element; bei Kontext-Container mit der Kette bis dorthin
+      focus.forEach((f, i) => {
+        let ctx = t("fileCssUnavailable");
+        try { ctx = cssContext(f, contextEl); } catch (e) { ctx += ": " + (e && e.message); }
+        head += (focus.length > 1 ? `\n${t("fileElementN", i + 1, focus.length, describe(f))}\n` : "\n") + ctx + "\n";
+      });
     }
     const raw = clones.map((c) => c.outerHTML).join("\n");
     // Verschlankt: Leerzeilen weg, Einrückung auf ein Viertel (40 Leerzeichen sagen nichts)
-    const html = slim ? raw.replace(/\n[ \t]*\n+/g, "\n").replace(/^[ \t]{4,}/gm, (m) => " ".repeat(Math.ceil(m.length / 4))) : raw;
+    const html = slim ? raw.replace(/\n(?:[ \t\r]*\n)+/g, "\n").replace(/^[ \t]{4,}/gm, (m) => " ".repeat(Math.ceil(m.length / 4))) : raw;
     // Sicherheitsventil: was fehlt, steht am Ende – als Information, nicht als Befehl
     const footer = lastSlimParts ? `\n<!-- ${t("fileSlimFooter", lastSlimParts)} -->\n` : "";
     return head + "-->\n" + html + "\n" + footer;
@@ -562,14 +603,16 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (!res || !res.path) throw new Error((res && res.error) || "nicht gespeichert");
     return res.path;
   }
-  async function saveHtml(el, selector, base) {
+  // el: Element(e), deren Markup gespeichert wird (bei Kontext der Container);
+  // focus: die gewählten Elemente, um die sich die Analyse dreht (Standard = el)
+  async function saveHtml(el, selector, base, focus) {
     let withCss = true, slim = true;
     try {
       const v = await api.storage.sync.get({ cssInHtml: true, htmlSlim: true });
       withCss = v.cssInHtml !== false;
       slim = v.htmlSlim !== false;
     } catch {}
-    return saveFile({ filename: base + ".html", content: htmlFor(el, selector, withCss, slim), mime: "text/html;charset=utf-8" });
+    return saveFile({ filename: base + ".html", content: htmlFor(el, selector, withCss, slim, focus), mime: "text/html;charset=utf-8" });
   }
   async function saveShot(blob, base) {
     const dataUrl = await new Promise((ok, err) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = err; fr.readAsDataURL(blob); });
@@ -695,7 +738,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
           await settle(); await sleep(250);
           r = measure();
         }
-        clipped = !inside(clipRect(sc), r);
+        clipped = !inside(clipRect(sc), inflate(r, -(pad || 0))); // nur der Rand außerhalb ist kein Mangel
       }
       // Kachelschleife in Bereichskoordinaten: Punkt (px, py) liegt bei (r.left+px, r.top+py)
       let y = 0;
@@ -859,7 +902,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     }
     if (withHtml) {
       try {
-        htmlPath = await saveHtml(opts.context || opts.list || el, opts.context ? opts.context.map((x) => buildSelector(x)).join(", ") : selector, base);
+        htmlPath = await saveHtml(opts.context || opts.list || el, selector, base, opts.list || [el]);
       } catch (e) {
         htmlErr = ((e && e.message) || String(e)).replace(/data:[^\s]+/g, "data:…").slice(0, 120);
         console.warn("LLMent Picker: HTML nicht gespeichert –", htmlErr);

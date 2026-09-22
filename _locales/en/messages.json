@@ -113,7 +113,7 @@
     "message": "Frame"
   },
   "fileEffective": {
-    "message": "== Effective values (element; defaults omitted) =="
+    "message": "== Effective values (element; core always, otherwise deviations only) =="
   },
   "fileRules": {
     "message": "== Applied CSS rules (element) =="
@@ -156,7 +156,7 @@
     "message": "active"
   },
   "mediaInactive": {
-    "message": "inactive"
+    "message": "inactive at"
   },
   "optTitle": {
     "message": "LLMent Picker – Settings"
@@ -588,7 +588,7 @@
     "message": "elements"
   },
   "lineContext": {
-    "message": "Context: $C$ (screenshot and HTML show this container; the $N$ element(s) above are meant)",
+    "message": "Context: $C$ (screenshot and HTML show this container; the reference is the selector line above)",
     "placeholders": {
       "c": {
         "content": "$1"
@@ -700,5 +700,36 @@
         "content": "$1"
       }
     }
+  },
+  "fileStates": {
+    "message": "== State rules (:hover / :focus / :active – not active now) =="
+  },
+  "fileChain": {
+    "message": "== Chain up to the context $C$ – box and deviations per level ==",
+    "placeholders": {
+      "c": {
+        "content": "$1"
+      }
+    }
+  },
+  "fileElementN": {
+    "message": "##### Element $I$/$N$: $EL$",
+    "placeholders": {
+      "i": {
+        "content": "$1"
+      },
+      "n": {
+        "content": "$2"
+      },
+      "el": {
+        "content": "$3"
+      }
+    }
+  },
+  "fileContext": {
+    "message": "Context"
+  },
+  "fileContextNote": {
+    "message": "the markup below is this container; the analysis is about the picked element(s), marked data-llment-picked"
   }
 }
