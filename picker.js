@@ -96,6 +96,7 @@
   }
   if (IN_FRAME) { try { parent.postMessage({ __llment: "alive" }, "*"); } catch {} }
   const frameReachable = (el) => { try { return LIVE_FRAMES.has(el.contentWindow); } catch { return false; } };
+  function isFrame(el) { return el.tagName === "IFRAME" || el.tagName === "FRAME"; }
   // Abbruch-Broadcast aus dem Hintergrund (ein anderer Frame hat kopiert/abgebrochen)
   if (!window.__llmentListening) {
     window.__llmentListening = true;
@@ -1642,7 +1643,6 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     placeHud(r);
   }
 
-  const isFrame = (el) => el.tagName === "IFRAME" || el.tagName === "FRAME";
   function targetAt(x, y) {
     const el = document.elementFromPoint(x, y);
     if (!el || el.closest("[data-llment-picker]")) return null;
@@ -1714,11 +1714,14 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   // außen. Klick ohne Shift löst aus, Esc bricht ab. Screenshot ist immer dabei.
   let range = null; // { anchor, focus, extras: [], pending }
   const SKIP_TAG = /^(SCRIPT|STYLE|TEMPLATE|LINK|META|NOSCRIPT)$/;
-  const unionRect = (els) => {
+  // Als Funktionsdeklaration (gehoben): der Kontextmenü-Pfad kopiert, bevor der
+  // Picker-Aufbau weiter unten durchlaufen ist – eine const hier wäre dort noch
+  // nicht initialisiert (ReferenceError, 25.09.2026 in Chrome gemeldet)
+  function unionRect(els) {
     let l = Infinity, tp = Infinity, r = -Infinity, b = -Infinity;
     for (const e of els) { const x = e.getBoundingClientRect(); l = Math.min(l, x.left); tp = Math.min(tp, x.top); r = Math.max(r, x.right); b = Math.max(b, x.bottom); }
     return { left: l, top: tp, width: r - l, height: b - tp, right: r, bottom: b };
-  };
+  }
   const visibleSibling = (el, dir) => {
     for (let n = dir > 0 ? el.nextElementSibling : el.previousElementSibling; n; n = dir > 0 ? n.nextElementSibling : n.previousElementSibling) {
       if (isOwn(n) || SKIP_TAG.test(n.tagName)) continue;
