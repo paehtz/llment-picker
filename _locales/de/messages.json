@@ -775,7 +775,7 @@
     "message": "(keine Ruheregel: Browser-Standard oder geerbt)"
   },
   "lineForeignFrame": {
-    "message": "Eingebetteter Frame fremder Herkunft: $U$ – die Elemente darin sind nicht wählbar (die Erweiterung hat nur Zugriff auf die Seite selbst); diese Zeile beschreibt den Frame, nicht seinen Inhalt",
+    "message": "Eingebetteter Frame fremder Herkunft: $U$ – die Elemente darin waren nicht wählbar (die Erweiterung hat nur Zugriff auf die Seite selbst, solange „Auch Elemente in eingebetteten Frames fremder Herkunft wählbar machen\" in ihren Einstellungen aus ist); diese Zeile beschreibt den Frame, nicht seinen Inhalt",
     "placeholders": {
       "u": {
         "content": "$1"
@@ -783,7 +783,7 @@
     }
   },
   "hintForeignFrame": {
-    "message": "fremder Frame, Inhalt nicht wählbar"
+    "message": "fremder Frame · O: Elemente in den Einstellungen freigeben"
   },
   "optFrames": {
     "message": "Auch Elemente in eingebetteten Frames fremder Herkunft wählbar machen"

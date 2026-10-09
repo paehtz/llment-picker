@@ -775,7 +775,7 @@
     "message": "(no resting rule: browser default or inherited)"
   },
   "lineForeignFrame": {
-    "message": "Embedded frame from another origin: $U$ – the elements inside it are not selectable (the extension only has access to the page itself); this line describes the frame, not its content",
+    "message": "Embedded frame from another origin: $U$ – the elements inside it were not selectable (the extension only has access to the page itself unless \"Also allow elements inside embedded frames from other sites\" is on in its settings); this line describes the frame, not its content",
     "placeholders": {
       "u": {
         "content": "$1"
@@ -783,7 +783,7 @@
     }
   },
   "hintForeignFrame": {
-    "message": "foreign frame, content not selectable"
+    "message": "foreign frame · O: allow its elements in settings"
   },
   "optFrames": {
     "message": "Also allow elements inside embedded frames from other sites"

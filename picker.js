@@ -92,6 +92,10 @@
     window.__llmentFrameListen = true;
     window.addEventListener("message", (e) => {
       if (e && e.data && e.data.__llment === "alive" && e.source) LIVE_FRAMES.add(e.source);
+      if (e && e.data && e.data.__llment === "inside") {
+        if (window.__elementPickerActive && window.__elementPickerActive.leave) window.__elementPickerActive.leave();
+        if (window !== window.top) { try { parent.postMessage({ __llment: "inside" }, "*"); } catch {} } // auch über mehrere Ebenen
+      }
     });
   }
   if (IN_FRAME) { try { parent.postMessage({ __llment: "alive" }, "*"); } catch {} }
@@ -1829,7 +1833,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     range.pending = false;
     highlightRange();
   }
+  // Frame: beim ersten Zeigerereignis nach dem Hereinkommen dem Elternframe Bescheid geben
+  let pointerInside = false;
+  if (IN_FRAME) document.documentElement.addEventListener("mouseleave", () => { pointerInside = false; }, true);
   function onMove(e) {
+    if (IN_FRAME && !pointerInside) { pointerInside = true; try { parent.postMessage({ __llment: "inside" }, "*"); } catch {} }
     if (range) { // Auswahl steht; unter der Maus nur eine Vorschau
       const el = targetAt(e.clientX, e.clientY);
       showPreview(el && !(isFrame(el) && frameReachable(el)) ? el : null);
@@ -1955,6 +1963,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   const TAP_MS = 400;
   let tap = null, tapAt = 0;
   function onKey(e) {
+    // Über einem Frame fremder Herkunft: O öffnet die Einstellungen mit der Frame-Freigabe
+    if ((e.key === "o" || e.key === "O") && !e.ctrlKey && !e.altKey && !e.metaKey && current && isFrame(current) && !frameReachable(current)) {
+      swallow(e);
+      try { api.runtime.sendMessage({ type: "llment-open-options" }); } catch {}
+      cleanup();
+      return;
+    }
     if (e.key === "Alt" || e.key === "Control" || e.key === "Meta") { if (!e.repeat) { tap = e.key; tapAt = performance.now(); } }
     else tap = null;
     if (e.key === "Escape") {
@@ -2026,6 +2041,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (!noReport) reportState(false);
     style.remove();
     delete window[KEY];
+    delete window.__elementPickerActive;
   }
 
   // Steht der Fokus in einem eingebetteten Frame (angeklicktes Formularfeld), gehen
@@ -2051,10 +2067,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   setMods(false, false); // zeigt eine Voreinstellung sofort an
   if (contextFallback) toast(t("toastPickElement"), false);
 
+  // für den Frame-Wechsel (siehe Nachricht „inside"): eigenen Rahmen ausblenden
+  window.__elementPickerActive = { leave: () => { if (!range) hideHighlight(); } };
   window[KEY] = {
     // silent: kein Toast; noReport: kein Abbruch-Broadcast (kam selbst aus einem)
     cancel(silent, noReport) {
       cleanup(noReport);
+      delete window.__elementPickerActive;
       if (!silent) toast(t("toastCancelled"), false);
     },
     // für Tests: Selektor eines beliebigen Elements berechnen

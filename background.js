@@ -124,6 +124,10 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
     return;
   }
+  if (msg.type === "llment-open-options") {
+    api.runtime.openOptionsPage();
+    return;
+  }
   if (msg.type === "llment-capture") {
     const windowId = sender.tab && sender.tab.windowId;
     api.tabs.captureVisibleTab(windowId, { format: "png" }).then(
