@@ -960,12 +960,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
         return t("lineInShot", buildSelector(f), Math.round((fr.left - rr.left) * shot.px), Math.round((fr.top - rr.top) * shot.py), Math.round(fr.width * shot.px), Math.round(fr.height * shot.py));
       }).join("\n");
     }
-    let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "selection" : null, box);
+    let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "selection" : opts.region ? "region" : "element", box);
     let ok = false, imageOk = false;
     if (shot && toClip && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
     else {
       // Bild nicht in der Zwischenablage → das Label darf es nicht behaupten
-      payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, false, selector, opts.list ? "selection" : null, box);
+      payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, false, selector, opts.list ? "selection" : opts.region ? "region" : "element", box);
       ok = await copy(payload);
     }
     const parts = [];
@@ -1625,14 +1625,19 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   // Klick Play/Pause in der Browser-eigenen Steuerung (Firefox: UA-Widget), die die
   // abgefangenen Ereignisse der Seite nicht mehr erreichen. Eine unsichtbare Fläche
   // genau über dem Element nimmt den Klick an, bevor er das Medium erreicht.
-  // Praxisfund 09.10.2026, dev.paehtz.de/t-k-eisleben (Vorschauvideo in der Galerie).
+  // Praxisfund 09.10.2026, dev.paehtz.de/t-k-eisleben (Vorschauvideo in der Galerie);
+  // dasselbe für Frames fremder Herkunft (signpath.org/apply, HubSpot-Formular).
   const mediaShield = document.createElement("div");
   mediaShield.setAttribute("data-llment-picker", "");
   mediaShield.style.cssText = `position:fixed;pointer-events:auto;z-index:${Z - 1};background:transparent;display:none;`;
   let shieldFor = null;
   const SHIELD_TAG = /^(VIDEO|AUDIO|EMBED|OBJECT)$/;
   function shieldOver(el) {
-    if (!el || !SHIELD_TAG.test(el.tagName)) { mediaShield.style.display = "none"; shieldFor = null; return; }
+    // Auch über einem Frame fremder Herkunft (ohne Freigabe nicht bespielbar): sonst
+    // landen Klicks im eingebetteten Formular und bedienen es, statt den Frame zu wählen –
+    // und über dem Frame bekäme die Seite gar keine Mausereignisse mehr
+    const foreign = el && isFrame(el) && !frameReachable(el);
+    if (!el || !(SHIELD_TAG.test(el.tagName) || foreign)) { mediaShield.style.display = "none"; shieldFor = null; return; }
     const r = el.getBoundingClientRect();
     mediaShield.style.left = r.left + "px"; mediaShield.style.top = r.top + "px";
     mediaShield.style.width = r.width + "px"; mediaShield.style.height = r.height + "px";
