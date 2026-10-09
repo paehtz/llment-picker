@@ -1621,13 +1621,32 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   const style = document.createElement("style");
   style.setAttribute("data-llment-picker", "");
   style.textContent = `*, *::before, *::after { cursor: crosshair !important; }`;
-  document.documentElement.append(box, label, hud, lassoBox, style);
+  // Schild über Medien: <video controls> und eingebettete Player schalten bei einem
+  // Klick Play/Pause in der Browser-eigenen Steuerung (Firefox: UA-Widget), die die
+  // abgefangenen Ereignisse der Seite nicht mehr erreichen. Eine unsichtbare Fläche
+  // genau über dem Element nimmt den Klick an, bevor er das Medium erreicht.
+  // Praxisfund 09.10.2026, dev.paehtz.de/t-k-eisleben (Vorschauvideo in der Galerie).
+  const mediaShield = document.createElement("div");
+  mediaShield.setAttribute("data-llment-picker", "");
+  mediaShield.style.cssText = `position:fixed;pointer-events:auto;z-index:${Z - 1};background:transparent;display:none;`;
+  let shieldFor = null;
+  const SHIELD_TAG = /^(VIDEO|AUDIO|EMBED|OBJECT)$/;
+  function shieldOver(el) {
+    if (!el || !SHIELD_TAG.test(el.tagName)) { mediaShield.style.display = "none"; shieldFor = null; return; }
+    const r = el.getBoundingClientRect();
+    mediaShield.style.left = r.left + "px"; mediaShield.style.top = r.top + "px";
+    mediaShield.style.width = r.width + "px"; mediaShield.style.height = r.height + "px";
+    mediaShield.style.display = "block";
+    shieldFor = el;
+  }
+  document.documentElement.append(mediaShield, box, label, hud, lassoBox, style);
 
   let current = null;
 
   function highlight(el) {
     if (!el || el === current) return;
     current = el;
+    shieldOver(el);
     const r = el.getBoundingClientRect();
     box.style.display = "block";
     box.style.left = r.left + "px";
@@ -1645,6 +1664,14 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
 
   function targetAt(x, y) {
     const el = document.elementFromPoint(x, y);
+    if (el === mediaShield) {
+      // Der Schild steht für das Medium darunter – liegt dort aber etwas anderes
+      // (Play-Overlay, Beschriftung über dem Video), zählt das
+      mediaShield.style.pointerEvents = "none";
+      const under = document.elementFromPoint(x, y);
+      mediaShield.style.pointerEvents = "auto";
+      return under && !under.closest("[data-llment-picker]") ? under : shieldFor;
+    }
     if (!el || el.closest("[data-llment-picker]")) return null;
     return el;
   }
@@ -1654,6 +1681,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   // übernimmt der Picker des Frames (er bekommt die Mausbewegungen).
   function hideHighlight() {
     current = null;
+    shieldOver(null);
     box.style.display = "none";
     label.style.display = "none";
     hud.style.display = "none";
@@ -1767,6 +1795,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     placeHud(r);
   }
   function showPreview(el) {
+    shieldOver(el); // auch im Bereichsmodus darf ein Klick aufs Video nicht Play auslösen
     if (!el || rangeList().includes(el)) { previewBox.style.display = "none"; return; }
     const x = el.getBoundingClientRect();
     previewBox.style.display = "block";
@@ -1824,10 +1853,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (el) highlight(el);
   }
   function onScroll() {
-    if (range) { highlightRange(); return; }
+    if (range) { shieldOver(null); highlightRange(); return; }
     if (drag && drag.active) return;
     if (!lastXY) return;
     current = null;
+    shieldOver(null);
     const el = targetAt(lastXY[0], lastXY[1]);
     if (el) highlight(el);
   }
@@ -1985,6 +2015,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     window.removeEventListener("keydown", onKey, opts);
     window.removeEventListener("keyup", onKeyUp, opts);
     box.remove();
+    mediaShield.remove();
     label.remove();
     hud.remove();
     if (!noReport) reportState(false);
