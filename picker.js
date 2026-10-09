@@ -1487,6 +1487,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     window[KEY].cancel();
     return "cancelled";
   }
+  // Neuer Lauf: Erreichbarkeit der Frames frisch erheben. Die Liste lebt im Fenster und
+  // überdauert Läufe; wer die Freigabe zwischendurch entzog (oder ein Frame wechselte
+  // die Herkunft), sah sonst den alten Stand – kein Hinweis, keine Fläche über dem Frame.
+  // Die Frames melden sich im zweiten Durchlauf gleich wieder (postMessage „alive").
+  LIVE_FRAMES.clear();
 
   // Voreinstellung aus dem Icon-Menü („Element wählen – mit Screenshot" usw.)
   const preset = Object.assign({ shot: false, html: false, record: false }, window.__elementPickerPreset || {});
