@@ -14,7 +14,9 @@ LLMent Picker (store name unchanged; the pronunciation hint "(say: el-el-ment)" 
 
 ## Description (English)
 
-LLMent Picker (say: el-el-ment) sees nothing until you click, sends nothing anywhere and runs only on the page you point it at. One click copies exactly what an AI agent needs to know which element you mean – and, unlike an annotation workspace, it stays out of your way: no panel, no comments, no all-sites permission.
+LLMent Picker (say: el-el-ment): point at any element in your own browser, on live sites and logged-in portals, in Firefox or Chrome, and paste it into Claude Code, Codex, Cursor or any chat. No server, no MCP, no setup. It sees nothing until you click, sends nothing anywhere and runs only on the page you point it at.
+
+Why not the browser built into your coding tool? That one runs a clean profile without your logins and is made for the local dev server. LLMent Picker works where you already are: the client's live site, the shop backend, the portal you are signed in to, with your own extensions and password manager, and it hands the result to whichever agent you use.
 
 Working on a web page with an AI assistant, you hit this constantly: "I mean the second box under the heading" is clear to a person and useless to a tool. LLMent Picker turns one click into an unambiguous reference in your clipboard:
 
@@ -35,13 +37,16 @@ Usage
 • Every copy starts with a label such as [LLMent: element, shot:file] and a context line (browser, viewport, pixel ratio, dark/reduced-motion) – an agent recognises the format instead of guessing; every part can be switched off
 • Right-click on the page → "Copy this element" / "Copy with screenshot" / "Save as HTML file" / "Record interaction here", without picker mode
 • Right-click the icon → start the picker with a preset
-• Works inside iframes; the clipboard says which frame
+• Videos and embedded players: a click copies the element instead of starting playback
+• Works inside iframes; the clipboard says which frame. Forms and widgets embedded from another site (HubSpot, Typeform, payment fields) become selectable after one optional permission in the settings; until then the picker marks such a frame and key O opens that setting
 
-Privacy: only the activeTab permission – the extension does nothing until you invoke it and has no access to other pages. Screenshots and HTML files are created only on your click and stay on your device (downloads folder or clipboard). No network access, no data collection. Source on GitHub, MIT licence.
+Privacy: by default only the activeTab permission; the extension does nothing until you invoke it and has no access to other pages. One optional permission (access to all sites) is requested only if you switch on "Also allow elements inside embedded frames from other sites" in the settings, and can be withdrawn there at any time; it is used solely to run the picker inside such frames when you start it. Screenshots and HTML files are created only on your click and stay on your device (downloads folder or clipboard). No network access, no data collection. Source on GitHub, MIT licence.
 
 ## Beschreibung (Deutsch)
 
-LLMent Picker (say: el-el-ment) sieht nichts, bis Sie klicken, sendet nichts und läuft nur auf der Seite, auf der Sie es aufrufen. Ein Klick kopiert genau das, was ein KI-Agent braucht, um zu wissen, welches Element Sie meinen – und bleibt dabei aus dem Weg: kein Panel, keine Kommentare, keine Berechtigung für alle Websites.
+LLMent Picker (say: el-el-ment): Zeigen Sie in Ihrem eigenen Browser auf ein beliebiges Element, auf Live-Seiten und in Portalen mit Login, in Firefox oder Chrome, und fügen Sie es in Claude Code, Codex, Cursor oder jeden Chat ein. Kein Server, kein MCP, keine Einrichtung. Die Erweiterung sieht nichts, bis Sie klicken, sendet nichts und läuft nur auf der Seite, auf der Sie sie aufrufen.
+
+Warum nicht der Browser, der im Coding-Werkzeug eingebaut ist? Der läuft mit einem leeren Profil ohne Ihre Logins und ist für den lokalen Entwicklungsserver gedacht. LLMent Picker arbeitet dort, wo Sie ohnehin sind: auf der Live-Seite des Kunden, im Shop-Backend, im Portal, in dem Sie angemeldet sind, mit Ihren eigenen Erweiterungen und Ihrem Passwortmanager, und übergibt das Ergebnis an den Agenten Ihrer Wahl.
 
 Wer mit einem KI-Assistenten an einer Webseite arbeitet, kennt das Problem: „Ich meine das zweite Kästchen unter der Überschrift" ist für Menschen klar, für ein Werkzeug nicht. LLMent Picker macht aus einem Klick eine eindeutige Referenz in der Zwischenablage:
 
@@ -62,13 +67,14 @@ Bedienung
 • Jede Kopie beginnt mit einem Label wie [LLMent: element, shot:file] und einer Kontextzeile (Browser, Viewport, Pixelverhältnis, dark/reduced-motion) – ein Agent erkennt das Format, statt zu raten; jeder Teil ist abschaltbar
 • Rechtsklick auf der Seite → „Dieses Element kopieren" / „Mit Screenshot kopieren" / „Als HTML-Datei speichern" / „Interaktion hier aufnehmen", ohne Picker-Modus
 • Rechtsklick auf das Icon → Picker mit Voreinstellung starten
-• Funktioniert auch in iframes; die Zwischenablage nennt den Frame
+• Videos und eingebettete Player: ein Klick kopiert das Element, statt die Wiedergabe zu starten
+• Funktioniert auch in iframes; die Zwischenablage nennt den Frame. Formulare und Bausteine, die von einer anderen Website eingebettet sind (HubSpot, Typeform, Zahlungsfelder), werden nach einer freiwilligen Freigabe in den Einstellungen wählbar; bis dahin markiert der Picker einen solchen Frame, und die Taste O öffnet diese Einstellung
 
-Datenschutz: nur die Berechtigung activeTab – die Erweiterung tut nichts, bis Sie sie aufrufen, und hat keinen Zugriff auf andere Seiten. Screenshots und HTML-Dateien entstehen nur auf Ihren Klick und bleiben auf Ihrem Gerät (Download-Ordner oder Zwischenablage). Keine Netzwerkzugriffe, keine Datenerhebung. Quellcode auf GitHub, MIT-Lizenz.
+Datenschutz: standardmäßig nur die Berechtigung activeTab; die Erweiterung tut nichts, bis Sie sie aufrufen, und hat keinen Zugriff auf andere Seiten. Eine optionale Berechtigung (Zugriff auf alle Websites) wird nur angefragt, wenn Sie in den Einstellungen „Auch Elemente in eingebetteten Frames fremder Herkunft wählbar machen" einschalten, und lässt sich dort jederzeit wieder entziehen; sie dient allein dazu, den Picker beim Start auch in solchen Frames laufen zu lassen. Screenshots und HTML-Dateien entstehen nur auf Ihren Klick und bleiben auf Ihrem Gerät (Download-Ordner oder Zwischenablage). Keine Netzwerkzugriffe, keine Datenerhebung. Quellcode auf GitHub, MIT-Lizenz.
 
 ## Category / tags
 
-- AMO: category "Web Development" (second: "Productivity"); tags: css, selector, developer, ai, clipboard, screenshot
+- AMO: category "Web Development" (second: "Productivity"); tags: css, selector, developer, ai, clipboard, screenshot, claude, coding agent
 - Chrome Web Store: category "Developer Tools"; languages English (default) and German
 
 ## Permissions – justifications (Chrome asks for each one)
@@ -80,6 +86,7 @@ Datenschutz: nur die Berechtigung activeTab – die Erweiterung tut nichts, bis 
 | `contextMenus` / `menus` | Context menu entries to copy the right-clicked element directly or record an interaction on it, and entries on the toolbar icon to start the picker with a preset. |
 | `clipboardWrite` | The lines (and, in screenshot mode, the image) are written to the clipboard. On the context-menu path there is no click gesture on the page; without this permission writing would fail there. |
 | `downloads` | On an explicit click (Ctrl+click, Alt+click, lasso or menu entry) the rendered HTML or the screenshot of the chosen element is saved as a file into the browser's downloads folder. No other download, no opening of files. |
+| optional host permission `<all_urls>` (`optional_host_permissions`, not granted on install) | Requested only when the user switches on "Also allow elements inside embedded frames from other sites" in the options page; can be withdrawn there. `activeTab` covers only the main frame's origin, so forms and widgets a page embeds from another site (e.g. HubSpot, payment fields) cannot be picked without it. Used solely to inject the picker into such frames when the user starts it on a tab; no content script runs on its own, nothing is read or sent otherwise. |
 | `storage` | Stores the user's preferences (subfolder, "Save as" dialog, screenshot target, CSS context, slim HTML, context-line parts, English output, key hints). No user data. |
 
 **Single purpose (Chrome):** Copies, for a page element chosen by the user, the page URL, a unique CSS selector and optionally the selected text, a screenshot or the rendered HTML, so the element can be referenced precisely in an AI chat or coding agent.
