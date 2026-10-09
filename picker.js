@@ -91,7 +91,10 @@
   if (!window.__llmentFrameListen) {
     window.__llmentFrameListen = true;
     window.addEventListener("message", (e) => {
-      if (e && e.data && e.data.__llment === "alive" && e.source) LIVE_FRAMES.add(e.source);
+      if (e && e.data && e.data.__llment === "alive" && e.source) {
+        LIVE_FRAMES.add(e.source);
+        if (window.__elementPickerFrameShields) window.__elementPickerFrameShields(); // erreichbar → Fläche weg
+      }
       if (e && e.data && e.data.__llment === "inside") {
         if (window.__elementPickerActive && window.__elementPickerActive.leave) window.__elementPickerActive.leave();
         if (window !== window.top) { try { parent.postMessage({ __llment: "inside" }, "*"); } catch {} } // auch über mehrere Ebenen
@@ -1657,17 +1660,51 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   let shieldFor = null;
   const SHIELD_TAG = /^(VIDEO|AUDIO|EMBED|OBJECT)$/;
   function shieldOver(el) {
-    // Auch über einem Frame fremder Herkunft (ohne Freigabe nicht bespielbar): sonst
-    // landen Klicks im eingebetteten Formular und bedienen es, statt den Frame zu wählen –
-    // und über dem Frame bekäme die Seite gar keine Mausereignisse mehr
-    const foreign = el && isFrame(el) && !frameReachable(el);
-    if (!el || !(SHIELD_TAG.test(el.tagName) || foreign)) { mediaShield.style.display = "none"; shieldFor = null; return; }
+    if (!el || !SHIELD_TAG.test(el.tagName)) { mediaShield.style.display = "none"; shieldFor = null; return; }
     const r = el.getBoundingClientRect();
     mediaShield.style.left = r.left + "px"; mediaShield.style.top = r.top + "px";
     mediaShield.style.width = r.width + "px"; mediaShield.style.height = r.height + "px";
     mediaShield.style.display = "block";
     shieldFor = el;
   }
+  // Flächen über Frames fremder Herkunft, die der Picker nicht erreicht – für die ganze
+  // Sitzung, nicht erst beim Überfahren: über einem solchen Frame bekommt die Seite keine
+  // Mausereignisse, ihr letzter Rahmen war dann der Container drumherum (Praxisfund
+  // 09.10.2026, signpath.org/apply: Label „div" statt Frame, kein Hinweis). Mit Fläche
+  // kommen die Ereignisse an, der Frame wird erkannt, Klicks erreichen das Formular nicht.
+  // Nur Frames, die an ihrer sichtbaren Stelle wirklich oben liegen (kein verstecktes reCAPTCHA).
+  const frameShields = new Map(); // Frame → Fläche
+  function refreshFrameShields() {
+    if (!document.documentElement.contains(box)) return; // Picker beendet
+    const keep = new Set();
+    for (const f of document.querySelectorAll("iframe, frame")) {
+      if (frameReachable(f)) continue;
+      const r = f.getBoundingClientRect();
+      const x0 = Math.max(r.left, 0), x1 = Math.min(r.right, innerWidth), y0 = Math.max(r.top, 0), y1 = Math.min(r.bottom, innerHeight);
+      if (x1 - x0 < 8 || y1 - y0 < 8) continue;
+      let sh = frameShields.get(f);
+      if (sh) sh.style.display = "none"; // eigene Fläche nicht mitmessen
+      const hit = document.elementFromPoint((x0 + x1) / 2, (y0 + y1) / 2);
+      if (hit !== f) continue;
+      if (!sh) {
+        sh = document.createElement("div");
+        sh.setAttribute("data-llment-picker", "");
+        sh.style.cssText = `position:fixed;pointer-events:auto;z-index:${Z - 1};background:transparent;`;
+        sh.__frame = f;
+        document.documentElement.append(sh);
+        frameShields.set(f, sh);
+      }
+      sh.style.left = r.left + "px"; sh.style.top = r.top + "px";
+      sh.style.width = r.width + "px"; sh.style.height = r.height + "px";
+      sh.style.display = "block";
+      keep.add(f);
+    }
+    for (const [f, sh] of frameShields) if (!keep.has(f)) { sh.remove(); frameShields.delete(f); }
+  }
+  // Die Frames melden sich im zweiten Durchlauf (postMessage) – erst danach steht fest,
+  // welche fremd bleiben; danach bei Scrollen, Größenänderung und jeder Meldung neu
+  setTimeout(refreshFrameShields, 700);
+  window.__elementPickerFrameShields = refreshFrameShields;
   document.documentElement.append(mediaShield, box, label, hud, lassoBox, style);
 
   let current = null;
@@ -1695,6 +1732,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
 
   function targetAt(x, y) {
     const el = document.elementFromPoint(x, y);
+    if (el && el.__frame) { // Fläche über einem fremden Frame
+      el.style.pointerEvents = "none";
+      const under = document.elementFromPoint(x, y);
+      el.style.pointerEvents = "auto";
+      return under && !under.closest("[data-llment-picker]") ? under : el.__frame;
+    }
     if (el === mediaShield) {
       // Der Schild steht für das Medium darunter – liegt dort aber etwas anderes
       // (Play-Overlay, Beschriftung über dem Video), zählt das
@@ -1887,6 +1930,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     if (el) highlight(el);
   }
   function onScroll() {
+    refreshFrameShields();
     if (range) { shieldOver(null); highlightRange(); return; }
     if (drag && drag.active) return;
     if (!lastXY) return;
@@ -2057,6 +2101,10 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     window.removeEventListener("keyup", onKeyUp, opts);
     box.remove();
     mediaShield.remove();
+    for (const sh of frameShields.values()) sh.remove();
+    frameShields.clear();
+    delete window.__elementPickerFrameShields;
+    window.removeEventListener("resize", refreshFrameShields);
     label.remove();
     hud.remove();
     if (!noReport) reportState(false);
@@ -2086,6 +2134,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   window.addEventListener("keyup", onKeyUp, opts);
   reportState(true);
   setMods(false, false); // zeigt eine Voreinstellung sofort an
+  window.addEventListener("resize", refreshFrameShields);
   if (contextFallback) toast(t("toastPickElement"), false);
 
   // für den Frame-Wechsel (siehe Nachricht „inside"): eigenen Rahmen ausblenden
