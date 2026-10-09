@@ -783,7 +783,7 @@
     }
   },
   "hintForeignFrame": {
-    "message": "fremder Frame · O: Elemente in den Einstellungen freigeben"
+    "message": "fremder Frame, Inhalt nicht wählbar · Taste O öffnet die Einstellungen zur Freigabe"
   },
   "optFrames": {
     "message": "Auch Elemente in eingebetteten Frames fremder Herkunft wählbar machen"

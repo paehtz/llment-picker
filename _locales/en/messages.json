@@ -783,7 +783,7 @@
     }
   },
   "hintForeignFrame": {
-    "message": "foreign frame · O: allow its elements in settings"
+    "message": "foreign frame, contents not selectable · press key O to open the settings and allow them"
   },
   "optFrames": {
     "message": "Also allow elements inside embedded frames from other sites"

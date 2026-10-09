@@ -1597,6 +1597,14 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     lassoChip.style.background = lasso ? LIT : DIM;
     recChip.style.background = rec ? LIT : DIM;
   }
+  // Label über dem Element; ist dessen Oberkante hinausgescrollt, oben im Sichtbereich
+  // (auf dem Element), solange es dort noch liegt – nicht an der Fensterunterkante,
+  // wo es bei hohen Elementen keiner sieht (Praxisfund 09.10.2026, Formular-Frame 2600 px)
+  function labelY(r) {
+    if (r.top > 24) return r.top - 22;
+    if (r.bottom > 48) return 2;
+    return Math.min(innerHeight - 22, r.bottom + 2);
+  }
   function placeHud(r) {
     hud.style.display = "inline-flex";
     if (showHints) {
@@ -1607,10 +1615,17 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     // Passen Label und Chips nicht nebeneinander über das Element, wandern die
     // Chips unter das Element (das Label bleibt oben)
     const labelW = label.style.display !== "none" ? label.getBoundingClientRect().width : 0;
-    const collide = labelW && labelW + w + 8 > r.width;
-    const above = r.top > 24 && !collide;
+    // sichtbare Breite zählt: ein Element breiter als das Fenster bietet nur diese Fläche
+    const visW = Math.min(r.right, innerWidth) - Math.max(r.left, 0);
+    const collide = labelW && labelW + w + 8 > visW;
+    // Reicht das Element unten aus dem Fenster, bleiben die Chips oben (unter dem Label)
+    const tall = r.bottom > innerHeight - 24;
+    let y;
+    if (r.top > 24) y = !collide ? r.top - 22 : tall ? r.top + 2 : r.bottom + 2;
+    else if (r.bottom > 72) y = collide ? 26 : 2;
+    else y = r.bottom + 2;
     hud.style.left = Math.max(0, Math.min(innerWidth - w - 4, r.right - w)) + "px";
-    hud.style.top = Math.max(2, Math.min(innerHeight - 22, above ? r.top - 22 : r.bottom + 2)) + "px";
+    hud.style.top = Math.max(2, Math.min(innerHeight - 22, y)) + "px";
   }
   const box = document.createElement("div");
   box.setAttribute("data-llment-picker", "");
@@ -1668,11 +1683,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     box.style.width = r.width + "px";
     box.style.height = r.height + "px";
     const cls = bestClass(el);
-    label.textContent = el.tagName.toLowerCase() + (el.id ? "#" + el.id : cls ? "." + cls : "") + (isFrame(el) && !frameReachable(el) ? " · " + t("hintForeignFrame") : "");
+    const foreign = isFrame(el) && !frameReachable(el);
+    label.textContent = el.tagName.toLowerCase() + (el.id ? "#" + el.id : cls ? "." + cls : "") + (foreign ? " · " + t("hintForeignFrame") : "");
+    // Der Frame-Hinweis endet mit der Taste – nicht auf 60 % Breite abschneiden
+    label.style.maxWidth = foreign ? "calc(100vw - 12px)" : "60vw"; // "" löschte die 60vw aus cssText
     label.style.display = "block";
-    const above = r.top > 24;
     label.style.left = Math.max(0, r.left) + "px";
-    label.style.top = Math.max(2, Math.min(innerHeight - 22, above ? r.top - 22 : r.bottom + 2)) + "px";
+    label.style.top = Math.max(2, Math.min(innerHeight - 22, labelY(r))) + "px";
     placeHud(r);
   }
 
@@ -1718,7 +1735,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     label.textContent = Math.round(r.width) + "×" + Math.round(r.height) + " px";
     label.style.display = "block";
     label.style.left = Math.max(0, r.left) + "px";
-    label.style.top = (r.top > 24 ? r.top - 22 : r.top + r.height + 2) + "px";
+    label.style.top = Math.max(2, Math.min(innerHeight - 22, labelY(r))) + "px";
     placeHud(r);
   }
   function onDown(e) {
@@ -1801,10 +1818,9 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     }));
     label.textContent = list.length + "\u00d7 " + (list.every((x) => x.tagName === list[0].tagName) ? list[0].tagName.toLowerCase() : t("hintMixed")) + "  " + t("hintRange");
     label.style.display = "block";
-    const above = r.top > 24;
     label.style.left = Math.max(0, r.left) + "px";
     // Ragt der Bereich über den Rand, sitzt das Label innen am oberen Rand
-    label.style.top = Math.max(2, Math.min(innerHeight - 22, above ? r.top - 22 : r.bottom + 2)) + "px";
+    label.style.top = Math.max(2, Math.min(innerHeight - 22, labelY(r))) + "px";
     setMods(false, false, true);
     placeHud(r);
   }
