@@ -1,0 +1,9 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Einblenden beim Scrollen</title>
+<style>body{margin:0;background:#fff;font:14px system-ui} .blk{height:40px;margin:0 0 60px 0;background:#0050ff;opacity:0} .blk.on{opacity:1}</style></head><body>
+<div id="list"></div>
+<script>
+const list=document.getElementById('list');
+for(let i=0;i<60;i++){const d=document.createElement('div');d.className='blk';d.dataset.i=i;list.appendChild(d);}
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.intersectionRatio>=0.99)e.target.classList.add('on')}),{threshold:[0,0.5,0.99,1]});
+document.querySelectorAll('.blk').forEach(b=>io.observe(b));
+</script></body></html>

@@ -769,6 +769,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const W = Math.max(1, Math.round(r.width)), H = Math.max(1, Math.round(r.height));
     const sc = scrollers(target);
     const view = sc.map(clientBox).reduce((a, b) => ({ width: Math.min(a.width, b.width), height: Math.min(a.height, b.height) }));
+    const revealCut = Math.min(200, Math.round(view.height * 0.2)); // CSS-px, siehe Kachelschleife
     const multi = W > view.width || H > view.height;
     const saved = sc.map((s) => (s === window ? [scrollX, scrollY] : [s.scrollLeft, s.scrollTop]));
     const own = Array.from(document.querySelectorAll("[data-llment-picker]"));
@@ -802,7 +803,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
           }
           const c = clipRect(sc);
           const sx0 = Math.max(x, c.left - r.left), sy0 = Math.max(y, c.top - r.top);
-          const sx1 = Math.min(W, c.right - r.left), sy1 = Math.min(H, c.bottom - r.top);
+          const sx1 = Math.min(W, c.right - r.left);
+          // Unteren Rand einer Kachel verwerfen (außer am Ende): Seiten blenden Inhalte oft
+          // erst ein, wenn sie ein Stück weit im Bild sind – am Unterrand ist ein Element noch
+          // unsichtbar, in der nächsten Kachel schon da, die Zeile wäre an der Naht halbiert
+          // (Praxisfund 09.11.2026, paehtz.de). Die nächste Kachel beginnt dann früher.
+          let sy1 = Math.min(H, c.bottom - r.top);
+          if (multi && sy1 < H) sy1 = Math.max(sy0 + 1, sy1 - revealCut);
           if (sx1 - sx0 < 1 || sy1 - sy0 < 1) { clipped = clipped || (sx1 - sx0 < 1 && short(x, W)) || (sy1 - sy0 < 1 && short(y, H)); break; }
           const img = await loadImage(await captureTab());
           tiles++;
