@@ -31,11 +31,12 @@ HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 
 ## What sets it apart
 
+- **Nothing in between.** Click, then Ctrl+V in your agent. The reference goes from your browser to your clipboard (screenshot and HTML into your downloads folder) and from there into your agent, all on your own machine: no account, no server or cloud relay, nothing to install or keep running besides the extension. The extension sends nothing anywhere; the agent receives exactly what you paste, when you paste it. The text reference works in any chat; the files are read directly by agents with access to your files (Claude Code, Codex, Cursor), for a web chat switch the screenshot to the clipboard.
 - **It sees nothing until you click.** Only `activeTab` – no host permissions, no content script running on every page. Chrome shows no "read and change all your data" warning. That also draws a line: `activeTab` covers the page itself, not frames a page embeds from another provider (HubSpot or Typeform forms, payment fields, consent banners). Elements inside such a frame cannot be picked; the picker says so at the frame ("O" opens the settings with the opt-in) and lets you pick the frame element instead, naming its URL; a click on such a frame never reaches the embedded form. If you need them, the settings hold an opt-in that asks the browser for access to all sites, revocable there at any time.
-- **Screenshot and text in a single paste.** The agent gets what it cannot render itself: how the element actually looks in your browser, at your viewport.
+- **The screenshot comes with the reference.** The agent gets what it cannot render itself: how the element actually looks in your browser, at your viewport, also beyond the visible area and for a whole page. As a file path by default (token-friendly, read only when needed), or image and text in one paste.
 - **Rendered HTML with CSS context.** For content that exists only in the browser (logged-in portals, JavaScript-rendered tables) and for "why does it look like this": the applied stylesheet rules with file and media query, plus the effective layout values – what the inspector shows, as a file.
 - **Readable selectors, verified.** IDs and meaningful classes as anchors, positions only where needed, state and animation classes ignored, uniqueness checked before copying.
-- **Firefox and Chrome**, ~30 KB, four plain files, no build step.
+- **Firefox and Chrome**, plain readable JavaScript (about 140 KB, no minification, no dependencies, no build step) – what the stores review is what you can read on GitHub.
 
 ## Why it exists
 

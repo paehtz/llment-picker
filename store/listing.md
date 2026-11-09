@@ -22,6 +22,8 @@ The AMO search reads name and summary; Claude, ChatGPT, Codex and Cursor are nam
 
 LLMent Picker (say: el-el-ment): point at any element in your own browser, on live sites and logged-in portals, in Firefox or Chrome, and paste it into Claude Code, ChatGPT, Codex, Cursor or any chat. No server, no MCP, no setup, no account. It sees nothing until you click: no script runs on the pages you visit, no usage statistics are collected, nothing goes to a cloud, and it runs only on the page you point it at.
 
+Nothing in between. Click an element, press Ctrl+V in your agent, done. The reference goes from your browser to your clipboard and from there into your agent, on your own machine: no account, no server or cloud relay, nothing to install or keep running besides the extension. The extension itself sends nothing anywhere; your agent receives exactly what you paste, at the moment you paste it. The text reference works in any chat. Screenshots and HTML are saved as files by default, which agents with access to your files read directly (Claude Code, Codex, Cursor); for a web chat, switch the screenshot to the clipboard in the settings.
+
 Why not the browser built into your coding tool? That one runs a clean profile without your logins and is made for the local dev server. LLMent Picker works where you already are: the client's live site, the shop backend, the portal you are signed in to, with your own extensions and password manager, and it hands the result to whichever agent you use.
 
 Working on a web page with an AI assistant, you hit this constantly: "I mean the second box under the heading" is clear to a person and useless to a tool. LLMent Picker turns one click into an unambiguous reference in your clipboard:
@@ -52,6 +54,8 @@ Privacy: by default only the activeTab permission; the extension does nothing un
 ## Beschreibung (Deutsch)
 
 LLMent Picker (say: el-el-ment): Zeigen Sie in Ihrem eigenen Browser auf ein beliebiges Element, auf Live-Seiten und in Portalen mit Login, in Firefox oder Chrome, und fügen Sie es in Claude Code, ChatGPT, Codex, Cursor oder jeden Chat ein. Kein Server, kein MCP, keine Einrichtung, kein Konto. Die Erweiterung sieht nichts, bis Sie klicken: kein Skript läuft auf den Seiten, die Sie besuchen, es wird keine Nutzungsstatistik erhoben, nichts geht in eine Cloud, und sie läuft nur auf der Seite, auf der Sie sie aufrufen.
+
+Nichts dazwischen. Element anklicken, im Agenten Strg+V drücken, fertig. Die Referenz geht von Ihrem Browser in Ihre Zwischenablage und von dort in Ihren Agenten, auf Ihrem eigenen Rechner: kein Konto, kein Server und keine Cloud dazwischen, nichts zu installieren oder am Laufen zu halten außer der Erweiterung. Die Erweiterung selbst sendet nichts; Ihr Agent bekommt genau das, was Sie einfügen, in dem Moment, in dem Sie es einfügen. Die Textreferenz funktioniert in jedem Chat. Screenshots und HTML landen standardmäßig als Dateien im Download-Ordner, die Agenten mit Zugriff auf Ihre Dateien direkt lesen (Claude Code, Codex, Cursor); für einen Web-Chat stellen Sie den Screenshot in den Einstellungen auf die Zwischenablage um.
 
 Warum nicht der Browser, der im Coding-Werkzeug eingebaut ist? Der läuft mit einem leeren Profil ohne Ihre Logins und ist für den lokalen Entwicklungsserver gedacht. LLMent Picker arbeitet dort, wo Sie ohnehin sind: auf der Live-Seite des Kunden, im Shop-Backend, im Portal, in dem Sie angemeldet sind, mit Ihren eigenen Erweiterungen und Ihrem Passwortmanager, und übergibt das Ergebnis an den Agenten Ihrer Wahl.
 

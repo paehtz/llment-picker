@@ -31,11 +31,12 @@ HTML: D:\Downloads\LLMent Picker\2026-09-17_0853_paehtz.de_service-body.html
 
 ## Was es abhebt
 
+- **Nichts dazwischen.** Klicken, dann im Agenten Strg+V. Die Referenz geht vom Browser in die Zwischenablage (Screenshot und HTML in den Download-Ordner) und von dort in den Agenten, alles auf dem eigenen Rechner: kein Konto, kein Server und keine Cloud dazwischen, nichts zu installieren oder am Laufen zu halten außer der Erweiterung. Die Erweiterung sendet nichts; der Agent bekommt genau das, was eingefügt wird, in dem Moment, in dem es eingefügt wird. Die Textreferenz funktioniert in jedem Chat; die Dateien lesen Agenten mit Dateizugriff direkt (Claude Code, Codex, Cursor), für einen Web-Chat den Screenshot auf die Zwischenablage umstellen.
 - **Es sieht nichts, bis Du klickst.** Nur `activeTab` – keine Host-Berechtigung, kein Content-Script auf jeder Seite. Chrome zeigt keine Warnung „kann alle Ihre Daten auf allen Websites lesen". Das zieht zugleich eine Grenze: `activeTab` deckt die Seite selbst ab, nicht die Frames, die eine Seite von anderen Anbietern einbettet (HubSpot- oder Typeform-Formulare, Zahlungsfelder, Einwilligungsbanner). Elemente darin sind nicht wählbar; der Picker sagt das am Frame („O" öffnet die Einstellungen mit der Freigabe) und lässt stattdessen den Frame selbst wählen, mit seiner URL; ein Klick auf einen solchen Frame erreicht das eingebettete Formular nicht. Wer sie braucht, findet in den Einstellungen eine freiwillige Freigabe, die den Browser um Zugriff auf alle Seiten bittet und dort jederzeit wieder entzogen werden kann.
-- **Screenshot und Text in einem Einfügen.** Der Agent bekommt, was er selbst nicht rendern kann: wie das Element in Deinem Browser bei Deiner Fensterbreite wirklich aussieht.
+- **Der Screenshot kommt mit der Referenz.** Der Agent bekommt, was er selbst nicht rendern kann: wie das Element in Deinem Browser bei Deiner Fensterbreite wirklich aussieht, auch über den sichtbaren Bereich hinaus und für eine ganze Seite. Standardmäßig als Dateipfad (tokensparend, gelesen nur bei Bedarf), wahlweise Bild und Text in einem Einfügen.
 - **Gerendertes HTML mit CSS-Kontext.** Für Inhalte, die es nur im Browser gibt (eingeloggte Portale, per JavaScript gerenderte Tabellen), und für „warum sieht das so aus": die greifenden Stylesheet-Regeln mit Datei und Media-Query plus die effektiven Layout-Werte – was der Inspektor zeigt, als Datei.
 - **Lesbare Selektoren, geprüft.** IDs und sprechende Klassen als Anker, Positionen nur wo nötig, Zustands- und Animationsklassen ignoriert, Eindeutigkeit vor dem Kopieren gemessen.
-- **Firefox und Chrome**, ~30 KB, vier Klartextdateien, kein Build-Schritt.
+- **Firefox und Chrome**, lesbares JavaScript (rund 140 KB, nicht minifiziert, ohne Abhängigkeiten, ohne Build-Schritt) – was die Stores prüfen, ist genau das, was auf GitHub zu lesen ist.
 
 ## Warum es das gibt
 
