@@ -3,7 +3,7 @@
     "message": "LLMent Picker"
   },
   "extDescription": {
-    "message": "Ein Klick kopiert URL und eindeutigen CSS-Selektor eines Elements, dazu Text, Screenshot oder HTML, für KI-Chats und Coding-Agenten."
+    "message": "Element zeigen, in Claude, ChatGPT oder Codex einfügen: URL, CSS-Selektor, Screenshot, HTML. Kein Konto, keine Statistik."
   },
   "actionTitle": {
     "message": "LLMent Picker"
@@ -796,5 +796,19 @@
   },
   "optFramesOff": {
     "message": "Freigabe entzogen: wieder nur die Seite selbst."
+  },
+  "menuCopyPage": {
+    "message": "Ganze Seite kopieren (Screenshot + HTML)"
+  },
+  "linePage": {
+    "message": "Ganze Seite: $W$×$H$ px (CSS, scrollbares Dokument); fixierte Kopfleisten und Hinweise erscheinen einmal, an ihrem Platz oben auf der Seite",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      }
+    }
   }
 }

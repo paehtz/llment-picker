@@ -727,7 +727,9 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
   // Fixierte Fremdelemente ausblenden, sticky-Elemente festsetzen (position:
   // relative ohne Versatz = ihr natürlicher Platz). Vorherige Stile werden zurückgegeben.
-  function freezeStickies(target) {
+  // page: ganze Seite – fixierte Elemente (Kopfleiste, Cookie-Hinweis) stehen dann
+  // einmal an der Stelle, die sie oben auf der Seite einnehmen, statt in jeder Kachel
+  function freezeStickies(target, page) {
     const restore = [];
     const all = document.querySelectorAll("body *");
     for (const el of all) {
@@ -736,7 +738,15 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       if (el.closest("[data-llment-picker]")) continue;
       if (el === target || el.contains(target)) continue; // Vorfahr des Ziels: bleibt
       restore.push([el, el.getAttribute("style")]);
-      if (pos === "fixed") {
+      if (pos === "fixed" && page) {
+        const b = el.getBoundingClientRect();
+        el.style.setProperty("position", "absolute", "important");
+        el.style.setProperty("top", b.top + scrollY + "px", "important");
+        el.style.setProperty("left", b.left + scrollX + "px", "important");
+        el.style.setProperty("width", b.width + "px", "important");
+        el.style.setProperty("right", "auto", "important");
+        el.style.setProperty("bottom", "auto", "important");
+      } else if (pos === "fixed") {
         if (!target.contains(el)) el.style.setProperty("visibility", "hidden", "important");
       } else {
         el.style.setProperty("position", "relative", "important");
@@ -752,7 +762,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
 
   // measure(): aktuelle Fensterkoordinaten des Bereichs (inkl. Rand); target: das
   // Element, an dem Scroll-Container und fixierte Elemente bestimmt werden.
-  async function captureRegion(measure, target, pad) {
+  async function captureRegion(measure, target, pad, page) {
     const off = IN_FRAME ? frameOffset() : { x: 0, y: 0, topWidth: innerWidth };
     if (!off) throw new Error("frame offset unavailable (cross-origin)");
     let r = measure();
@@ -787,7 +797,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
           if (multi) {
             scrollPointTo(measure, sc, x, y, false);
             await settle(); await sleep(tiles === 0 ? 250 : 120);
-            if (!unfreeze) { unfreeze = freezeStickies(target); await settle(); }
+            if (!unfreeze) { unfreeze = freezeStickies(target, page); await settle(); }
             r = measure();
           }
           const c = clipRect(sc);
@@ -839,6 +849,11 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   }
 
   const captureElement = (el) => captureRegion(() => inflate(el.getBoundingClientRect(), SHOT_PAD), el, SHOT_PAD);
+  // Ganze Seite: das scrollbare Dokument (Breite ohne Scrollleiste), in Fensterkoordinaten
+  const pageMeasure = () => {
+    const d = document.documentElement;
+    return { left: -scrollX, top: -scrollY, width: Math.max(d.scrollWidth, d.clientWidth), height: Math.max(d.scrollHeight, document.body ? document.body.scrollHeight : 0) };
+  };
 
   // ───────────────────────── Zwischenablage ────────────────────────────────
   // Chrome setzt beim Loslassen von Alt (auch nach Alt+Klick) den Fokus auf das
@@ -923,7 +938,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
     const toClip = target !== "file", toFile = target !== "clipboard";
     if (withShot) {
       try {
-        shot = await (opts.region ? captureRegion(opts.region.measure, el, 0) : opts.list ? captureRegion(() => inflate(unionRect(opts.context || opts.list), SHOT_PAD), (opts.context || opts.list)[0], SHOT_PAD) : captureElement(el));
+        shot = await (opts.page ? captureRegion(pageMeasure, document.documentElement, 0, true) : opts.region ? captureRegion(opts.region.measure, el, 0) : opts.list ? captureRegion(() => inflate(unionRect(opts.context || opts.list), SHOT_PAD), (opts.context || opts.list)[0], SHOT_PAD) : captureElement(el));
       } catch (e) {
         shotErr = (e && e.message) || String(e);
         console.warn("LLMent Picker: Screenshot fehlgeschlagen –", shotErr);
@@ -948,7 +963,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       }
     }
     const adjacent = opts.list && opts.list.every((x, i) => i === 0 || x.parentElement === opts.list[0].parentElement);
-    let note = opts.region ? opts.region.line : opts.list ? (opts.list.length > 1 ? (adjacent ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : t("lineSelection", opts.list.length)) : "") : null;
+    let note = opts.page ? t("linePage", pageMeasure().width, pageMeasure().height) : opts.region ? opts.region.line : opts.list ? (opts.list.length > 1 ? (adjacent ? t("lineRange", opts.list.length, buildSelector(opts.list[0]), buildSelector(opts.list[opts.list.length - 1])) : t("lineSelection", opts.list.length)) : "") : null;
     if (opts.context) note = (note ? note + "\n" : "") + t("lineContext", opts.context.map((x) => buildSelector(x)).join(", "), opts.list.length);
     // Fremde Herkunft: der Inhalt war nicht erreichbar – das gehört in den Block,
     // sonst liest ein Agent den Frame-Selektor als Zugang zu dem, was darin steht
@@ -957,7 +972,7 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
       try { src = new URL(src, location.href).href; } catch {}
       note = (note ? note + "\n" : "") + t("lineForeignFrame", src || f.tagName.toLowerCase());
     }
-    const box = shot ? (opts.region ? opts.region.measure() : unionRect(opts.context || opts.list || [el])) : null;
+    const box = shot ? (opts.page ? pageMeasure() : opts.region ? opts.region.measure() : unionRect(opts.context || opts.list || [el])) : null;
     if (shot && opts.context && opts.list) {
       // Der Screenshot bleibt unverändert (er soll das Frontend zeigen); die Lage der
       // gewählten Elemente steht als Text in Bildpixeln, damit ein Agent sie findet
@@ -967,12 +982,12 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
         return t("lineInShot", buildSelector(f), Math.round((fr.left - rr.left) * shot.px), Math.round((fr.top - rr.top) * shot.py), Math.round(fr.width * shot.px), Math.round(fr.height * shot.py));
       }).join("\n");
     }
-    let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.list ? "selection" : opts.region ? "region" : "element", box);
+    let payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, !!(shot && toClip), selector, opts.page ? "page" : opts.list ? "selection" : opts.region ? "region" : "element", box);
     let ok = false, imageOk = false;
     if (shot && toClip && (await copyWithImage(payload, shot.blob))) ok = imageOk = true;
     else {
       // Bild nicht in der Zwischenablage → das Label darf es nicht behaupten
-      payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, false, selector, opts.list ? "selection" : opts.region ? "region" : "element", box);
+      payload = payloadFor(el, text, shot && shot.info, htmlPath, note, shotPath, false, selector, opts.page ? "page" : opts.list ? "selection" : opts.region ? "region" : "element", box);
       ok = await copy(payload);
     }
     const parts = [];
@@ -1458,9 +1473,13 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
 
   let contextFallback = false;
   if (window[CTX] != null) {
-    const { id, onSelection, shot, html, record } = window[CTX];
+    const { id, onSelection, shot, html, record, page } = window[CTX];
     delete window[CTX];
     if (window[KEY]) window[KEY].cancel(true);
+    if (page) { // ganze Seite: Screenshot über die volle Länge, HTML auf Wunsch
+      copyElement(document.body || document.documentElement, undefined, { shot: true, html, page: true }).then(() => reportState(false));
+      return "picked";
+    }
     if (record) {
       const rEl = contextTarget(id);
       if (rEl) {
@@ -2029,6 +2048,14 @@ ${t("fileViewport")}: ${innerWidth}×${innerHeight}, DPR ${Math.round(devicePixe
   let tap = null, tapAt = 0;
   function onKey(e) {
     // Über einem Frame fremder Herkunft: O öffnet die Einstellungen mit der Frame-Freigabe
+    // P: ganze Seite als Screenshot (mit HTML, wenn Strg scharf ist) – Strg+P bleibt Drucken
+    if ((e.key === "p" || e.key === "P") && !e.ctrlKey && !e.altKey && !e.metaKey && !range) {
+      swallow(e);
+      const withHtml = armHtml || preset.html;
+      cleanup();
+      copyElement(document.body || document.documentElement, undefined, { shot: true, html: withHtml, page: true }).then(() => reportState(false));
+      return;
+    }
     if ((e.key === "o" || e.key === "O") && !e.ctrlKey && !e.altKey && !e.metaKey && current && isFrame(current) && !frameReachable(current)) {
       swallow(e);
       try { api.runtime.sendMessage({ type: "llment-open-options" }); } catch {}

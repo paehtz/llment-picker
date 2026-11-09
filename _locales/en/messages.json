@@ -3,7 +3,7 @@
     "message": "LLMent Picker"
   },
   "extDescription": {
-    "message": "One click copies a page element’s URL and a unique CSS selector, plus text, screenshot or HTML, for AI chats and coding agents."
+    "message": "Point at an element, paste it into Claude, ChatGPT or Codex: URL, CSS selector, screenshot, HTML. No account, no tracking."
   },
   "actionTitle": {
     "message": "LLMent Picker"
@@ -796,5 +796,19 @@
   },
   "optFramesOff": {
     "message": "Access withdrawn: only the page itself, as before."
+  },
+  "menuCopyPage": {
+    "message": "Copy the whole page (screenshot + HTML)"
+  },
+  "linePage": {
+    "message": "Whole page: $W$×$H$ px (CSS, scrollable document); fixed headers and banners appear once, where they sit at the top of the page",
+    "placeholders": {
+      "w": {
+        "content": "$1"
+      },
+      "h": {
+        "content": "$2"
+      }
+    }
   }
 }
